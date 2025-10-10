@@ -6,7 +6,8 @@ import pytest
 from haven.devices import IonChamber, Motor, Robot
 from haven.instrument import Instrument, make_devices
 
-haven_dir = Path(__file__).parent.parent.resolve()
+haven_dir = Path(__file__).parent.parent.parent.resolve() / "src" / "haven"
+print(haven_dir)
 toml_file = haven_dir / "iconfig_testing.toml"
 
 

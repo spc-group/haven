@@ -20,8 +20,8 @@ from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
 
-top_dir = Path(__file__).parent.resolve()
-haven_dir = top_dir / "haven"
+top_dir = Path(__file__).parent.parent.resolve()
+haven_dir = top_dir / "src" / "haven"
 
 
 # Specify the configuration files to use for testing

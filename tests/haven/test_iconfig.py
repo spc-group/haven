@@ -46,8 +46,9 @@ def test_merging_dicts():
     """Do the entries from multiple dictioneries merge properly?"""
     this_dir = Path(__file__).resolve().parent
     default_files = [
-        this_dir.parent / "iconfig_testing.toml",
+        this_dir.parent.parent / "src" / "haven" / "iconfig_testing.toml",
     ]
+    print(default_files)
     test_file = this_dir / "test_iconfig.toml"
     config = load_config(*default_files, test_file)
     assert "prefix" in config["area_detector"][0].keys()

@@ -12,7 +12,7 @@ from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import plan_display
+from firefly.plans import display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -173,7 +173,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
             widgets.step_label.setText(str(step_size))
 
 
-class GridScanDisplay(plan_display.PlanDisplay):
+class GridScanDisplay(display.PlanDisplay):
     _default_region_count = 2
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):

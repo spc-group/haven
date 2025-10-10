@@ -3,12 +3,12 @@ import logging
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 
-from firefly.plans import plan_display
+from firefly.plans import display
 
 log = logging.getLogger()
 
 
-class CountDisplay(plan_display.PlanDisplay):
+class CountDisplay(display.PlanDisplay):
 
     async def update_devices(self, registry):
         """Set available components in the device list."""

@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from ophyd_async.testing import set_mock_value
 
-from firefly.plans.move_motor_window import MoveMotorDisplay
+from firefly.plans.move import MoveMotorDisplay
 from haven.devices import Motor
 
 

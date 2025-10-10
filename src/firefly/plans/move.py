@@ -9,7 +9,7 @@ from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import plan_display
+from firefly.plans import display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -100,7 +100,7 @@ class MotorRegionsManager(RegionsManager):
             )
 
 
-class MoveMotorDisplay(plan_display.PlanStubDisplay):
+class MoveMotorDisplay(display.PlanStubDisplay):
     _default_region_count = 1
     scan_repetitions = 1
 
@@ -133,7 +133,7 @@ class MoveMotorDisplay(plan_display.PlanStubDisplay):
             return "mv"
 
     def ui_filename(self):
-        return "plans/move_motor_window.ui"
+        return "plans/move.ui"
 
 
 # -----------------------------------------------------------------------------

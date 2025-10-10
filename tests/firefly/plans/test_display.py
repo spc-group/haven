@@ -2,8 +2,8 @@ import pytest
 from bluesky_queueserver_api import BPlan
 from qtpy.QtWidgets import QPushButton
 
+from firefly.plans.display import PlanDisplay
 from firefly.plans.metadata import MetadataWidget
-from firefly.plans.plan_display import PlanDisplay
 
 
 class DummyScanDisplay(PlanDisplay):

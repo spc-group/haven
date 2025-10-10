@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 from xraydb.xraydb import XrayDB
 
 from firefly.exceptions import UnknownAbsorptionEdge
-from firefly.plans import plan_display
+from firefly.plans import display
 from firefly.plans.regions import RegionsManager
 from haven.energy_ranges import (
     ERange,
@@ -222,7 +222,7 @@ class XafsRegionsManager(RegionsManager):
                 line_edit.setValue(new_value)
 
 
-class XafsScanDisplay(plan_display.PlanDisplay):
+class XafsScanDisplay(display.PlanDisplay):
     plan_type = "xafs_scan"
     min_energy = 4000
     max_energy = 33000

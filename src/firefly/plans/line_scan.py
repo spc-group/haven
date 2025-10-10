@@ -9,7 +9,7 @@ from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import plan_display
+from firefly.plans import display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -142,7 +142,7 @@ class LineRegionsManager(RegionsManager):
                 widgets.step_label.setText(str(step_size))
 
 
-class LineScanDisplay(plan_display.PlanDisplay):
+class LineScanDisplay(display.PlanDisplay):
     _default_region_count = 1
 
     def customize_ui(self):

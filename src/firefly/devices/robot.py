@@ -1,14 +1,12 @@
 import logging
 
-from firefly.plans.move_motor_window import MotorRegionsManager
-from firefly.plans.plan_display import (
-    PlanDisplay,
-)
+from firefly.plans import display
+from firefly.plans.move import MotorRegionsManager
 
 log = logging.getLogger(__name__)
 
 
-class RobotDisplay(PlanDisplay):
+class RobotDisplay(display.PlanDisplay):
     """Manage sample transfer using a robot plan.
 
     .. code-block:: python
