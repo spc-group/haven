@@ -32,7 +32,6 @@ from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
 from .bss import BssApi  # noqa: F401
-from .catalog import tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import (  # noqa: F401
     ERange,
@@ -42,13 +41,6 @@ from .energy_ranges import (  # noqa: F401
     wavenumber_to_energy,
 )
 from .instrument import beamline  # noqa: F401
-from .motor_position import (  # noqa: F401
-    get_motor_position,
-    list_current_motor_positions,
-    list_motor_positions,
-    recall_motor_position,
-    save_motor_position,
-)
 from .preprocessors import (  # noqa: F401
     baseline_decorator,
     baseline_wrapper,

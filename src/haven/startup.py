@@ -26,7 +26,6 @@ import haven  # noqa: F401
 
 # Import plans (needed for the qserver, optional for ipython/firefly)
 from haven import plans  # noqa: F401
-from haven import recall_motor_position  # noqa: F401
 from haven.plans import (  # noqa: F401
     auto_gain,
     calibrate,

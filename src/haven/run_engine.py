@@ -8,9 +8,9 @@ from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
+from tiled.client import from_profile
 
 from haven import exceptions, load_config
-from haven.catalog import tiled_client
 from haven.tiled_writer import TiledWriter
 
 log = logging.getLogger(__name__)
@@ -81,10 +81,8 @@ def run_engine(
         tiled_config = config["tiled"]
         profile = tiled_config["writer_profile"]
         try:
-            client = tiled_client(
-                profile=tiled_config["writer_profile"],
-                cache_filepath=None,
-                structure_clients="numpy",
+            client = from_profile(
+                tiled_config["writer_profile"], structure_clients="numpy"
             )
         except httpx.ConnectError as exc:
             raise exceptions.TiledNotAvailable(profile) from exc
