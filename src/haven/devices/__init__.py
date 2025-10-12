@@ -1,5 +1,6 @@
 from .aerotech import AerotechStage  # noqa: F401
 from .aperture_slits import ApertureSlits  # noqa: F401
+from .aps import ApsMachine  # noqa: F401
 from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401

@@ -1,4 +1,4 @@
-name: tests
+name: CI
 on:
   push:
     branches:
@@ -64,8 +64,9 @@ jobs:
       with:
         pixi-version: v0.53.0
         cache: true
-    - run: |
-        pixi run test-haven
+    - name: Unit tests
+      run: |
+        pixi run test-haven --runslow
         pixi run test-firefly
   make-docs:
     defaults:

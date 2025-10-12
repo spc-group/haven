@@ -32,9 +32,6 @@ def open_shutters(shutters: Union[str, Sequence[Device]]):
       shutter = haven.devices.shutter.Shutter(..., name="Shutter C")
       RE(open_shutters([shutter]))
 
-    This plan will temporarily remove the default shutter-related
-    suspenders from the haven run engine.
-
     """
     yield from _set_shutters(shutters, ShutterState.OPEN)
 
@@ -52,9 +49,6 @@ def close_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
     E.g.
       shutter = haven.devices.shutter.Shutter(..., name="Shutter C")
       RE(close_shutters([shutter]))
-
-    This plan will temporarily remove the default shutter-related
-    suspenders from the haven run engine.
 
     """
     yield from _set_shutters(shutters, ShutterState.CLOSED)

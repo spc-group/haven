@@ -9,43 +9,12 @@ from ophyd.sim import SynAxis, det
 from haven import baseline_decorator, baseline_wrapper
 from haven.preprocessors import (
     inject_metadata_wrapper,
-    shutter_suspend_decorator,
-    shutter_suspend_wrapper,
 )
 
 
 @pytest.fixture()
 def RE():
     return RunEngine({})
-
-
-@pytest.mark.xfail
-def test_shutter_suspend_wrapper(aps, shutters, sim_registry, RE):
-    # Check that the run engine does not have any shutter suspenders
-    # Currently this test is fragile since we might add non-shutter
-    # suspenders in the future.
-    assert len(RE.suspenders) == 1
-    # Check that the shutter suspenders get added
-    plan = bp.count([det])
-    msgs = list(plan)
-    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
-    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
-    assert len(sub_msgs) == 0
-    assert len(unsub_msgs) == 0
-    # Now wrap the plan in the suspend wrapper
-    plan = shutter_suspend_wrapper(bp.count([det]))
-    msgs = list(plan)
-    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
-    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
-    assert len(sub_msgs) == 2
-    assert len(unsub_msgs) == 2
-    # Now wrap the plan in the suspend decorator
-    plan = shutter_suspend_decorator()(bp.count)([det])
-    msgs = list(plan)
-    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
-    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
-    assert len(sub_msgs) == 2
-    assert len(unsub_msgs) == 2
 
 
 def test_baseline_wrapper(sim_registry, aps, RE):

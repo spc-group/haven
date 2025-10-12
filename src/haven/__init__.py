@@ -42,12 +42,12 @@ from .energy_ranges import (  # noqa: F401
 )
 from .instrument import beamline  # noqa: F401
 from .preprocessors import (  # noqa: F401
+    aps_suspenders_decorator,
+    aps_suspenders_wrapper,
     baseline_decorator,
     baseline_wrapper,
     open_shutters_decorator,
     open_shutters_wrapper,
-    shutter_suspend_decorator,
-    shutter_suspend_wrapper,
 )
 from .run_engine import run_engine  # noqa: F401
 from .tiled_writer import TiledWriter  # noqa: F401

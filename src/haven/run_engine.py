@@ -54,24 +54,6 @@ def run_engine(
     RE, *_ = init_RE(config, bec_instance=bec, **kwargs)
     # Add custom verbs
     RE.register_command("calibrate", _calibrate)
-    # Install suspenders
-    # try:
-    #     aps = beamline.devices["APS"]
-    # except ComponentNotFound:
-    #     log.warning("APS device not found, suspenders not installed.")
-    # else:
-    #     # Suspend when shutter permit is disabled
-    #     # Re-enable when the APS shutter permit signal is better understood
-    #     pass
-    #     # RE.install_suspender(
-    #     #     suspenders.SuspendWhenChanged(
-    #     #         signal=aps.shutter_permit,
-    #     #         expected_value="PERMIT",
-    #     #         allow_resume=True,
-    #     #         sleep=3,
-    #     #         tripped_message="Shutter permit revoked.",
-    #     #     )
-    #     # )
     # Add a shortcut for using the run engine more efficiently
     RE.waiting_hook = ProgressBarManager()
     if (ip := IPython.get_ipython()) is not None:

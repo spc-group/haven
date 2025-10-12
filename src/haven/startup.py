@@ -103,6 +103,16 @@ for cpt in devices.root_devices:
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
 
+# Apply suspenders to the run engine
+try:
+    aps = haven.beamline.devices["APS"]
+except ComponentNotFound:
+    log.info("APS device not found, suspenders not installed.")
+else:
+    # Suspend when shutter permit is disabled or storage ring current is too low
+    pass
+
+
 # Apply a wrapper for keeping the beam at a fixed offset
 if config.feature_flag("fixed_offset_tracking"):
     try:

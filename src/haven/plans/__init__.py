@@ -11,7 +11,6 @@ from haven.preprocessors import (
     baseline_decorator,
     inject_metadata_decorator,
     open_shutters_decorator,
-    shutter_suspend_decorator,
 )
 
 from ._align_monochromators import align_monochromators  # noqa: F401
@@ -44,7 +43,6 @@ def chain(*decorators):
 
 
 all_decorators = chain(
-    # shutter_suspend_decorator(),
     open_shutters_decorator(),
     baseline_decorator(),
     inject_metadata_decorator(),
@@ -72,7 +70,6 @@ scan_nd = all_decorators(bp.scan_nd)
 del beamline
 del open_shutters_decorator
 del baseline_decorator
-del shutter_suspend_decorator
 del bp
 
 # -----------------------------------------------------------------------------
