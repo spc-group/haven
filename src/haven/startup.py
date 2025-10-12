@@ -4,6 +4,7 @@ qserver."""
 import logging
 import time
 import warnings
+from collections.abc import Callable
 from functools import partial
 
 import numpy as np  # noqa: F401
@@ -103,14 +104,38 @@ for cpt in devices.root_devices:
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
 
-# Apply suspenders to the run engine
-try:
-    aps = haven.beamline.devices["APS"]
-except ComponentNotFound:
-    log.info("APS device not found, suspenders not installed.")
-else:
-    # Suspend when shutter permit is disabled or storage ring current is too low
-    pass
+# Plan Decorators
+# ===============
+#
+# Add plan decorators that require specific devices to be loaded
+plan_decorators: Callable = []
+
+# Suspenders for if the storage ring goes down
+if config.feature_flag("install_storage_ring_suspenders"):
+    try:
+        aps = haven.beamline.devices["APS"]
+    except ComponentNotFound:
+        log.info("APS device not found, suspenders not installed.")
+    else:
+        # Suspend when shutter permit is disabled or storage ring current is too low
+        shutters = haven.beamline.devices.findall("endstation_shutter", allow_none=True)
+        plan_decorators.append(
+            haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
+        )
+
+plan_decorators = haven.plans.chain(*plan_decorators)
+
+auto_gain = plan_decorators(auto_gain)
+count = plan_decorators(count)
+energy_scan = plan_decorators(energy_scan)
+grid_scan = plan_decorators(grid_scan)
+list_scan = plan_decorators(list_scan)
+rel_grid_scan = plan_decorators(rel_grid_scan)
+rel_list_scan = plan_decorators(rel_list_scan)
+rel_scan = plan_decorators(rel_scan)
+scan = plan_decorators(scan)
+scan_nd = plan_decorators(scan_nd)
+xafs_scan = plan_decorators(xafs_scan)
 
 
 # Apply a wrapper for keeping the beam at a fixed offset
