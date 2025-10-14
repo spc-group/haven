@@ -5,11 +5,12 @@ import pytest
 from ophyd import sim
 from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import Motor
+from scanspec.core import Path
 from scanspec.specs import Line
 
-from haven.devices import DG645Delay, IonChamber, Xspress3Detector
+from haven.devices import DG645Delay, IonChamber, SoftGlueDelay, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
-from haven.plans._fly import fly_segment, prepare_detectors
+from haven.plans._fly import fly_scan_with_spec, fly_segment, prepare_detectors
 
 fly_motor = Motor("255idcVME:m1", name="m1")
 
@@ -52,7 +53,79 @@ def test_fly_segment(flyer):
     assert msgs[10].command == "wait"
 
 
-def test_set_fly_motor_params(flyer):
+def test_line_prepares_flyer_path(flyer):
+    """Does the plan set the parameters of the flyer motor?"""
+    # step size == 10
+    plan = fly_scan_with_spec([], flyer, -20, 30, num=6, dwell_time=1.5)
+    messages = list(plan)
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ][0]
+    prep_path = prep_msg.args[0]
+    assert isinstance(prep_path, Path)
+    points = prep_path.consume()
+    print(points)
+    np.testing.assert_equal(points.midpoints[flyer], np.linspace(-20, 30, num=6))
+    np.testing.assert_equal(points.lower[flyer], np.linspace(-25, 25, num=6))
+    np.testing.assert_equal(points.upper[flyer], np.linspace(-15, 35, num=6))
+    np.testing.assert_equal(points.duration, np.full(shape=(6,), fill_value=1.5))
+
+
+def test_line_prepares_controller_path(flyer):
+    """Does the plan set the parameters of the flyer controller?"""
+    controller = SoftGlueDelay(prefix="spam_eggs:", name="soft_glue_delay")
+    plan = fly_scan_with_spec(
+        [], flyer, -20, 30, num=6, dwell_time=1.5, flyer_controllers=[controller]
+    )
+    messages = list(plan)
+    from pprint import pprint
+
+    pprint(messages)
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is controller
+    ][0]
+    prep_path = prep_msg.args[0]
+    assert isinstance(prep_path, Path)
+    points = prep_path.consume()
+    print(points)
+    np.testing.assert_equal(points.midpoints[flyer], np.linspace(-20, 30, num=6))
+    np.testing.assert_equal(points.lower[flyer], np.linspace(-25, 25, num=6))
+    np.testing.assert_equal(points.upper[flyer], np.linspace(-15, 35, num=6))
+    np.testing.assert_equal(points.duration, np.full(shape=(6,), fill_value=1.5))
+
+
+def test_fly_scan_metadata(flyer, ion_chamber):
+    """Does the plan set the parameters of the flyer motor."""
+    md = {"spam": "eggs"}
+    plan = fly_scan_with_spec([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
+    messages = list(plan)
+    assert messages[0].command == "stage"
+    assert messages[1].command == "stage"
+    open_msg = messages[2]
+    assert open_msg.command == "open_run"
+    real_md = open_msg.kwargs
+    expected_md = {
+        "plan_args": {
+            "detectors": list([repr(ion_chamber)]),
+            "num": 6,
+            "dwell_time": 1,
+            "flyer_controllers": [],
+            "trigger": "DetectorTrigger.INTERNAL",
+            "*args": (repr(flyer), -20, 30),
+        },
+        "plan_name": "fly_scan",
+        "motors": [flyer.name],
+        "detectors": [ion_chamber.name],
+        "spam": "eggs",
+    }
+    assert real_md == expected_md
+
+
+# Old tests are below this line
+# -----------------------------
+
+
+def test_set_fly_motor_params_old(flyer):
     """Does the plan set the parameters of the flyer motor?"""
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
@@ -67,7 +140,7 @@ def test_set_fly_motor_params(flyer):
     assert prep_info.point_count == 6
 
 
-def test_set_fly_params_reverse(flyer):
+def test_set_fly_params_reverse_old(flyer):
     """Does the plan set the parameters of the flyer motor when going
     higher to lower positions?
 
@@ -84,7 +157,7 @@ def test_set_fly_params_reverse(flyer):
     assert prep_info.point_count == 6
 
 
-def test_fly_scan_metadata(flyer, ion_chamber):
+def test_fly_scan_metadata_old(flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
     md = {"spam": "eggs"}
     plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
@@ -217,7 +290,7 @@ async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
     assert real_md == expected_md
 
 
-def test_prepare_detectors():
+def test_prepare_detectors_old():
     delay = DG645Delay("")
     # Include two ion chambers to make sure we set the delay outputs only once
     ion_chamber = IonChamber(

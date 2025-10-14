@@ -1,6 +1,8 @@
+import operator
 import uuid
 from collections import OrderedDict, abc
 from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
+from functools import reduce
 from typing import Any, Hashable
 
 import numpy as np
@@ -14,7 +16,9 @@ from bluesky.preprocessors import (
     pchain,
     plan_mutator,
     run_decorator,
+    run_wrapper,
     stage_decorator,
+    stage_wrapper,
     stub_wrapper,
 )
 from bluesky.protocols import Collectable, Flyable, Preparable
@@ -23,7 +27,7 @@ from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 from scanspec.core import Path
-from scanspec.specs import Spec
+from scanspec.specs import ConstantDuration, Fly, Line, Spec
 
 from haven._iconfig import load_config
 from haven.devices.delay import DG645DelayOutput
@@ -711,6 +715,7 @@ def fly_segment(
     detectors: Sequence[Flyable],
     motors: Sequence[Flyable],
     spec: Spec[Flyable],
+    flyer_controllers: Sequence[Flyable] = (),
     *,
     start: int = 0,
     num: int | None = None,
@@ -732,14 +737,126 @@ def fly_segment(
     for motor in motors:
         path = Path(frames, start=start, num=num)
         yield from bps.prepare(motor, path, group=prepare_group, wait=False)
+    for controller in flyer_controllers:
+        path = Path(frames, start=start, num=num)
+        yield from bps.prepare(controller, path, group=prepare_group, wait=False)
     for detector in detectors:
         yield from bps.prepare(detector, trigger_info, group=prepare_group, wait=False)
     yield from bps.wait(group=prepare_group)
     # Start the detectors before the motors so we know they'll be ready
     yield from bps.kickoff_all(*detectors, wait=True)
+    if len(flyer_controllers) > 0:
+        yield from bps.kickoff_all(*flyer_controllers, wait=True)
     yield from bps.kickoff_all(*motors, wait=True)
     yield from bps.complete_all(*motors, wait=True)
+    if len(flyer_controllers) > 0:
+        yield from bps.complete_all(*flyer_controllers, wait=True)
     yield from bps.complete_all(*detectors, wait=True)
+    for detector in detectors:
+        yield from bps.collect(detector)
+
+
+def fly_scan_with_spec(
+    detectors: Sequence[Flyable],
+    *args,
+    num: int,
+    dwell_time: float,
+    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    flyer_controllers: Sequence[Flyable] = (),
+    md: Mapping = {},
+) -> Generator[Msg, Any, None]:
+    """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
+
+    Will use external triggering if *delay_generator* is provided.
+    Otherwise, internal triggering is used.
+
+    Parameters
+    ----------
+    detectors
+      List of 'readable' objects that support the flyer interface
+    *args
+      For one dimension, motor, start, stop. In general:
+
+      .. code-block:: python
+
+         motor1, start1, stop1,
+         motor2, start2, stop2,
+         ...,
+         motorN, startN, stopN
+
+      Motors can be any ‘flyable’ object.
+    num
+      Number of measurements to take.
+    dwell_time
+      How long, in seconds, for each measurement point.
+    trigger
+      The trigger mode to use for flying.
+    delay_outputs
+      If provided, these delay generator outputs will be used to
+      coordinate hardware triggering of detectors.
+    md
+      metadata
+
+    Yields
+    ------
+    msg
+      'prepare', 'kickoff', 'complete, and 'collect' messages
+
+    """
+    # For now, the aerotech is producing shorter segments than expected
+    trigger_info = TriggerInfo(
+        number_of_events=num,
+        livetime=dwell_time * 0.85,
+        deadtime=dwell_time * 0.15,
+        trigger=trigger,
+    )
+    # Prepare the motor info
+    motors = args[0::3]
+    starts = args[1::3]
+    stops = args[2::3]
+    motor_args = []
+    for motor, start, stop in zip(motors, starts, stops):
+        motor_info = FlyMotorInfo(
+            start_position=start,
+            end_position=stop,
+            time_for_move=dwell_time * num,
+            point_count=num,
+        )
+        motor_args.extend([motor, motor_info])
+    # Prepare metadata
+    md_args = tuple(zip([repr(m) for m in motors], starts, stops))
+    md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
+    md_ = {
+        "plan_name": "fly_scan",
+        "motors": [motor.name for motor in motors],
+        "detectors": [det.name for det in detectors],
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "*args": md_args,
+            "num": num,
+            "dwell_time": dwell_time,
+            "trigger": str(trigger),
+            "flyer_controllers": [repr(output) for output in flyer_controllers],
+        },
+    }
+    md_.update(md)
+    # Do the actual flying
+    lines = [
+        Line(motor, start, stop, num)
+        for (motor, start, stop) in zip(motors, starts, stops)
+    ]
+    lines = reduce(operator.mul, lines)
+    spec = Fly(ConstantDuration(dwell_time, lines))
+    segment_plan = fly_segment(
+        detectors=detectors,
+        motors=motors,
+        spec=spec,
+        trigger_info=trigger_info,
+        flyer_controllers=flyer_controllers,
+    )
+    segment_plan = run_wrapper(segment_plan, md=md_)
+    segment_plan = stage_wrapper(segment_plan, [*detectors, *motors])
+    yield from segment_plan
 
 
 # -----------------------------------------------------------------------------

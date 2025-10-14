@@ -18,7 +18,7 @@ from ._align_motor import align_motor
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
 from ._energy_scan import energy_scan
-from ._fly import fly_scan, grid_fly_scan
+from ._fly import fly_scan, grid_fly_scan  # noqa: F401
 from ._record_dark_current import record_dark_current  # noqa: F401
 from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
 from ._set_energy import set_energy  # noqa: F401
