@@ -82,9 +82,10 @@ name = "undulator"
 prefix = "id_ioc:"
 offset_pv = "mono_ioc:offset"
 
-[[ fixed_bounce_monochromator ]]
+[[ channel_cut_monochromator ]]
 name = "secondary_mono"
 prefix = "255idcVME:Si220:"
+vertical_motor = "255idcVME:m47"
 
 
 # Ion chambers
