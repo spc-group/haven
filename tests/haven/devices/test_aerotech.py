@@ -1,9 +1,10 @@
 import asyncio
-from collections import OrderedDict
 
 import numpy as np
 import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
+from scanspec.core import Path
+from scanspec.specs import Fly, Line
 
 from haven.devices.aerotech import AerotechStage
 from haven.plans._fly import FlyMotorInfo
@@ -60,7 +61,6 @@ async def test_aerotech_signals(aerotech):
         "aerotech-profile_move-axis-0-positions",
         "aerotech-profile_move-axis-1-enabled",
         "aerotech-profile_move-axis-1-positions",
-        "aerotech-profile_move-pulse_positions",
         # PSO parameters
         "aerotech-profile_move-pulse_mode",
         "aerotech-profile_move-pulse_direction",
@@ -74,16 +74,21 @@ async def test_aerotech_signals(aerotech):
 
 profile_positions = [
     # (start, stop, num, expected, direction)
-    (-1000, 1000, 100, np.linspace(-1010, 1010, num=101), "Pos"),
-    (1000, -1000, 100, np.linspace(1010, -1010, num=101), "Neg"),
+    (-1000, 1000, 101, np.linspace(-1010, 1010, num=102), "Pos"),
+    (1000, -1000, 101, np.linspace(1010, -1010, num=102), "Neg"),
 ]
 
 
 @pytest.mark.parametrize("start,end,num,expected,direction", profile_positions)
-async def test_prepare(aerotech, start, end, num, expected, direction):
+async def test_prepare_motor_info(aerotech, start, end, num, expected, direction):
     axis = aerotech.horizontal
+    num_pulses = num + 1
+    dwell_time = 1.2
     motor_info = FlyMotorInfo(
-        start_position=start, end_position=end, time_for_move=120, point_count=num
+        start_position=start,
+        end_position=end,
+        time_for_move=dwell_time * num,
+        point_count=num,
     )
     # Set to busy to check the observe_value behavior
     set_mock_value(aerotech.profile_move.build_state, "Busy")
@@ -96,22 +101,73 @@ async def test_prepare(aerotech, start, end, num, expected, direction):
     await prepared
     # Check that the aerotech profile move was setup properly
     get_mock_put(aerotech.profile_move.point_count).assert_called_once_with(
-        101, wait=True
+        num + 1, wait=True
     )
     get_mock_put(aerotech.profile_move.pulse_count).assert_called_once_with(
-        101, wait=True
+        num + 1, wait=True
     )
     get_mock_put(aerotech.profile_move.pulse_range_start).assert_called_once_with(
         0, wait=True
     )
     get_mock_put(aerotech.profile_move.pulse_range_end).assert_called_once_with(
-        101, wait=True
+        num + 1, wait=True
     )
     get_mock_put(aerotech.profile_move.dwell_time).assert_called_once_with(
-        1.2, wait=True
+        dwell_time, wait=True
     )
     get_mock_put(aerotech.profile_move.pulse_direction).assert_called_once_with(
         direction, wait=True
+    )
+    get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with(
+        "Absolute", wait=True
+    )
+    get_mock_put(aerotech.profile_move.axis[0].enabled).assert_called_once_with(
+        True, wait=True
+    )
+    get_mock_put(aerotech.profile_move.axis[1].enabled).assert_called_once_with(
+        False, wait=True
+    )
+    mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
+    assert mock_put.called
+    np.testing.assert_equal(mock_put.call_args.args[0], expected)
+    mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
+    assert mock_put.called
+    np.testing.assert_equal(mock_put.call_args.args[0], expected)
+
+
+@pytest.mark.parametrize("start,end,num,expected,direction", profile_positions)
+async def test_prepare_scanspec(aerotech, start, end, num, expected, direction, mocker):
+    dwell_time = 2
+    num_pulses = num + 1
+    mock_config = mocker.MagicMock()
+    mock_config.feature_flag.return_value = True
+    mocker.patch("haven.devices.aerotech.load_config", mock_config)
+    axis = aerotech.horizontal
+    spec = Fly(dwell_time @ Line(axis, start, end, num))
+    path = Path(spec.calculate())
+    # Set to busy to check the observe_value behavior
+    set_mock_value(aerotech.profile_move.build_state, "Busy")
+    # Prepare
+    prepare_status = axis.prepare(path)
+    await asyncio.sleep(0.01)
+    set_mock_value(aerotech.profile_move.build_status, "Success")
+    set_mock_value(aerotech.profile_move.build_state, "Done")
+    await prepare_status
+    # Check that the aerotech profile move was setup properly
+    get_mock_put(aerotech.profile_move.point_count).assert_called_once_with(
+        num_pulses, wait=True
+    )
+    get_mock_put(aerotech.profile_move.pulse_count).assert_called_once_with(
+        num_pulses, wait=True
+    )
+    get_mock_put(aerotech.profile_move.pulse_range_start).assert_called_once_with(
+        0, wait=True
+    )
+    get_mock_put(aerotech.profile_move.pulse_range_end).assert_called_once_with(
+        num_pulses, wait=True
+    )
+    get_mock_put(aerotech.profile_move.pulse_direction).assert_called_once_with(
+        "Both", wait=True
     )
     get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with(
         "Absolute", wait=True
@@ -128,6 +184,11 @@ async def test_prepare(aerotech, start, end, num, expected, direction):
     mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
     assert mock_put.called
     assert np.all(mock_put.call_args.args[0] == expected)
+    mock_put = get_mock_put(aerotech.profile_move.pulse_times)
+    assert mock_put.called
+    np.testing.assert_equal(
+        mock_put.call_args.args[0], np.full((num,), fill_value=dwell_time)
+    )
 
 
 async def test_prepare_build_failed(aerotech):
@@ -183,77 +244,6 @@ async def test_complete_execute_failed(aerotech):
     set_mock_value(aerotech.profile_move.execute_status, "Failure")
     with pytest.raises(RuntimeError):
         await status
-
-
-@pytest.mark.skip(reason="Aerotech support needs to be re-written for new hardware")
-def test_collect(aerotech_flyer):
-    flyer = aerotech_flyer
-    # Set up needed parameters
-    flyer.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    flyer.starttime = 0
-    flyer.endtime = flyer.starttime + 11.25
-    flyer.acceleration.put(0.5)  # µm/s^2
-    flyer.flyer_end_position.put(0.1)
-    flyer.flyer_num_points.put(2)  # µm
-    flyer.flyer_dwell_time.put(1)  # sec
-    expected_timestamps = [
-        1.125,
-        2.125,
-        3.125,
-        4.125,
-        5.125,
-        6.125,
-        7.125,
-        8.125,
-        9.125,
-        10.125,
-    ]
-    payload = list(flyer.collect())
-    # Confirm data have the right structure
-    for datum, value, timestamp in zip(
-        payload, flyer.pixel_positions, expected_timestamps
-    ):
-        assert datum == {
-            "data": {
-                "aerotech_horiz": value,
-                "aerotech_horiz_user_setpoint": value,
-            },
-            "timestamps": {
-                "aerotech_horiz": timestamp,
-                "aerotech_horiz_user_setpoint": timestamp,
-            },
-            "time": timestamp,
-        }
-
-
-@pytest.mark.skip(reason="Aerotech support needs to be re-written for new hardware")
-def test_describe_collect(aerotech_flyer):
-    expected = {
-        "positions": OrderedDict(
-            [
-                (
-                    "aerotech_horiz",
-                    {
-                        "source": "SIM:aerotech_horiz",
-                        "dtype": "integer",
-                        "shape": [],
-                        "precision": 3,
-                    },
-                ),
-                (
-                    "aerotech_horiz_user_setpoint",
-                    {
-                        "source": "SIM:aerotech_horiz_user_setpoint",
-                        "dtype": "integer",
-                        "shape": [],
-                        "precision": 3,
-                    },
-                ),
-            ]
-        )
-    }
-
-    assert aerotech_flyer.describe_collect() == expected
 
 
 # -----------------------------------------------------------------------------
