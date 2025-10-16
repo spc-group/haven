@@ -6,24 +6,45 @@ from ophyd import sim
 from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import Motor
 from scanspec.core import Path
-from scanspec.specs import Line
+from scanspec.specs import Fly, Line
 
 from haven.devices import DG645Delay, IonChamber, SoftGlueDelay, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
-from haven.plans._fly import fly_scan_with_spec, fly_segment, prepare_detectors
-
-fly_motor = Motor("255idcVME:m1", name="m1")
+from haven.plans._fly import (
+    _grid_scan_spec,
+    fly_scan_with_spec,
+    fly_segment,
+    grid_fly_scan_with_spec,
+    prepare_detectors,
+)
 
 
 @pytest.fixture()
-def flyer(sim_registry, mocker):
-    m1 = fly_motor
-    return m1
+def flyer():
+    fly_motor = Motor("255idcVME:m1", name="flyer")
+    return fly_motor
 
 
-def test_fly_segment(flyer):
-    xspress = Xspress3Detector("")
-    spec = Line(fly_motor, -10, 10, 6)
+@pytest.fixture()
+def stepper():
+    step_motor = Motor("255idcVME:m2", name="stepper")
+    return step_motor
+
+
+@pytest.fixture()
+def controller():
+    device = SoftGlueDelay(prefix="spam_eggs:", name="soft_glue_delay")
+    return device
+
+
+@pytest.fixture()
+def xspress():
+    xsp = Xspress3Detector(prefix="XSP3:", name="xspress")
+    return xsp
+
+
+def test_fly_segment(flyer, xspress):
+    spec = Line(flyer, -10, 10, 6)
     trigger_info = TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER, number_of_events=6)
     plan = fly_segment([xspress], motors=[flyer], spec=spec, trigger_info=trigger_info)
     msgs = list(plan)
@@ -37,20 +58,28 @@ def test_fly_segment(flyer):
     }
     assert prepared_objs == {xspress, flyer}
     assert msgs[2].command == "wait"
+    assert msgs[3].command == "declare_stream"
+    assert msgs[3].args[0] is xspress
     # Start the scan
-    assert msgs[3].command == "kickoff"
-    assert msgs[3].obj is xspress
-    assert msgs[4].command == "wait"
+    assert msgs[4].command == "monitor"
+    assert msgs[4].obj is flyer
     assert msgs[5].command == "kickoff"
-    assert msgs[5].obj is flyer
+    assert msgs[5].obj is xspress
     assert msgs[6].command == "wait"
-    # Finish the scan
-    assert msgs[7].command == "complete"
+    assert msgs[7].command == "kickoff"
     assert msgs[7].obj is flyer
     assert msgs[8].command == "wait"
+    # Finish the scan
     assert msgs[9].command == "complete"
-    assert msgs[9].obj is xspress
+    assert msgs[9].obj is flyer
     assert msgs[10].command == "wait"
+    assert msgs[11].command == "complete"
+    assert msgs[11].obj is xspress
+    assert msgs[12].command == "wait"
+    assert msgs[13].command == "collect"
+    assert msgs[13].obj is xspress
+    assert msgs[14].command == "unmonitor"
+    assert msgs[14].obj is flyer
 
 
 def test_line_prepares_flyer_path(flyer):
@@ -64,16 +93,14 @@ def test_line_prepares_flyer_path(flyer):
     prep_path = prep_msg.args[0]
     assert isinstance(prep_path, Path)
     points = prep_path.consume()
-    print(points)
     np.testing.assert_equal(points.midpoints[flyer], np.linspace(-20, 30, num=6))
     np.testing.assert_equal(points.lower[flyer], np.linspace(-25, 25, num=6))
     np.testing.assert_equal(points.upper[flyer], np.linspace(-15, 35, num=6))
     np.testing.assert_equal(points.duration, np.full(shape=(6,), fill_value=1.5))
 
 
-def test_line_prepares_controller_path(flyer):
+def test_line_prepares_controller_path(flyer, controller):
     """Does the plan set the parameters of the flyer controller?"""
-    controller = SoftGlueDelay(prefix="spam_eggs:", name="soft_glue_delay")
     plan = fly_scan_with_spec(
         [], flyer, -20, 30, num=6, dwell_time=1.5, flyer_controllers=[controller]
     )
@@ -116,6 +143,206 @@ def test_fly_scan_metadata(flyer, ion_chamber):
         "plan_name": "fly_scan",
         "motors": [flyer.name],
         "detectors": [ion_chamber.name],
+        "spam": "eggs",
+    }
+    assert real_md == expected_md
+
+
+grid_specs = [
+    # (
+    #     motor args,
+    #     snaking,
+    #     dwell_time,
+    #     expected_spec,
+    # ),
+    (
+        ("y", -20, 20, 6, "x", -10, 10, 11),
+        True,
+        1.5,
+        Line("y", -20, 20, 6) * Fly(1.5 @ ~Line("x", -10, 10, 11)),
+    ),
+    (
+        ("y", -20, 20, 6, "x", -10, 10, 11),
+        ["x"],
+        1.5,
+        Line("y", -20, 20, 6) * Fly(1.5 @ ~Line("x", -10, 10, 11)),
+    ),
+]
+
+
+@pytest.mark.parametrize("args,snaking,dwell_time,spec", grid_specs)
+def test_grid_scan_spec(args, snaking, dwell_time, spec):
+    assert _grid_scan_spec(*args, dwell_time=dwell_time, snake_axes=snaking) == spec
+
+
+def test_grid_scan_path():
+    """Confirm that we can get snaked points in both directions."""
+    spec = Line("y", -20, 20, 6) * Fly(1.5 @ ~Line("x", -10, 10, 11))
+    path = Path(spec.calculate(), start=11, num=11)
+    points = path.consume()
+    np.testing.assert_equal(points.midpoints["x"], np.linspace(10, -10, num=11))
+
+
+def test_grid_fly_scan_setup(flyer, stepper, xspress, controller):
+    plan = grid_fly_scan_with_spec(
+        [xspress],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+        flyer_controllers=[controller],
+    )
+    messages = list(plan)
+    # Check initial setup messages
+    assert messages[0].command == "stage"
+    assert messages[0].obj is xspress
+    assert messages[1].command == "stage"
+    assert messages[1].obj is stepper
+    assert messages[2].command == "stage"
+    assert messages[2].obj is flyer
+    assert messages[3].command == "stage"
+    assert messages[3].obj is controller
+    assert messages[4].command == "open_run"
+
+
+def test_grid_fly_scan_stepper_positions(flyer, stepper, xspress, controller):
+    plan = grid_fly_scan_with_spec(
+        [xspress],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+        flyer_controllers=[controller],
+    )
+    messages = list(plan)
+    # Check stepper positions
+    step_msgs = [msg for msg in messages if msg.command == "set" and msg.obj is stepper]
+    np.testing.assert_equal(
+        [msg.args[0] for msg in step_msgs], np.linspace(-100, 100, num=11)
+    )
+
+
+def test_grid_fly_scan_flyer_paths(flyer, stepper, xspress, controller):
+    num_steps = 11
+    plan = grid_fly_scan_with_spec(
+        [xspress],
+        stepper,
+        -100,
+        100,
+        num_steps,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+        flyer_controllers=[controller],
+    )
+    messages = list(plan)
+    # from pprint import pprint
+    # pprint([f"{msg.command}: {getattr(msg.obj, 'name', '')}" for msg in messages])
+    # Check stepper positions
+    flyer_paths = [
+        msg.args[0] for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ]
+    assert len(flyer_paths) == num_steps
+    # Make sure the paths are snaking
+    np.testing.assert_equal(
+        flyer_paths[0].consume().midpoints[flyer], np.linspace(-20, 30, num=6)
+    )
+    np.testing.assert_equal(
+        flyer_paths[1].consume().midpoints[flyer], np.linspace(30, -20, num=6)
+    )
+
+
+def test_grid_prepare_controllers(flyer, stepper, xspress, controller):
+    num_steps = 11
+    num_points = 6
+    plan = grid_fly_scan_with_spec(
+        [xspress],
+        stepper,
+        -100,
+        100,
+        num_steps,
+        flyer,
+        -20,
+        30,
+        num_points,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+        flyer_controllers=[controller],
+    )
+    messages = list(plan)
+    # Check controller prepare args
+    controller_args = [
+        msg.args
+        for msg in messages
+        if msg.command == "prepare" and msg.obj is controller
+    ]
+    assert len(controller_args) == num_steps
+    first_trigger_info = controller_args[0][1]
+    assert first_trigger_info.number_of_events == num_points
+
+
+async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber, stepper):
+    """Does the plan set the parameters of the flyer motor."""
+    md = {"spam": "eggs"}
+    plan = grid_fly_scan_with_spec(
+        [ion_chamber],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+        md=md,
+    )
+    # Check the metadata contained in the "open_run" message
+    messages = list(plan)
+    open_run_messages = [msg for msg in messages if msg.command == "open_run"]
+    assert len(open_run_messages) == 1
+    real_md = open_run_messages[0].kwargs
+    expected_md = {
+        "motors": (stepper.name, flyer.name),
+        "num_points": 66,
+        "num_intervals": 55,
+        "plan_args": {
+            "detectors": [repr(ion_chamber)],
+            "args": [repr(stepper), -100, 100, 11, repr(flyer), -20, 30, 6],
+            "dwell_time": 1.0,
+            "trigger": "DetectorTrigger.INTERNAL",
+            "flyer_controllers": [],
+            "snake_axes": [repr(flyer)],
+            "md": {"spam": "eggs"},
+        },
+        "plan_name": "grid_fly_scan",
+        "hints": {
+            "gridding": "rectilinear",
+            "dimensions": [([stepper.name], "primary"), ([flyer.name], "primary")],
+        },
+        "shape": (11, 6),
+        "extents": (
+            {"stepper": (-100, 100)},
+            {"flyer": (-20, 30)},
+        ),
+        "snaking": (False, True),
+        "plan_pattern": "outer_product",
         "spam": "eggs",
     }
     assert real_md == expected_md
@@ -182,7 +409,7 @@ def test_fly_scan_metadata_old(flyer, ion_chamber):
     assert real_md == expected_md
 
 
-def test_fly_grid_scan(flyer):
+def test_fly_grid_scan_old(flyer):
     stepper = sim.motor
     # step size == 10
     plan = grid_fly_scan(
@@ -227,7 +454,7 @@ def test_fly_grid_scan(flyer):
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
 
 
-async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
+async def test_fly_grid_scan_metadata_old(sim_registry, flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
     stepper = Motor(name="stepper", prefix="")
     await stepper.connect(mock=True)

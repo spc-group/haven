@@ -467,7 +467,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -520,7 +520,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/50/5f/6a802741176c93f2ebe97ad90751894c7b0c922b52ba99a4395e79492205/numba-0.62.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/31/1b/11a1202f8b67dce8e119a9f6481d839b152cc0084940a146b52f8f38685b/numexpr-2.13.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/6f/3a3b466e70afbd671b8c3e4eced0326aae6121d84ed15a5b333dc42cc879/ophyd_async-0.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/98/be/bbb87789480c09f074a4321b86f8d12cc068971c77bae50ea889865b36c1/ophyd_async-0.13.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
@@ -543,7 +543,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/e5/f2a0621f1781b76a38194acae72f01e37b1941470407345b6e8653ad7640/ruamel.yaml-0.18.15-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/df/99/65080c863eb06d4498de3d6c86f3e90595e02e159fd8529f1565f56cfe2c/ruamel.yaml.clib-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/99/48/f3d9e0a811788691c70cab67dcf98cd34f1ff1759b7a4a4e758085912b81/scanspec-1.0a2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/d2/40b114decad4a2a9be2fb8eff0c96c9531ce64250e405d8dd7f37f3805d4/scanspec-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/b0/4562db6223154aa4e22f939003cb92514c79f3d4dccca3444253fd17f902/Send2Trash-1.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
@@ -1036,7 +1036,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -1089,7 +1089,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/50/5f/6a802741176c93f2ebe97ad90751894c7b0c922b52ba99a4395e79492205/numba-0.62.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/31/1b/11a1202f8b67dce8e119a9f6481d839b152cc0084940a146b52f8f38685b/numexpr-2.13.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/6f/3a3b466e70afbd671b8c3e4eced0326aae6121d84ed15a5b333dc42cc879/ophyd_async-0.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/98/be/bbb87789480c09f074a4321b86f8d12cc068971c77bae50ea889865b36c1/ophyd_async-0.13.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
@@ -1112,7 +1112,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/e5/f2a0621f1781b76a38194acae72f01e37b1941470407345b6e8653ad7640/ruamel.yaml-0.18.15-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/df/99/65080c863eb06d4498de3d6c86f3e90595e02e159fd8529f1565f56cfe2c/ruamel.yaml.clib-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/99/48/f3d9e0a811788691c70cab67dcf98cd34f1ff1759b7a4a4e758085912b81/scanspec-1.0a2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/d2/40b114decad4a2a9be2fb8eff0c96c9531ce64250e405d8dd7f37f3805d4/scanspec-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/b0/4562db6223154aa4e22f939003cb92514c79f3d4dccca3444253fd17f902/Send2Trash-1.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
@@ -2145,7 +2145,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/26/30/7d6b649ed26ac2ac3acc22f0fd3ade5daf48db7dc442b810ca4bf78ab12e/awkward-2.8.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -2189,7 +2189,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/50/5f/6a802741176c93f2ebe97ad90751894c7b0c922b52ba99a4395e79492205/numba-0.62.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/31/1b/11a1202f8b67dce8e119a9f6481d839b152cc0084940a146b52f8f38685b/numexpr-2.13.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/6f/3a3b466e70afbd671b8c3e4eced0326aae6121d84ed15a5b333dc42cc879/ophyd_async-0.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/98/be/bbb87789480c09f074a4321b86f8d12cc068971c77bae50ea889865b36c1/ophyd_async-0.13.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b8/db/14bafcb4af2139e046d03fd00dea7873e48eafe18b7d2797e73d6681f210/prometheus_client-0.23.1-py3-none-any.whl
@@ -2212,7 +2212,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/e5/f2a0621f1781b76a38194acae72f01e37b1941470407345b6e8653ad7640/ruamel.yaml-0.18.15-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/df/99/65080c863eb06d4498de3d6c86f3e90595e02e159fd8529f1565f56cfe2c/ruamel.yaml.clib-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/99/48/f3d9e0a811788691c70cab67dcf98cd34f1ff1759b7a4a4e758085912b81/scanspec-1.0a2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/d2/40b114decad4a2a9be2fb8eff0c96c9531ce64250e405d8dd7f37f3805d4/scanspec-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/b0/4562db6223154aa4e22f939003cb92514c79f3d4dccca3444253fd17f902/Send2Trash-1.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
@@ -2702,7 +2702,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -2755,7 +2755,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/50/5f/6a802741176c93f2ebe97ad90751894c7b0c922b52ba99a4395e79492205/numba-0.62.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/31/1b/11a1202f8b67dce8e119a9f6481d839b152cc0084940a146b52f8f38685b/numexpr-2.13.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a8/6f/3a3b466e70afbd671b8c3e4eced0326aae6121d84ed15a5b333dc42cc879/ophyd_async-0.13.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/98/be/bbb87789480c09f074a4321b86f8d12cc068971c77bae50ea889865b36c1/ophyd_async-0.13.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
@@ -2778,7 +2778,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/e5/f2a0621f1781b76a38194acae72f01e37b1941470407345b6e8653ad7640/ruamel.yaml-0.18.15-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/df/99/65080c863eb06d4498de3d6c86f3e90595e02e159fd8529f1565f56cfe2c/ruamel.yaml.clib-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/99/48/f3d9e0a811788691c70cab67dcf98cd34f1ff1759b7a4a4e758085912b81/scanspec-1.0a2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/df/d2/40b114decad4a2a9be2fb8eff0c96c9531ce64250e405d8dd7f37f3805d4/scanspec-0.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/40/b0/4562db6223154aa4e22f939003cb92514c79f3d4dccca3444253fd17f902/Send2Trash-1.8.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl
@@ -3964,9 +3964,9 @@ packages:
   - pkg:pypi/bluesky-live?source=hash-mapping
   size: 34118
   timestamp: 1734965301665
-- pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
+- pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
   name: bluesky-queueserver
-  version: 0.0.22.post14+g56573f8
+  version: 0.0.22.post20+g5319ccc
   requires_dist:
   - bluesky>=1.7.0
   - ipykernel
@@ -9601,10 +9601,10 @@ packages:
   - pkg:pypi/ophyd?source=hash-mapping
   size: 215652
   timestamp: 1757003348106
-- pypi: https://files.pythonhosted.org/packages/a8/6f/3a3b466e70afbd671b8c3e4eced0326aae6121d84ed15a5b333dc42cc879/ophyd_async-0.13.2-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/98/be/bbb87789480c09f074a4321b86f8d12cc068971c77bae50ea889865b36c1/ophyd_async-0.13.4-py3-none-any.whl
   name: ophyd-async
-  version: 0.13.2
-  sha256: ad188aeeda38b024efced104ad5a697efc9d349edb4c262a8dd2ad8a45973dde
+  version: 0.13.4
+  sha256: 9dd9e8c49d552dc54ae5091fda5099d07754a2557e247c70f87e21c4dac03010
   requires_dist:
   - numpy
   - bluesky>=1.13.1rc2
@@ -9614,7 +9614,7 @@ packages:
   - pydantic>=2.0
   - pydantic-numpy
   - stamina>=23.1.0
-  - scanspec>=1.0a1
+  - scanspec>=0.8
   - velocity-profile
   - h5py ; extra == 'sim'
   - aioca>=2.0a4 ; extra == 'ca'
@@ -9647,6 +9647,7 @@ packages:
   - pytest-rerunfailures ; extra == 'dev'
   - pytest-timeout ; extra == 'dev'
   - ruff ; extra == 'dev'
+  - scanspec>=1.0a1 ; extra == 'dev'
   - sphinx-autobuild ; extra == 'dev'
   - sphinx-autodoc2 ; extra == 'dev'
   - sphinxcontrib-mermaid ; extra == 'dev'
@@ -11503,10 +11504,10 @@ packages:
   purls: []
   size: 390887
   timestamp: 1758013933691
-- pypi: https://files.pythonhosted.org/packages/99/48/f3d9e0a811788691c70cab67dcf98cd34f1ff1759b7a4a4e758085912b81/scanspec-1.0a2-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/df/d2/40b114decad4a2a9be2fb8eff0c96c9531ce64250e405d8dd7f37f3805d4/scanspec-0.9.0-py3-none-any.whl
   name: scanspec
-  version: 1.0a2
-  sha256: a86feeeed84da853ab23a06d86031dd66c235f62f22615016a84703dd5e6c79b
+  version: 0.9.0
+  sha256: 354716527c1f57ca3d80f60c8fd24cce91d07ad7742a3716d2cc8429d7da08a5
   requires_dist:
   - numpy
   - click>=8.1
@@ -11515,27 +11516,7 @@ packages:
   - matplotlib ; extra == 'plotting'
   - fastapi>=0.100.0 ; extra == 'service'
   - uvicorn ; extra == 'service'
-  - scanspec[plotting] ; extra == 'dev'
-  - scanspec[service] ; extra == 'dev'
-  - autodoc-pydantic ; extra == 'dev'
-  - copier ; extra == 'dev'
-  - httpx ; extra == 'dev'
-  - myst-parser ; extra == 'dev'
-  - pipdeptree ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pydata-sphinx-theme>=0.12 ; extra == 'dev'
-  - pyright ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - pytest-cov ; extra == 'dev'
-  - ruff ; extra == 'dev'
-  - sphinx-autobuild ; extra == 'dev'
-  - sphinx-copybutton ; extra == 'dev'
-  - sphinx-design ; extra == 'dev'
-  - sphinxcontrib-openapi ; extra == 'dev'
-  - tox-direct ; extra == 'dev'
-  - types-mock ; extra == 'dev'
-  - pillow==11.0.0 ; extra == 'dev'
-  requires_python: '>=3.10'
+  requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/noarch/schema-0.7.7-pyhd8ed1ab_0.conda
   sha256: e2341ab1cf6128bde5037a6ba3c48ee33abc6bbe8d3db10f5f73f24b9f28b83c
   md5: 1add6f6b99191efab14f16e6aa9b6461

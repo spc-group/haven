@@ -21,13 +21,13 @@ from bluesky.preprocessors import (
     stage_wrapper,
     stub_wrapper,
 )
-from bluesky.protocols import Collectable, Flyable, Preparable
+from bluesky.protocols import Collectable, Flyable, HasName, Preparable
 from bluesky.utils import Msg, single_gen
 from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
-from scanspec.core import Path
-from scanspec.specs import ConstantDuration, Fly, Line, Spec
+from scanspec.core import Path, SnakedDimension
+from scanspec.specs import ConstantDuration, Fly, Line, Spec, Zip
 
 from haven._iconfig import load_config
 from haven.devices.delay import DG645DelayOutput
@@ -215,7 +215,7 @@ def fly_line_scan_old(
 
 
 def declare_streams(
-    primary_detectors: Sequence[Device], secondary_detectors: Sequence[Device]
+    primary_detectors: Sequence[Device] = (), secondary_detectors: Sequence[Device] = ()
 ) -> Generator[Msg, Any, None]:
     """Plan stub to declare data streams for bluesky.
 
@@ -224,10 +224,13 @@ def declare_streams(
     stream.
 
     """
-    if len(primary_detectors) > 0:
-        yield from bps.declare_stream(*primary_detectors, name="primary")
-    for detector in secondary_detectors:
+    # For now, this is broken, we just declare all the streams as independent
+    for detector in (*primary_detectors, *secondary_detectors):
         yield from bps.declare_stream(detector, name=detector.name)
+    # if len(primary_detectors) > 0:
+    #     yield from bps.declare_stream(*primary_detectors, name="primary")
+    # for detector in secondary_detectors:
+    #     yield from bps.declare_stream(detector, name=detector.name)
 
 
 def fly_scan(
@@ -728,7 +731,8 @@ def fly_segment(
     detectors
       Will be kicked off before the motors begin to move.
     spec
-      A scan spec that describes the trajectory to take.
+      A scan spec that describes the trajectory to take. Will be
+      consumed by this plan.
 
     """
     # Prepare the detectors, just for this line segment
@@ -739,21 +743,29 @@ def fly_segment(
         yield from bps.prepare(motor, path, group=prepare_group, wait=False)
     for controller in flyer_controllers:
         path = Path(frames, start=start, num=num)
-        yield from bps.prepare(controller, path, group=prepare_group, wait=False)
+        yield from bps.prepare(
+            controller, path, trigger_info, group=prepare_group, wait=False
+        )
     for detector in detectors:
         yield from bps.prepare(detector, trigger_info, group=prepare_group, wait=False)
     yield from bps.wait(group=prepare_group)
+    yield from declare_streams(secondary_detectors=detectors)
     # Start the detectors before the motors so we know they'll be ready
+    for motor in motors:
+        yield from bps.monitor(motor)
     yield from bps.kickoff_all(*detectors, wait=True)
     if len(flyer_controllers) > 0:
         yield from bps.kickoff_all(*flyer_controllers, wait=True)
     yield from bps.kickoff_all(*motors, wait=True)
+    # Finish the scan and cleanup
     yield from bps.complete_all(*motors, wait=True)
     if len(flyer_controllers) > 0:
         yield from bps.complete_all(*flyer_controllers, wait=True)
     yield from bps.complete_all(*detectors, wait=True)
     for detector in detectors:
         yield from bps.collect(detector)
+    for motor in motors:
+        yield from bps.unmonitor(motor)
 
 
 def fly_scan_with_spec(
@@ -845,7 +857,7 @@ def fly_scan_with_spec(
         Line(motor, start, stop, num)
         for (motor, start, stop) in zip(motors, starts, stops)
     ]
-    lines = reduce(operator.mul, lines)
+    lines = reduce(Zip, lines)
     spec = Fly(ConstantDuration(dwell_time, lines))
     segment_plan = fly_segment(
         detectors=detectors,
@@ -857,6 +869,186 @@ def fly_scan_with_spec(
     segment_plan = run_wrapper(segment_plan, md=md_)
     segment_plan = stage_wrapper(segment_plan, [*detectors, *motors])
     yield from segment_plan
+
+
+def _is_snaked(axis, snake_axes) -> bool:
+    if isinstance(snake_axes, abc.Iterable):
+        return axis in snake_axes
+    else:
+        return snake_axes
+
+
+def _grid_scan_spec(*args, snake_axes: Iterable | bool, dwell_time: float) -> Spec:
+    """Build the scan specification for a fly grid scan.
+
+    Arguments should be a subset of those used in `grid_fly_scan`.
+
+    """
+    # Create the fly scan part of the spec
+    *step_args, flyer, fly_start, fly_stop, fly_num = args
+    fly_line = Line(flyer, fly_start, fly_stop, fly_num)
+    if _is_snaked(flyer, snake_axes):
+        fly_line = ~fly_line
+    fly_line = Fly(ConstantDuration(dwell_time, fly_line))
+    # Build the step-scan parts of the spec
+    step = 4
+    step_chunks = [step_args[n : n + step] for n in range(0, len(step_args), step)]
+    step_lines = [
+        Line(axis, start, stop, step) for axis, start, stop, step in step_chunks
+    ]
+    # Apply snaking, but not to the slowest axis
+    step_lines = [
+        step_lines[0],
+        *[
+            ~line if _is_snaked(line.axes, snake_axes) else line
+            for line in step_lines[1:]
+        ],
+    ]
+    # Apply snaking
+    specs = [*step_lines, fly_line]
+    # Combine the specs into a grid
+    grid_spec = reduce(operator.mul, specs)
+    return grid_spec
+
+
+def grid_fly_scan_with_spec(
+    detectors: Sequence[Flyable],
+    *args,
+    dwell_time: float,
+    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    flyer_controllers: Sequence[Preparable] = [],
+    snake_axes: Iterable | bool = False,
+    md: Mapping = {},
+):
+    """Scan over a mesh with one of the axes collecting without stopping.
+
+    Parameters
+    ----------
+    detectors
+      list of 'readable' objects
+    *args
+      patterned like::
+
+        motor1, start1, stop1, num1,
+        motor2, start2, stop2, num2,
+        ...
+        flyer, flyer_start, flyer_stop, flyer_num
+
+      The first motor is the "slowest", the outer loop. The last
+      motor should be flyable.
+    dwell_time
+      How long, in seconds, for each measurement point.
+    trigger
+      The trigger mode to use for flying.
+    flyer_controllers
+      If provided, these devices (e.g. delay generator outputs) will
+      be used to coordinate hardware triggering of detectors.
+    snake_axes
+      which axes should be snaked, either ``False`` (do not snake any axes),
+      ``True`` (snake all axes) or a list of axes to snake. "Snaking" an axis
+      is defined as following snake-like, winding trajectory instead of a
+      simple left-to-right trajectory. The elements of the list are motors
+      that are listed in `args`. The list must not contain the slowest
+      (first) motor, since it can't be snaked.
+    md: dict, optional
+      metadata
+
+    Yields
+    ------
+    msg
+      'stage', 'open_run', 'mv', 'kickoff', 'wait', 'complete, 'wait',
+      'collect', 'close_run', 'stage' messages.
+
+    """
+    # Build the scan specification for flying
+    spec = _grid_scan_spec(*args, snake_axes=snake_axes, dwell_time=dwell_time)
+    frames = spec.calculate()
+    *step_frames, fly_frame = frames
+    step_path = Path(step_frames)
+    step_motors = [axis for frame in step_frames for axis in frame.axes()]
+    fly_motors = fly_frame.axes()
+    # Figure out how to trigger the detector (once per line)
+    num_fly_points = args[-1]
+    trigger_info = TriggerInfo(
+        number_of_events=num_fly_points,
+        livetime=dwell_time,
+        deadtime=0,
+        trigger=trigger,
+    )
+
+    # Set up plan-specific metadata
+    extents: tuple[dict[str, tuple[float, float]], ...] = tuple(
+        {
+            axis.name: (float(np.min(points)), float(np.max(points)))
+            for axis, points in frame.midpoints.items()
+        }
+        for frame in frames
+    )
+    args_for_md = [repr(arg) if isinstance(arg, HasName) else arg for arg in args]
+    snake_repr = (
+        [repr(arg) for arg in snake_axes]
+        if isinstance(snake_axes, Iterable)
+        else snake_axes
+    )
+    num_intervals = np.prod([len(frame) for frame in frames[:-1]]) * (
+        len(frames[-1]) - 1
+    )
+    md_ = {
+        "shape": tuple(len(frame) for frame in frames),
+        "extents": extents,
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "args": args_for_md,
+            "dwell_time": dwell_time,
+            "trigger": str(trigger),
+            "flyer_controllers": [repr(ctrlr) for ctrlr in flyer_controllers],
+            "snake_axes": snake_repr,
+            "md": md,
+        },
+        "plan_name": "grid_fly_scan",
+        "num_points": int(np.prod([len(frame) for frame in frames])),
+        "num_intervals": int(num_intervals),
+        "plan_pattern": "outer_product",
+        "motors": tuple(axis.name for axis in spec.axes()),
+        "snaking": tuple(
+            isinstance(dimension, SnakedDimension) for dimension in frames
+        ),
+        "hints": {
+            "gridding": "rectilinear",
+            "dimensions": [(m.hints["fields"], "primary") for m in spec.axes()],
+        },
+    }
+    md_.update(md)
+
+    @stage_decorator([*detectors, *step_motors, *fly_motors, *flyer_controllers])
+    @run_decorator(md=md_)
+    def inner_loop():
+        while len(step_path) > 0:
+            loop_iteration = step_path.index
+            # Move the step-scanned motors to the next position
+            next_point = step_path.consume(1)
+            mv_args = [
+                (motor, midpoints[0])
+                for motor, midpoints in next_point.midpoints.items()
+            ]
+            mv_args = [arg for args in mv_args for arg in args]  # Flatten the list
+            yield from bps.mv(*mv_args)
+            # Execute the fly segment
+            for motor in step_motors:
+                yield from bps.monitor(motor)
+            yield from fly_segment(
+                detectors=detectors,
+                motors=fly_motors,
+                spec=spec,
+                flyer_controllers=flyer_controllers,
+                start=loop_iteration * num_fly_points,
+                num=num_fly_points,
+                trigger_info=trigger_info,
+            )
+            for motor in step_motors:
+                yield from bps.unmonitor(motor)
+
+    yield from inner_loop()
 
 
 # -----------------------------------------------------------------------------

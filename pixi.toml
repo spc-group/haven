@@ -55,8 +55,8 @@ ophyd = "*"  # =1.10.7",
 apsbits = "*"
 apstools = "*"  # ==1.7.3",
 guarneri = "*"  # ==0.2.0",
-ophyd-async = "==0.13.2"
-scanspec = ">=1.0a2"
+ophyd-async = "==0.13.4"
+scanspec = "==0.9.0"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
@@ -104,13 +104,13 @@ cmd = "pytest tests/haven -Werror {{ runslow }}"
 args = [
      { arg = "check_flag", default = "" },
 ]
-cmd = "isort src {{ check_flag }}"
+cmd = "isort src tests/ {{ check_flag }}"
 
 [feature.dev.tasks.format]
 args = [
      { arg = "check_flag", default = "" },
 ]
-cmd = "black src {{ check_flag }}"
+cmd = "black src/ tests/ {{ check_flag }}"
 
 [feature.gui.dependencies]
 # Old dependencies until pydm is stable with pyside6

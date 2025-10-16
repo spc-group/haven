@@ -47,7 +47,7 @@ FEATURE_FLAGS = {
         expires=dt.datetime(2025, 11, 1).timestamp(),
     ),
     "apstools_2025-3_cycle_support": FeatureFlag(
-        expires=dt.datetime(2025, 10, 15).timestamp(),
+        expires=dt.datetime(2025, 10, 18).timestamp(),
         description="https://github.com/BCDA-APS/apstools/issues/1122",
         default=True,
     ),
