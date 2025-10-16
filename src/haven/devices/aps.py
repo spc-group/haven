@@ -4,14 +4,7 @@ from apstools.devices.aps_machine import ApsMachineParametersDevice
 from ophyd import Component as Cpt
 from ophyd import EpicsSignalRO
 
-from haven._iconfig import load_config
-
 log = logging.getLogger(__name__)
-
-if load_config().feature_flag("apstools_2025-3_cycle_support"):
-    from haven.devices.aps_patched import (
-        PatchedApsMachineParametersDevice as ApsMachineParametersDevice,
-    )
 
 
 class ApsMachine(ApsMachineParametersDevice):

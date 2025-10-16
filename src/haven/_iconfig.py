@@ -46,11 +46,6 @@ FEATURE_FLAGS = {
     "grid_fly_scan_by_line": FeatureFlag(
         expires=dt.datetime(2025, 11, 1).timestamp(),
     ),
-    "apstools_2025-3_cycle_support": FeatureFlag(
-        expires=dt.datetime(2025, 10, 18).timestamp(),
-        description="https://github.com/BCDA-APS/apstools/issues/1122",
-        default=True,
-    ),
     "undulator_fast_step_scanning_mode": FeatureFlag(
         expires=dt.datetime(2025, 10, 30).timestamp(),
         description="new controls added to the 25-ID undulator for step scanning faster",

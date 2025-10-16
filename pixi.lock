@@ -455,7 +455,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/77/e1f9650c76742c3ea3e3771d32cf3e308d40e248f1a4106d7f408c21f8ea/apsbits-1.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/4f/ee/2dea66944997c9b68b07afdf1ef07f7bc8d4206e9d5f41fb8bdf4ee0264b/apstools-1.7.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297cd6e3e3b0155c7e25db170edf1c74783d6a31a2490b8d9/argon2_cffi-25.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/09/52/94108adfdd6e2ddf58be64f959a0b9c7d4ef2fa71086c38356d22dc501ea/argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -1024,7 +1024,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/77/e1f9650c76742c3ea3e3771d32cf3e308d40e248f1a4106d7f408c21f8ea/apsbits-1.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/4f/ee/2dea66944997c9b68b07afdf1ef07f7bc8d4206e9d5f41fb8bdf4ee0264b/apstools-1.7.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297cd6e3e3b0155c7e25db170edf1c74783d6a31a2490b8d9/argon2_cffi-25.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/09/52/94108adfdd6e2ddf58be64f959a0b9c7d4ef2fa71086c38356d22dc501ea/argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -2134,7 +2134,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/77/e1f9650c76742c3ea3e3771d32cf3e308d40e248f1a4106d7f408c21f8ea/apsbits-1.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/4f/ee/2dea66944997c9b68b07afdf1ef07f7bc8d4206e9d5f41fb8bdf4ee0264b/apstools-1.7.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297cd6e3e3b0155c7e25db170edf1c74783d6a31a2490b8d9/argon2_cffi-25.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/09/52/94108adfdd6e2ddf58be64f959a0b9c7d4ef2fa71086c38356d22dc501ea/argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -2690,7 +2690,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/77/e1f9650c76742c3ea3e3771d32cf3e308d40e248f1a4106d7f408c21f8ea/apsbits-1.0.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/4f/ee/2dea66944997c9b68b07afdf1ef07f7bc8d4206e9d5f41fb8bdf4ee0264b/apstools-1.7.7-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297cd6e3e3b0155c7e25db170edf1c74783d6a31a2490b8d9/argon2_cffi-25.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/09/52/94108adfdd6e2ddf58be64f959a0b9c7d4ef2fa71086c38356d22dc501ea/argon2_cffi_bindings-25.1.0-cp39-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -3117,10 +3117,10 @@ packages:
   - sphinx ; extra == 'doc'
   - apsbss[dev,doc] ; extra == 'all'
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/4f/ee/2dea66944997c9b68b07afdf1ef07f7bc8d4206e9d5f41fb8bdf4ee0264b/apstools-1.7.7-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
   name: apstools
-  version: 1.7.7
-  sha256: 04be7abdb15cbda077915a41765443370ed8a0c8840eab0ebc79275ab50bab47
+  version: 1.7.9
+  sha256: 20f6c44ed8488c2d5a9f29bac3bb3626e26c1cd1b628d77b116e648f1e9c17b7
   requires_dist:
   - area-detector-handlers
   - bluesky-live
