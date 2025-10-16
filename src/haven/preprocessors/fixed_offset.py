@@ -69,9 +69,9 @@ def fixed_offset_wrapper(
         def head(msg, bragg: float | None = None, energy: float | None = None):
             # Calculate bragg angle from energy, if necessary
             if bragg is None:
-                bragg = energy_to_bragg(energy, d=d_spacing)
+                bragg = energy_to_bragg(energy, d=d_spacing) + bragg_offset
             # Calculate the new primary offset
-            new_secondary_offset = beam_offset(bragg + bragg_offset, gap=gap)
+            new_secondary_offset = beam_offset(bragg, gap=gap)
             new_primary_offset = total_offset - new_secondary_offset
             yield Msg(
                 "set",
