@@ -9,7 +9,8 @@ from pydm.data_plugins import plugin_for_address
 from pydm.main_window import PyDMMainWindow
 from pydm.widgets import PyDMLineEdit
 from qtpy import QtCore
-from typhos.plugins.core import SignalPlugin
+
+from firefly.pydm_plugin import SignalPlugin
 
 
 class DummyObject(QtCore.QObject):
@@ -18,7 +19,6 @@ class DummyObject(QtCore.QObject):
 
 @pytest.fixture()
 def sim_motor(sim_registry):
-    sim_registry.use_typhos = True
     FakeMotor = make_fake_device(EpicsMotor)
     motor = FakeMotor("255idVME:m1", name="motor")
     motor.user_setpoint.sim_set_limits((0, 1000))
