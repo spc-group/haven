@@ -188,36 +188,6 @@ async def test_gain_signals(preamp):
     assert gain_db == pytest.approx(46.9897)
 
 
-@pytest.mark.skip(reason="Not sure put complete is needed with ophyd-async")
-def test_sensitivity_put_complete():
-    """Test the fix for a race condition in the pre-amp EPICS database.
-
-    If the gain is set to 1 mA/V in the IOC, and you try to set it to
-    e.g. 200 µA/V, you need to set the unit first then the value since
-    "1" is the only valid "mA/V" value:
-
-    ✓ 1 mA/V -> 1 µA/V -> 200 µA/V
-    ✗ 1 mA/V -> 200 mA/V (corrects to 1 mA/V) -> 1 µA/V
-
-    Even if the order of ``set`` calls is correct in ophyd, the
-    requests may not make it through the calc/transform in the right
-    order, so we wind up at the wrong gain.
-
-    Apparently, using put_complete for the sensitivity unit fixes this
-    problem, though it's not entirely clear why.
-
-    Regardless, this test checks that put_complete is set on the given
-    signal.
-
-    """
-    preamp = SRS570PreAmplifier("prefix:", name="preamp")
-    put_complete_signals = [
-        preamp.sensitivity_unit,
-    ]
-    for sig in put_complete_signals:
-        assert sig._put_complete is True, sig
-
-
 @pytest.mark.asyncio
 async def test_get_gain_level(preamp):
     # Change the preamp settings

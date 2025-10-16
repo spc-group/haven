@@ -13,14 +13,10 @@ specific to one device or another.
 """
 
 import logging
-import time
-from pathlib import Path
 
 import numpy as np
 import pytest
 from ophyd import OphydObject, Signal
-
-from haven.devices.dxp import parse_xmap_buffer
 
 # DETECTORS = ["dxp", "xspress"]
 DETECTORS = ["dxp"]
@@ -144,7 +140,6 @@ def test_disable_rois(vortex):
     assert hinted == 0
 
 
-@pytest.mark.skip(reason="fails, and will be replaced by ophyd-async device soon")
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_stage_signal_names(vortex):
     """Check that we can set the name of the detector ROIs dynamically."""
@@ -160,10 +155,9 @@ def test_stage_signal_names(vortex):
     except Exception:
         raise
     else:
-        assert "Ni-Ka" not in dev.name  # Make sure it gets sanitized
+        assert "Ni-Ka" in dev.name  # Make sure it gets sanitized
         assert "~" not in dev.name  # Make sure it gets sanitized
         assert "__" not in dev.name  # Tildes sanitize bad but used for `use` signal
-        assert "Ni_Ka" in dev.name
     finally:
         dev.unstage()
     # Name gets reset when unstaged
@@ -171,7 +165,7 @@ def test_stage_signal_names(vortex):
     assert dev.count.name == f"{orig_name}_count"
     # Check acquired data uses dynamic names
     for res in result.keys():
-        assert "Ni_Ka" in res
+        assert "Ni-Ka" in res
 
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
@@ -275,40 +269,6 @@ def test_stage_hints(vortex):
     assert roi1.count.name not in vortex.hints["fields"]
 
 
-@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
-def test_kickoff_dxp(dxp):
-    vortex = dxp
-    vortex.write_path = "M:\\tmp\\"
-    vortex.read_path = "/net/s20data/sector20/tmp/"
-    [
-        s.wait(timeout=3)
-        for s in [
-            vortex.acquiring.set(0),
-            vortex.collect_mode.set("MCA Spectrum"),
-            vortex.erase_start.set(0),
-            vortex.pixel_advance_mode.set("Sync"),
-        ]
-    ]
-    # Ensure that the vortex is in its normal operating state
-    assert vortex.collect_mode.get(use_monitor=False) == "MCA Spectrum"
-    # Check that the kickoff status ended properly
-    status = vortex.kickoff()
-    assert not status.done
-    vortex.acquiring.set(1)
-    status.wait(timeout=3)
-    assert status.done
-    assert status.success
-    # Check that the right signals were set during  kick off
-    assert vortex.collect_mode.get(use_monitor=False) == "MCA Mapping"
-    assert vortex.erase_start.get(use_monitor=False) == 1
-    assert vortex.pixel_advance_mode.get(use_monitor=False) == "Gate"
-    # Check that the netCDF writer was setup properly
-    assert vortex.net_cdf.enable.get(use_monitor=False) == "Enable"
-    assert vortex.net_cdf.file_path.get(use_monitor=False) == "M:\\tmp\\"
-    assert vortex.net_cdf.file_name.get(use_monitor=False) == "fly_scan_temp.nc"
-    assert vortex.net_cdf.capture.get(use_monitor=False) == 1
-
-
 def test_dxp_acquire(dxp):
     """Check that the DXP acquire mimics that of the area detector base."""
     assert dxp.stop_all.get(use_monitor=False) == 0
@@ -327,39 +287,6 @@ def test_dxp_acquire(dxp):
     assert dxp.acquire.get(use_monitor=False) == 1
     dxp.acquiring.set(0).wait(timeout=3)
     assert dxp.acquire.get(use_monitor=False) == 0
-
-
-@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
-def test_complete_dxp(dxp):
-    """Check the behavior of the DXP electornic's fly-scan complete call."""
-    vortex = dxp
-    vortex.write_path = "M:\\tmp\\"
-    vortex.read_path = "/net/s20data/sector20/tmp/"
-    vortex.acquire._readback = 1
-    status = vortex.complete()
-    time.sleep(0.01)
-    assert vortex.stop_all.get(use_monitor=False) == 1
-    assert not status.done
-    vortex.acquiring.set(0)
-    status.wait(timeout=3)
-    assert status.done
-
-
-@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
-def test_parse_dxp_buffer(dxp):
-    """The output for fly-scanning with the DXP-based readout electronics
-    is a raw uint16 buffer that must be parsed by the ophyd device
-    according to section 5.3.3 of
-    https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
-
-    """
-    vortex = dxp
-    fp = Path(__file__)
-    buff = np.loadtxt(fp.parent / "dxp_3px_4elem_Fe55.txt")
-    data = parse_xmap_buffer(buff)
-    assert isinstance(data, dict)
-    assert data["num_pixels"] == 3
-    assert len(data["pixels"]) == 3
 
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)

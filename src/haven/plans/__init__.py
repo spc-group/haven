@@ -14,7 +14,6 @@ from haven.preprocessors import (
 )
 
 from ._align_monochromators import align_monochromators  # noqa: F401
-from ._align_motor import align_motor
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
 from ._energy_scan import energy_scan
@@ -49,7 +48,6 @@ all_decorators = chain(
 )
 
 # Apply decorators to Haven plans
-align_motor = all_decorators(align_motor)
 auto_gain = open_shutters_decorator()(auto_gain)
 energy_scan = all_decorators(energy_scan)
 fly_scan = baseline_decorator()(fly_scan)
