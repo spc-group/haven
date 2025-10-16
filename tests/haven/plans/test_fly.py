@@ -116,14 +116,8 @@ def test_line_prepares_controller_path(flyer, controller):
     prep_msg = [
         msg for msg in messages if msg.command == "prepare" and msg.obj is controller
     ][0]
-    prep_path = prep_msg.args[0]
-    assert isinstance(prep_path, Path)
-    points = prep_path.consume()
-    print(points)
-    np.testing.assert_equal(points.midpoints[flyer], np.linspace(-20, 30, num=6))
-    np.testing.assert_equal(points.lower[flyer], np.linspace(-25, 25, num=6))
-    np.testing.assert_equal(points.upper[flyer], np.linspace(-15, 35, num=6))
-    np.testing.assert_equal(points.duration, np.full(shape=(6,), fill_value=1.5))
+    prep_info = prep_msg.args[0]
+    assert isinstance(prep_info, TriggerInfo)
 
 
 def test_fly_scan_metadata(flyer, ion_chamber):
@@ -297,7 +291,7 @@ def test_grid_prepare_controllers(flyer, stepper, xspress, controller):
         if msg.command == "prepare" and msg.obj is controller
     ]
     assert len(controller_args) == num_steps
-    first_trigger_info = controller_args[0][1]
+    first_trigger_info = controller_args[0][0]
     assert first_trigger_info.number_of_events == num_points
 
 

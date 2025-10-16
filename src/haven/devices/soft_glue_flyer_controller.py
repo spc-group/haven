@@ -98,6 +98,13 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
         aws = (
+            # Configure the specific output channels
+            self.trigger_output.prepare(
+                TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER)
+            ),
+            self.gate_output.prepare(
+                TriggerInfo(trigger=DetectorTrigger.CONSTANT_GATE)
+            ),
             # Input/output channels
             self.reset_buffer.description.set("Reset"),
             self.reset_buffer.output_signal.set(RESET),

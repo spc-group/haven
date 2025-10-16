@@ -67,6 +67,11 @@ async def test_prepare_softglue_internal(soft_glue):
     assert await soft_glue.clock_divider.clock_signal.get_value() == "internClk"
     assert await soft_glue.clock_divider.enable_signal.get_value() == "1"
     assert await soft_glue.clock_divider.reset_signal.get_value() == "reset"
+    # Spot check that the gate/trigger outputs also get prepared
+    assert await soft_glue.gate_output.and_gate.inputA_signal.get_value() == "outPermit"
+    assert (
+        await soft_glue.trigger_output.and_gate.inputA_signal.get_value() == "outPermit"
+    )
 
 
 async def test_prepare_softglue_gate_output(soft_glue):

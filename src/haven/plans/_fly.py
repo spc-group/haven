@@ -742,9 +742,8 @@ def fly_segment(
         path = Path(frames, start=start, num=num)
         yield from bps.prepare(motor, path, group=prepare_group, wait=False)
     for controller in flyer_controllers:
-        path = Path(frames, start=start, num=num)
         yield from bps.prepare(
-            controller, path, trigger_info, group=prepare_group, wait=False
+            controller, trigger_info, group=prepare_group, wait=False
         )
     for detector in detectors:
         yield from bps.prepare(detector, trigger_info, group=prepare_group, wait=False)
