@@ -63,9 +63,9 @@ def test_bragg_tracking(primary_mono, secondary_mono):
     wrapped.send(units_tasks({"secondary_mono-beam_offset": {"units": "microns"}}))
     wrapped.send({"readback": -2159.15})  # Bragg offset
     wrapped.send(units_tasks({"secondary_mono-bragg_offset": {"units": "arcsec"}}))
-    wrapped.send({secondary_mono.gap.name: {"value": gap}})
+    wrapped.send({"readback": gap})
     wrapped.send(units_tasks({"secondary_mono-gap": {"units": "um"}}))
-    wrapped.send({secondary_mono.d_spacing.name: {"value": d_spacing}})
+    wrapped.send({"readback": d_spacing})
     new_msg = wrapped.send(
         units_tasks({"secondary_mono-d_spacing": {"units": "angstrom"}})
     )
@@ -102,9 +102,9 @@ def test_energy_tracking(primary_mono, secondary_mono):
     wrapped.send(units_tasks({"secondary_mono-beam_offset": {"units": "microns"}}))
     wrapped.send({"readback": -2159.15})  # Bragg offset
     wrapped.send(units_tasks({"secondary_mono-bragg_offset": {"units": "arcsec"}}))
-    wrapped.send({secondary_mono.gap.name: {"value": gap}})
+    wrapped.send({"readback": gap})
     wrapped.send(units_tasks({"secondary_mono-gap": {"units": "um"}}))
-    wrapped.send({secondary_mono.d_spacing.name: {"value": d_spacing}})
+    wrapped.send({"readback": d_spacing})
     new_msg = wrapped.send(
         units_tasks({"secondary_mono-d_spacing": {"units": "angstrom"}})
     )

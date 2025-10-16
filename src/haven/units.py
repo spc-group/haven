@@ -13,6 +13,9 @@ from scipy import constants
 
 ureg = UnitRegistry()
 
+# Add some oddly named units from epics
+ureg.define("Angstro = angstrom")
+
 h = (
     constants.physical_constants["Planck constant in eV/Hz"][0]
     * ureg.electron_volt
@@ -70,9 +73,9 @@ def energy_to_bragg(energy: Quantity, d: Quantity) -> Quantity:
     Parameters
     ==========
     energy
-      Photon energy, in eV.
+      Photon energy.
     d
-      d-spacing of the analyzer crystal, in meters.
+      d-spacing of the analyzer crystal.
 
     Returns
     =======
