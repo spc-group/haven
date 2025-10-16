@@ -1,11 +1,20 @@
 import pytest
-from bluesky.plan_stubs import trigger_and_read
+from bluesky.plan_stubs import (
+    collect,
+    complete,
+    kickoff,
+    prepare,
+    trigger_and_read,
+)
 from bluesky.plans import count
 from bluesky.protocols import Triggerable
 from ophyd_async.core import Device, soft_signal_r_and_setter
 
 from haven import open_shutters_wrapper
-from haven.preprocessors.open_shutters import open_fast_shutters_wrapper
+from haven.preprocessors.open_shutters import (
+    open_on_kickoff_wrapper,
+    open_on_trigger_wrapper,
+)
 
 
 @pytest.fixture()
@@ -109,13 +118,14 @@ async def test_slow_shutter_wrapper(
     assert wait_msg.kwargs["group"] == set_msg.kwargs["group"]
 
 
-def test_fast_shutter_wrapper(sim_registry, detector, fast_shutter):
+def test_on_trigger_wrapper(sim_registry, detector, fast_shutter):
     # Build the wrapped plan
     plan = count([detector], num=2)
-    plan = open_fast_shutters_wrapper(plan, shutters=[fast_shutter])
+    plan = open_on_trigger_wrapper(plan, shutters=[fast_shutter])
     msgs = list(plan)
     # Check that the shutter opens before triggering
     trig_idxs = [idx for idx, msg in enumerate(msgs) if msg.command == "trigger"]
+    assert len(trig_idxs) > 0
     for trig_idx in trig_idxs:
         set_msg = msgs[trig_idx - 2]
         assert set_msg.command == "set"
@@ -127,3 +137,35 @@ def test_fast_shutter_wrapper(sim_registry, detector, fast_shutter):
         assert set_msg.command == "set"
         assert set_msg.obj == fast_shutter
         assert set_msg.args == (1,)
+
+
+def fly_plan(detector):
+    yield from prepare(detector)
+    # Kickoff/complete twice so we can test idempotence
+    yield from kickoff(detector)
+    yield from kickoff(detector)
+    yield from complete(detector, wait=True)
+    yield from complete(detector, wait=True)
+    yield from collect(detector)
+
+
+def test_on_kickoff_wrapper(sim_registry, detector, fast_shutter):
+    # Build the wrapped plan
+    plan = fly_plan(detector)
+    plan = open_on_kickoff_wrapper(plan, shutters=[fast_shutter])
+    msgs = list(plan)
+    # Check that the shutter opens before kickoff
+    set_msg = msgs[1]
+    assert set_msg.command == "set"
+    assert set_msg.obj is fast_shutter
+    assert set_msg.args == (0,)
+    assert msgs[2].command == "wait"
+    # Make sure we didn't try and open twice
+    assert msgs[3].command == "kickoff"
+    assert msgs[4].command == "kickoff"
+    # Check that the shutter closes after waiting
+    set_msg = msgs[9]
+    assert set_msg.command == "set"
+    assert set_msg.obj is fast_shutter
+    assert set_msg.args == (1,)
+    assert msgs[10].command == "wait"

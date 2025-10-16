@@ -1,4 +1,5 @@
 from collections.abc import Generator, Mapping
+from enum import IntEnum
 
 from bluesky import Msg
 from bluesky import plan_stubs as bps
@@ -78,7 +79,8 @@ def open_shutters_wrapper(plan, registry: Registry | None = None):
     # Open shutters
     yield from _set_shutters(slow_shutters, ShutterState.OPEN)
     # Add the wrapper for opening fast shutters at every trigger
-    new_plan = open_fast_shutters_wrapper(plan, fast_shutters)
+    new_plan = open_on_trigger_wrapper(plan, fast_shutters)
+    new_plan = open_on_kickoff_wrapper(plan, fast_shutters)
     # Add a wrapper to close all the shutters once the measurement is done
     close_shutters = _set_shutters(shutters_to_open, ShutterState.CLOSED)
     new_plan = finalize_wrapper(new_plan, close_shutters)
@@ -87,7 +89,7 @@ def open_shutters_wrapper(plan, registry: Registry | None = None):
     return return_val
 
 
-def open_fast_shutters_wrapper(plan, shutters):
+def open_on_trigger_wrapper(plan, shutters):
     """Open and close each shutter when encountering a detector trigger."""
     response = None
     open_groups = set()
@@ -115,6 +117,53 @@ def open_fast_shutters_wrapper(plan, shutters):
             else:
                 if len(open_groups) == 0:
                     yield from _set_shutters(shutters, ShutterState.CLOSED)
+    return return_val
+
+
+class FlyStates(IntEnum):
+    IDLE = 0
+    FLYING = 1
+    COMPLETING = 2
+
+
+def open_on_kickoff_wrapper(plan, shutters):
+    """Open and close each shutter when encountering a kickoff/complete
+    fly-scan pair.
+
+    """
+    response = None
+    state = FlyStates.IDLE  # Should probably be re-factored into a state machine
+    completing_groups = set()
+    while True:
+        # Loop through the messages and get the next one in the queue
+        try:
+            msg = plan.send(response)
+        except StopIteration as exc:
+            # End of the inner plan
+            return_val = exc.value
+            break
+        # Check whether ``complete()`` is done and we're moving on
+        if (
+            msg.command != "complete"
+            and state == FlyStates.COMPLETING
+            and len(completing_groups) == 0
+        ):
+            state = FlyStates.IDLE
+            yield from _set_shutters(shutters, ShutterState.CLOSED)
+        # Check for the first "kickoff" message to open shutters
+        if msg.command == "kickoff":
+            if state == FlyStates.IDLE:
+                yield from _set_shutters(shutters, ShutterState.OPEN)
+                state = FlyStates.FLYING
+        # Emit the actual intended message
+        response = yield msg
+        # Check for "complete" messages to close shutters
+        group = msg.kwargs.get("group", None)
+        if msg.command == "complete":
+            completing_groups.add(group)
+            state = FlyStates.COMPLETING
+        elif msg.command == "wait" and group in completing_groups:
+            completing_groups.remove(group)
     return return_val
 
 
