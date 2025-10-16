@@ -8,7 +8,12 @@ from ophyd_async.epics.motor import Motor
 from scanspec.core import Path
 from scanspec.specs import Fly, Line
 
-from haven.devices import DG645Delay, IonChamber, SoftGlueDelay, Xspress3Detector
+from haven.devices import (
+    DG645Delay,
+    IonChamber,
+    SoftGlueFlyerController,
+    Xspress3Detector,
+)
 from haven.plans import fly_scan, grid_fly_scan
 from haven.plans._fly import (
     _grid_scan_spec,
@@ -33,7 +38,7 @@ def stepper():
 
 @pytest.fixture()
 def controller():
-    device = SoftGlueDelay(prefix="spam_eggs:", name="soft_glue_delay")
+    device = SoftGlueFlyerController(prefix="spam_eggs:", name="soft_glue_delay")
     return device
 
 

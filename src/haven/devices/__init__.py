@@ -5,7 +5,7 @@ from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .channel_cut_monochromator import ChannelCutMonochromator  # noqa: F401
-from .delay import DG645Delay, SoftGlueDelay  # noqa: F401
+from .delay import DG645Delay  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
@@ -18,6 +18,7 @@ from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter, ShutterState  # noqa: F401
 from .soft_glue import SoftGlueZynq  # noqa: F401
+from .soft_glue_flyer_controller import SoftGlueFlyerController  # noqa: F401
 from .table import Table  # noqa: F401
 from .undulator import PlanarUndulator  # noqa: F401
 from .vacuum import PumpController, TelevacIonGauge  # noqa: F401

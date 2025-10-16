@@ -222,6 +222,8 @@ DEPRECATED_KEYS = [
     ("queueserver.control_port", None),
     ("queueserver.info_host", None),
     ("queueserver.info_port", None),
+    ("soft_glue_delay", "soft_glue_flyer_controller"),
+    ("monochromator", "axilon_monochromator"),
 ]
 
 

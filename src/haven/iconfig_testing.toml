@@ -73,7 +73,7 @@ hutch_prefix = "S255ID-PSS:StaZ:"
 # Energy Positioners
 # =================
 
-[[ monochromator ]]
+[[ axilon_monochromator ]]
 name = "mono"
 prefix = "mono_ioc:"
 
