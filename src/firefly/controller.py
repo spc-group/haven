@@ -215,10 +215,10 @@ class FireflyController(QtCore.QObject):
             display_file=ui_dir / "devices/xrf_detector.py",
             device_key="DEV",
         )
-        self.actions.xray_filter = WindowAction(
-            name="show_filters_window_action",
-            text="Filters",
-            display_file=ui_dir / "devices/filters.py",
+        self.actions.attenuators = WindowAction(
+            name="show_attenuators_window_action",
+            text="Attenuators",
+            display_file=ui_dir / "devices/attenuators.py",
             WindowClass=FireflyMainWindow,
             icon=qta.icon("mdi.air-filter"),
         )

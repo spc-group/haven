@@ -105,7 +105,7 @@ action_targets = {
     "log": FireflyMainWindow,
     "status": PlanMainWindow,
     "voltmeter": PlanMainWindow,
-    "xray_filter": FireflyMainWindow,
+    "attenuators": FireflyMainWindow,
 }
 
 

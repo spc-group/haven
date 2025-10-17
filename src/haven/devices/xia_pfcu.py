@@ -90,7 +90,7 @@ class PFCUFilter(Positioner):
     """
 
     def __init__(self, prefix: str, *, name: str = ""):
-        self._ophyd_labels_ = {"filters"}
+        self._ophyd_labels_ = {"attenuators"}
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.material = epics_signal_rw(Material, f"{prefix}_mat")
             self.thick = epics_signal_rw(float, f"{prefix}_thick")
@@ -218,8 +218,8 @@ class PFCUShutter(Positioner):
         with self.add_children_as_readables():
             self.bottom_filter = PFCUFilter(prefix=f"{prefix}filter{bottom_filter+1}")
             self.top_filter = PFCUFilter(prefix=f"{prefix}filter{top_filter+1}")
-        self.bottom_filter._ophyd_labels_.remove("filters")
-        self.top_filter._ophyd_labels_.remove("filters")
+        self.bottom_filter._ophyd_labels_.remove("attenuators")
+        self.top_filter._ophyd_labels_.remove("attenuators")
         # Set up the positioner signals
         parent_signals = {
             "setpoint": filter_bank.setpoint,

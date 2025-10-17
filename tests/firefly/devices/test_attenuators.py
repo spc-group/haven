@@ -1,4 +1,4 @@
-from firefly.devices.filters import FiltersDisplay
+from firefly.devices.attenuators import AttenuatorsDisplay
 
 
 def test_embedded_display_widgets(qtbot, filters):
@@ -7,7 +7,7 @@ def test_embedded_display_widgets(qtbot, filters):
 
     """
     # Load the display
-    display = FiltersDisplay()
+    display = AttenuatorsDisplay()
     qtbot.addWidget(display)
     # Check that the embedded display widgets get added correctly
     assert hasattr(display, "_filter_displays")

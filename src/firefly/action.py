@@ -106,7 +106,7 @@ class ActionsRegistry:
     log: WindowAction = None
     status: WindowAction = None
     voltmeter: WindowAction = None
-    xray_filter: WindowAction = None
+    attenuators: WindowAction = None
 
     # Show windows for launching plans
     plans: Mapping[str, WindowAction]
@@ -173,7 +173,7 @@ class ActionsRegistry:
             self.log,
             self.status,
             self.voltmeter,
-            self.xray_filter,
+            self.attenuators,
             *self.plans.values(),
             self.queue_monitor,
             *self.queue_settings.values(),

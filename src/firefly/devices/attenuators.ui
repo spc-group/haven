@@ -28,7 +28,7 @@
         <enum>QFrame::NoFrame</enum>
        </property>
        <property name="filename" stdset="0">
-        <string>filters_row.ui</string>
+        <string>attenuators_row.ui</string>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
         <enum>QFrame::NoFrame</enum>
        </property>
        <property name="filename" stdset="0">
-        <string>filters_row.ui</string>
+        <string>attenuators_row.ui</string>
        </property>
       </widget>
      </item>
@@ -54,7 +54,7 @@
         <enum>QFrame::NoFrame</enum>
        </property>
        <property name="filename" stdset="0">
-        <string>filters_row.ui</string>
+        <string>attenuators_row.ui</string>
        </property>
       </widget>
      </item>

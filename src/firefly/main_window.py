@@ -184,7 +184,7 @@ class FireflyMainWindow(PyDMMainWindow):
             queue_control_actions=actions.queue_controls,
             queue_settings_actions=actions.queue_settings,
             energy_window_action=actions.energy,
-            filters_action=actions.xray_filter,
+            attenuators_action=actions.attenuators,
             slits_actions=actions.slits,
             mirror_actions=actions.mirrors,
             monochromator_actions=actions.monochromators,
@@ -210,7 +210,7 @@ class FireflyMainWindow(PyDMMainWindow):
         queue_control_actions,
         queue_settings_actions,
         energy_window_action,
-        filters_action,
+        attenuators_action,
         slits_actions,
         monochromator_actions,
         mirror_actions,
@@ -269,8 +269,8 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in mirror_actions.values():
             self.ui.positioners_menu.addAction(action)
 
-        if filters_action is not None:
-            self.ui.positioners_menu.addAction(filters_action)
+        if attenuators_action is not None:
+            self.ui.positioners_menu.addAction(attenuators_action)
         if len(slits_actions) > 0:
             self.ui.positioners_menu.addSection("Slits")
         for action in slits_actions.values():
