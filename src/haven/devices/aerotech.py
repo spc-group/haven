@@ -399,7 +399,7 @@ class ProfileMove(StandardReadable):
         self.pulse_positions = epics_signal_rw(
             Array1D[np.float64], f"{prefix}PulsePositions"
         )
-        self.pulse_times = epics_signal_rw(Array1D[np.int32], f"{prefix}Times")
+        self.pulse_times = epics_signal_rw(Array1D[np.float64], f"{prefix}Times")
         self.build = epics_signal_x(f"{prefix}Build")
         self.build_state = epics_signal_r(BuildState, f"{prefix}BuildState")
         self.build_status = epics_signal_r(str, f"{prefix}BuildStatus")

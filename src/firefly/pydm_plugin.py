@@ -397,6 +397,8 @@ class SignalPlugin(PyDMPlugin):
 
             with self.lock:
                 self.connections.pop(self.get_connection_id(channel), None)
+        except AttributeError as ex:
+            log.debug(ex)
 
 
 # Our code is below
@@ -485,7 +487,10 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
             self.enum_strings_signal.emit(tuple(enum_strs))
         # Send the current value as well so widgets can update
         if self.is_subscribable:
-            self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+            try:
+                self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+            except RuntimeError:
+                pass
         elif self.is_triggerable:
             # Any value will do, we won't use it anyway
             self.new_value_signal.emit(0)
@@ -542,7 +547,10 @@ class HavenPlugin(SignalPlugin):
         try:
             sig = beamline.devices[address]
         except KeyError:
-            sig = None
+            # sig = None
+            msg = f"Could not find signal for {address=}."
+            log.debug(msg)
+            return
         is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))
         is_vanilla_ophyd = isinstance(sig, OphydObject)
         # Get the right Connection class and build it
