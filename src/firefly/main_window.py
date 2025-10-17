@@ -1,5 +1,4 @@
 import logging
-import warnings
 from itertools import chain
 from pathlib import Path
 from typing import Sequence
@@ -134,7 +133,6 @@ class FireflyMainWindow(PyDMMainWindow):
                 "or FireflyDisplay?"
             )
             log.warning(msg)
-            warnings.warn(msg)
         # Add the caQtDM action to the menubar
         caqtdm_menu = self.ui.setup_menu
         caqtdm_actions = getattr(widget, "caqtdm_actions", [])

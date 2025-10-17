@@ -1,107 +1,17 @@
 import logging
-import warnings
-from pathlib import Path
 
 from firefly import display
-from haven import beamline, load_config
-from haven.devices import Table
+from haven import beamline
 
 log = logging.getLogger(__name__)
-
-
-class CaQtDMBase:
-    """caQtDM parameters for the given table.
-
-    Different table geometries require different caQtDM
-    configurations.
-
-    """
-
-    ui_file: str = ""
-    table: Table
-
-    def __init__(self, table: Table):
-        self.table = table
-
-    def motor_attrs(self):
-        attr_names = ["horizontal", "vertical"]
-        # Look for which motor is present on this table device
-        attrs = []
-        for attr in attr_names:
-            if getattr(self.table, attr, None) is not None:
-                attrs.append(attr)
-        return attrs
-
-    @property
-    def macros(self):
-        # See if the Haven config file has the caQtDM macro string
-        config = load_config()
-        try:
-            macro_str = config["table"][self.table.name]["caqtdm_macros"]
-        except KeyError:
-            log.warning(f"No caQtDM macro string for table: {self.table.name}")
-            return {}
-        # Parse out the caQtDM string
-        macros = {
-            k: v for k, v in (piece.split("=", 1) for piece in macro_str.split(","))
-        }
-        return macros
-
-
-class TwoLegCaQtDM(CaQtDMBase):
-    """caQtDM parameters for a table with two ."""
-
-    ui_file = "/net/s25data/xorApps/ui/table_2leg.ui"
-
-
-def parse_motor_source(motor):
-    source = motor.user_readback.source
-    transport, pv = source.split("://", maxsplit=1)
-    prefix, suffix = pv.removesuffix(".RBV").rsplit(":", maxsplit=1)
-    return transport, prefix, suffix
-
-
-class SingleMotorCaQtDM(CaQtDMBase):
-    """caQtDM parameters for a table with only a single motor."""
-
-    ui_file = "/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/motorx.ui"
-
-
-class MultipleMotorCaQtDM(CaQtDMBase):
-    """caQtDM parameters for a table with only multiple independent motors."""
-
-    @property
-    def ui_file(self):
-        ui_dir = Path(
-            "/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/"
-        )
-        num_motors = len(self.motor_attrs())
-        ui_path = ui_dir / f"motor{num_motors}x.ui"
-        return str(ui_path)
 
 
 class TableDisplay(display.FireflyDisplay):
     def customize_device(self):
         self.device = beamline.devices[self.macros()["DEVICE"]]
-        # Determine which flavor of caQtDM parameters we need
-        if self.num_legs == 2:
-            self.caqtdm = TwoLegCaQtDM(table=self.device)
-        elif self.num_motors == 1:
-            self.caqtdm = SingleMotorCaQtDM(table=self.device)
-        elif self.num_motors > 1:
-            self.caqtdm = MultipleMotorCaQtDM(table=self.device)
-        else:
-            warnings.warn(
-                f"Could not determine caQtDM parameters for device: {self.device}."
-            )
-            self.caqtdm = CaQtDMBase(table=self.device)
 
     def ui_filename(self):
         return "devices/table.ui"
-
-    @property
-    def caqtdm_ui_file(self):
-        return self.caqtdm.ui_file
 
     @property
     def num_legs(self):
@@ -135,14 +45,6 @@ class TableDisplay(display.FireflyDisplay):
         self.ui.horizontal_embedded_display.setEnabled(
             hasattr(self.device, "horizontal")
         )
-
-    def launch_caqtdm(self):
-        # Build the macros for the caQtDM panels
-        caqtdm_macros = dict(
-            **self.caqtdm.macros,
-        )
-        # Launch the caQtDM panel
-        super().launch_caqtdm(macros=caqtdm_macros)
 
 
 # -----------------------------------------------------------------------------

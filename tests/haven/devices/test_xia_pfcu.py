@@ -62,8 +62,8 @@ def test_shutter_devices(filter_bank):
 
 async def test_shutter_signals(shutter):
     # Check initial state
-    assert await shutter.top_filter.setpoint.get_value() == False
-    assert await shutter.bottom_filter.setpoint.get_value() == False
+    assert await shutter.top_filter.setpoint.get_value() == "OUT"
+    assert await shutter.bottom_filter.setpoint.get_value() == "OUT"
 
 
 async def test_shutter_readback(filter_bank, shutter):

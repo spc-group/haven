@@ -1,5 +1,4 @@
 import logging
-import warnings
 from functools import partial
 from typing import Sequence
 
@@ -40,11 +39,9 @@ class EnergyDisplay(display.FireflyDisplay):
         )
         self.undulators = beamline.devices.findall("undulators", allow_none=True)
         if len(self.monochromators) == 0:
-            warnings.warn("Could not find monochromators.")
-            log.warning("Could not find monochromators.")
+            log.info("Could not find monochromators.")
         if len(self.monochromators) + len(self.undulators) == 0:
-            warnings.warn("No devices with label 'energy'.")
-            log.error("No devices with label 'energy'.")
+            log.info("No devices with label 'energy'.")
         self.build_readback_widgets(self.monochromators + self.undulators)
 
     def build_readback_widgets(self, devices: Sequence[Device]):

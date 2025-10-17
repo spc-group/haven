@@ -1,3 +1,4 @@
+import asyncio
 import time
 from collections import ChainMap
 from unittest.mock import AsyncMock
@@ -345,6 +346,7 @@ async def test_stop_queue(client, qtbot):
     await client.stop_queue(True)
     api.queue_stop.assert_called_once()
     # Check the queue stop can be cancelled
+    await asyncio.sleep(0.5)
     api.clear_mock()
     await client.stop_queue(False)
     api.queue_stop_cancel.assert_called_once()
