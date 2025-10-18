@@ -751,7 +751,7 @@ def fly_segment(
     yield from declare_streams(secondary_detectors=detectors)
     # Start the detectors before the motors so we know they'll be ready
     for motor in motors:
-        yield from bps.monitor(motor)
+        yield from bps.monitor(motor, name=motor.name)
     yield from bps.kickoff_all(*detectors, wait=True)
     if len(flyer_controllers) > 0:
         yield from bps.kickoff_all(*flyer_controllers, wait=True)
@@ -968,10 +968,11 @@ def grid_fly_scan_with_spec(
     fly_motors = fly_frame.axes()
     # Figure out how to trigger the detector (once per line)
     num_fly_points = args[-1]
+    # For now, the aerotech is producing shorter segments than expected
     trigger_info = TriggerInfo(
         number_of_events=num_fly_points,
-        livetime=dwell_time,
-        deadtime=0,
+        livetime=dwell_time * 0.85,
+        deadtime=dwell_time * 0.15,
         trigger=trigger,
     )
 
@@ -1034,7 +1035,7 @@ def grid_fly_scan_with_spec(
             yield from bps.mv(*mv_args)
             # Execute the fly segment
             for motor in step_motors:
-                yield from bps.monitor(motor)
+                yield from bps.monitor(motor, name=motor.name)
             yield from fly_segment(
                 detectors=detectors,
                 motors=fly_motors,

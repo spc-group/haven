@@ -148,6 +148,7 @@ class AerotechMotor(Motor):
 
     axis: int
     detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
+    _fly_points = None
 
     def __init__(self, *args, axis: int, **kwargs):
         super().__init__(*args, **kwargs)
@@ -158,6 +159,7 @@ class AerotechMotor(Motor):
         # Initial calculations
         stage = self.parent
         points = path.consume()
+        self._fly_points = points
         # Get the positions for where the PSO should actually fire
         pulse_points = [
             (lower, upper) if gap else (upper,)
@@ -171,13 +173,19 @@ class AerotechMotor(Motor):
         num_pulses = len(pulse_positions)
         # Set up profile parameters
         ixce2_output = 143
-        await asyncio.gather(
+        dwell_time = np.unique(points.duration)
+        if dwell_time.shape == (1,):
+            dwell_time = dwell_time[0]
+        else:
+            raise ValueError(
+                f"Aerotech cannot handle non-constant scan durations: {dwell_time}"
+            )
+        # await asyncio.gather(
+        aws = (
             stage.profile_move.point_count.set(num_pulses),
             stage.profile_move.pulse_count.set(num_pulses),
             stage.profile_move.pulse_range_start.set(0),
             stage.profile_move.pulse_range_end.set(num_pulses),
-            stage.profile_move.time_mode.set(TimeMode.ARRAY),
-            stage.profile_move.pulse_times.set(points.duration),
             stage.profile_move.move_mode.set(MoveMode.ABSOLUTE),
             stage.profile_move.pulse_direction.set(PulseDirection.BOTH),
             stage.profile_move.axis[self.axis].positions.set(pulse_positions),
@@ -187,7 +195,15 @@ class AerotechMotor(Motor):
                 axis.enabled.set(num == self.axis)
                 for num, axis in stage.profile_move.axis.items()
             ),
+            # We need fixed-time mode for now
+            # To-do: sort out how to do array time mode
+            stage.profile_move.time_mode.set(TimeMode.FIXED),
+            stage.profile_move.dwell_time.set(dwell_time),
+            # stage.profile_move.time_mode.set(TimeMode.ARRAY),
+            # stage.profile_move.pulse_times.set(points.duration),
         )
+        for aw in aws:
+            await aw
 
     async def prepare_fly_motor_info(self, value: FlyMotorInfo):
         # Initial calculations
@@ -246,7 +262,19 @@ class AerotechMotor(Motor):
             aws.append(self.prepare_scanspec(value))
         else:
             aws.append(self.prepare_fly_motor_info(value))
-        await asyncio.gather(*aws)
+        # await asyncio.gather(*aws)
+        for aw in aws:
+            await aw
+        # Go to the first point
+        actual_positions, dwell_time, acceleration_time = await asyncio.gather(
+            stage.profile_move.pulse_positions.get_value(),
+            stage.profile_move.dwell_time.get_value(),
+            stage.profile_move.acceleration_time.get_value(),
+        )
+        step = actual_positions[1] - actual_positions[0]
+        taxi_distance = acceleration_time * step / dwell_time / 2
+        print(taxi_distance)
+        await self.set(actual_positions[0] - taxi_distance)
         # Build the profile
         await stage.profile_move.build.trigger()
         observations = observe_value(
@@ -295,7 +323,9 @@ class AerotechMotor(Motor):
             self._fly_info, "Motor must be prepared before attempting to kickoff"
         )
         stage = self.parent
-        if fly_info.timeout == CALCULATE_TIMEOUT:
+        if self._fly_points is not None:
+            timeout = np.sum(self._fly_points.duration) + DEFAULT_TIMEOUT
+        elif fly_info.timeout == CALCULATE_TIMEOUT:
             timeout = fly_info.time_for_move + DEFAULT_TIMEOUT
         else:
             timeout = fly_info.timeout
@@ -307,6 +337,7 @@ class AerotechMotor(Motor):
                 break
         # Check that the move was successful
         status = await stage.profile_move.execute_status.get_value()
+        self._fly_points = None
         if status != ExecuteStatus.SUCCESS:
             raise exceptions.ProfileFailure(
                 f"Profile move execution unsuccessful: {status}"

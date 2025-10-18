@@ -70,10 +70,19 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
+        external_triggers = [
+            DetectorTrigger.CONSTANT_GATE,
+            DetectorTrigger.VARIABLE_GATE,
+            DetectorTrigger.EDGE_TRIGGER,
+        ]
         if trigger_info.trigger == DetectorTrigger.INTERNAL:
             trigger_mode = XspressTriggerMode.INTERNAL
-        elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
+        elif trigger_info.trigger in external_triggers:
             trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
+        else:
+            raise ValueError(
+                f"Xspress does not recognize trigger mode '{trigger_info.trigger}'"
+            )
         max_frames = 2000
         num_frames = trigger_info.number_of_events or max_frames
         if isinstance(num_frames, Iterable):
@@ -269,6 +278,14 @@ class Xspress3Detector(AreaDetector):
         if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
             value = value.model_copy(update={"deadtime": 1e-5})
         return value
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TriggerInfo) -> None:
+        ## This shouldn't really be necessary, but during fly scans
+        ## the xspress doesn't finish if the number of frames isn't
+        ## set on the HDF5 plugin.
+        await super().prepare(value=value)
+        await self._writer.fileio.num_capture.set(value.total_number_of_exposures)
 
 
 def ndattribute_xml(params):

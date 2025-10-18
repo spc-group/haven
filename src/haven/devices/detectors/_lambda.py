@@ -1,9 +1,21 @@
-from collections.abc import Sequence
+import asyncio
+from collections.abc import Iterable, Sequence
+from itertools import repeat
 
-from ophyd_async.core import PathProvider, SignalR, StrictEnum, SubsetEnum
+from ophyd_async.core import (
+    AsyncStatus,
+    DetectorTrigger,
+    PathProvider,
+    SignalR,
+    StrictEnum,
+    SubsetEnum,
+    TriggerInfo,
+    DEFAULT_TIMEOUT,
+    observe_value,
+)
 from ophyd_async.epics import adcore
 from ophyd_async.epics.adcore import ADBaseController, AreaDetector
-from ophyd_async.epics.core import epics_signal_rw_rbv
+from ophyd_async.epics.core import epics_signal_rw, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
 
@@ -20,12 +32,19 @@ class LambdaImageMode(SubsetEnum):
     MULTIPLE = "Multiple"
 
 
+class LambdaTriggerMode(StrictEnum):
+    INTERNAL = "Internal"
+    EXTERNAL_SEQUENCE = "External_SequencePer"
+    EXTERNAL_IMAGE = "External_ImagePer"
+
+
 class LambdaDriverIO(adcore.ADBaseIO):
 
     def __init__(self, prefix, name=""):
         self.operating_mode = epics_signal_rw_rbv(
             OperatingMode, f"{prefix}OperatingMode"
         )
+        self.trigger_mode = epics_signal_rw(LambdaTriggerMode, f"{prefix}TriggerMode")
         self.dual_mode = epics_signal_rw_rbv(bool, f"{prefix}DualMode")
         self.gating_mode = epics_signal_rw_rbv(bool, f"{prefix}GatingMode")
         self.charge_summing = epics_signal_rw_rbv(bool, f"{prefix}ChargeSumming")
@@ -42,6 +61,52 @@ class LambdaController(ADBaseController):
         # From manual: No readout time in 12-bit, 6-bit and1-bit mode,
         # 1 ms in 24-bit mode
         return 1e-3
+
+    async def prepare(self, trigger_info: TriggerInfo) -> None:
+        external_triggers = [
+            DetectorTrigger.CONSTANT_GATE,
+            DetectorTrigger.VARIABLE_GATE,
+            DetectorTrigger.EDGE_TRIGGER,
+        ]
+        if trigger_info.trigger == DetectorTrigger.INTERNAL:
+            return await super().prepare(trigger_info)
+        elif trigger_info.trigger in external_triggers:
+            trigger_mode = LambdaTriggerMode.EXTERNAL_SEQUENCE
+        else:
+            raise ValueError(
+                f"{self.name} does not recognize trigger mode '{trigger_info.trigger}'"
+            )
+        max_frames = 2000
+        num_frames = trigger_info.number_of_events or max_frames
+        if isinstance(num_frames, Iterable):
+            # We have multiple events with distinct number of channels
+            self._trigger_frame_nums = iter(num_frames)
+        else:
+            # Fixed number of events
+            self._trigger_frame_nums = repeat(num_frames)
+        aws = [
+            self.driver.num_images.set(trigger_info.total_number_of_exposures),
+            self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
+            self.driver.trigger_mode.set(trigger_mode),
+        ]
+        if trigger_info.livetime is not None:
+            aws.extend(
+                [
+                    self.driver.acquire_time.set(trigger_info.livetime),
+                    self.driver.acquire_period.set(
+                        trigger_info.livetime + trigger_info.deadtime
+                    ),
+                ]
+            )
+        task = asyncio.ensure_future(asyncio.gather(*aws))
+        # Make sure the number of frames is set properly (not too high)
+        
+        async for num_images in observe_value(
+            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
+        ):
+            if num_images == trigger_info.total_number_of_exposures:
+                break
+        await task
 
 
 class LambdaDetector(AreaDetector):
@@ -92,6 +157,14 @@ class LambdaDetector(AreaDetector):
     @property
     def default_time_signal(self):
         return self.driver.acquire_time
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TriggerInfo) -> None:
+        ## This shouldn't really be necessary, but during fly scans
+        ## the xspress doesn't finish if the number of frames isn't
+        ## set on the HDF5 plugin.
+        await super().prepare(value=value)
+        await self._writer.fileio.num_capture.set(value.total_number_of_exposures)
 
 
 # -----------------------------------------------------------------------------
