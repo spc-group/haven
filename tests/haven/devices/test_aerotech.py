@@ -7,7 +7,6 @@ from scanspec.core import Path
 from scanspec.specs import Fly, Line
 
 from haven.devices.aerotech import AerotechStage
-from haven.plans._fly import FlyMotorInfo
 
 
 @pytest.fixture()
@@ -80,50 +79,9 @@ profile_positions = [
 
 
 @pytest.mark.parametrize("start,end,num,expected,direction", profile_positions)
-async def test_prepare_motor_info(aerotech, start, end, num, expected, direction):
-    axis = aerotech.horizontal
-    num_pulses = num + 1
-    dwell_time = 1.2
-    motor_info = FlyMotorInfo(
-        start_position=start,
-        end_position=end,
-        time_for_move=dwell_time * num,
-        point_count=num,
-    )
-    # Set to busy to check the observe_value behavior
-    set_mock_value(aerotech.profile_move.build_state, "Busy")
-    # Prepare
-    prepared = axis.prepare(motor_info)
-    await asyncio.sleep(0.01)
-    assert axis._fly_info is motor_info
-    set_mock_value(aerotech.profile_move.build_status, "Success")
-    set_mock_value(aerotech.profile_move.build_state, "Done")
-    await prepared
-    # Check that the aerotech profile move was setup properly
-    await assert_value(aerotech.profile_move.point_count, num + 1)
-    await assert_value(aerotech.profile_move.pulse_count, num + 1)
-    await assert_value(aerotech.profile_move.pulse_range_start, 0)
-    await assert_value(aerotech.profile_move.pulse_range_end, num + 1)
-    await assert_value(aerotech.profile_move.dwell_time, dwell_time)
-    await assert_value(aerotech.profile_move.pulse_direction, direction)
-    await assert_value(aerotech.profile_move.move_mode, "Absolute")
-    await assert_value(aerotech.profile_move.axis[0].enabled, True)
-    await assert_value(aerotech.profile_move.axis[1].enabled, False)
-    mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
-    assert mock_put.called
-    np.testing.assert_equal(mock_put.call_args.args[0], expected)
-    mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
-    assert mock_put.called
-    np.testing.assert_equal(mock_put.call_args.args[0], expected)
-
-
-@pytest.mark.parametrize("start,end,num,expected,direction", profile_positions)
-async def test_prepare_scanspec(aerotech, start, end, num, expected, direction, mocker):
+async def test_prepare(aerotech, start, end, num, expected, direction):
     dwell_time = 2
     num_pulses = num + 1
-    mock_config = mocker.MagicMock()
-    mock_config.feature_flag.return_value = True
-    mocker.patch("haven.devices.aerotech.load_config", mock_config)
     axis = aerotech.horizontal
     spec = Fly(dwell_time @ Line(axis, start, end, num))
     path = Path(spec.calculate())
@@ -171,13 +129,12 @@ async def test_prepare_scanspec(aerotech, start, end, num, expected, direction, 
 async def test_prepare_build_failed(aerotech):
     """Check that prepare fails if the build does not succeed."""
     axis = aerotech.horizontal
-    motor_info = FlyMotorInfo(
-        start_position=-1000, end_position=1000, time_for_move=120, point_count=100
-    )
+    spec = Fly(1 @ Line(axis, -1000, 1000, 100))
+    path = Path(spec.calculate())
     # Set to busy to check the observe_value behavior
     set_mock_value(aerotech.profile_move.build_state, "Busy")
     # Prepare
-    prepared = axis.prepare(motor_info)
+    prepared = axis.prepare(path)
     await asyncio.sleep(0.01)
     set_mock_value(aerotech.profile_move.build_status, "Failure")
     set_mock_value(aerotech.profile_move.build_state, "Done")
@@ -187,11 +144,10 @@ async def test_prepare_build_failed(aerotech):
 
 async def test_kickoff(aerotech):
     axis = aerotech.horizontal
-    motor_info = FlyMotorInfo(
-        start_position=-1000, end_position=1000, time_for_move=120, point_count=100
-    )
+    spec = Fly(1 @ Line(axis, -1000, 1000, 100))
+    path = Path(spec.calculate())
     set_mock_value(aerotech.profile_move.build_status, "Success")
-    await axis.prepare(motor_info)
+    await axis.prepare(path)
     # Start flying
     status = axis.kickoff()
     await asyncio.sleep(0.01)
@@ -201,11 +157,10 @@ async def test_kickoff(aerotech):
 
 async def test_complete(aerotech):
     axis = aerotech.horizontal
-    motor_info = FlyMotorInfo(
-        start_position=-1000, end_position=1000, time_for_move=120, point_count=100
-    )
+    spec = Fly(1 @ Line(axis, -1000, 1000, 100))
+    path = Path(spec.calculate())
     set_mock_value(aerotech.profile_move.build_status, "Success")
-    await axis.prepare(motor_info)
+    await axis.prepare(path)
     # Complete flying
     status = axis.complete()
     set_mock_value(aerotech.profile_move.execute_state, "Done")

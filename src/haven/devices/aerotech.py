@@ -10,7 +10,6 @@ from ophyd_async.core import (
     AsyncStatus,
     DetectorTrigger,
     DeviceVector,
-    FlyMotorInfo,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
@@ -21,7 +20,6 @@ from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal
 from scanspec.core import Path
 
 from haven import exceptions
-from haven._iconfig import load_config
 from haven.devices.motor import Motor
 
 log = logging.getLogger(__name__)
@@ -202,64 +200,20 @@ class AerotechMotor(Motor):
             # stage.profile_move.pulse_times.set(points.duration),
         )
 
-    async def prepare_fly_motor_info(self, value: FlyMotorInfo):
-        # Initial calculations
-        stage = self.parent
-        num_pulses = value.point_count + 1  # Account for the extra pulse at the end
-        dwell_time = value.time_for_move / value.point_count
-        step_size = (value.end_position - value.start_position) / (
-            value.point_count - 1
-        )
-        start = value.start_position - step_size / 2
-        end = value.end_position + step_size / 2
-        pulse_positions = np.linspace(start, end, num=num_pulses)
-        forward, backward = PulseDirection.POSITIVE, PulseDirection.NEGATIVE
-        if (await self.offset_dir.get_value()) == self.Direction.NEGATIVE:
-            # Swap pulse directions since the motor goes backwards
-            forward, backward = backward, forward
-        pulse_direction = PulseDirection.BOTH
-        if start < end:
-            pulse_direction = forward
-        elif start > end:
-            pulse_direction = backward
-        # Set up profile parameters
-        await asyncio.gather(
-            stage.profile_move.point_count.set(num_pulses),
-            stage.profile_move.pulse_count.set(num_pulses),
-            stage.profile_move.pulse_range_start.set(0),
-            stage.profile_move.pulse_range_end.set(num_pulses),
-            stage.profile_move.dwell_time.set(dwell_time),
-            stage.profile_move.move_mode.set(MoveMode.ABSOLUTE),
-            stage.profile_move.pulse_direction.set(pulse_direction),
-            stage.profile_move.axis[self.axis].positions.set(pulse_positions),
-            stage.profile_move.pulse_positions.set(pulse_positions),
-            # Only enable this axis, disable all others
-            *(
-                axis.enabled.set(num == self.axis)
-                for num, axis in stage.profile_move.axis.items()
-            ),
-        )
-
     @AsyncStatus.wrap
-    async def prepare(self, value: FlyMotorInfo | Path):
+    async def prepare(self, value: Path):
         """Prepare the detector to execute the profile specified in *value*."""
         ixce2_output = 143
         stage = self.parent
         self._fly_info = value
         # Magic values for the PSO to work
         # TODO: Sort out which of these need to change for different axes
-        aws = [
+        await asyncio.gather(
             stage.profile_move.pulse_output.set(ixce2_output),
             stage.profile_move.pulse_source.set(0),
             stage.profile_move.pulse_axis.set(0),
-        ]
-        if isinstance(value, Path) and load_config().feature_flag(
-            "grid_fly_scan_by_line"
-        ):
-            aws.append(self.prepare_scanspec(value))
-        else:
-            aws.append(self.prepare_fly_motor_info(value))
-        await asyncio.gather(*aws)
+            self.prepare_scanspec(value),
+        )
         # Go to the first point
         actual_positions, dwell_time, acceleration_time = await asyncio.gather(
             stage.profile_move.pulse_positions.get_value(),

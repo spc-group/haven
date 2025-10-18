@@ -43,9 +43,6 @@ class FeatureFlag:
 FEATURE_FLAGS = {
     # Declare a feature flags to develop some new feature. Be
     # conservative when deciding on expiration dates.
-    "grid_fly_scan_by_line": FeatureFlag(
-        expires=dt.datetime(2025, 11, 1).timestamp(),
-    ),
     "undulator_fast_step_scanning_mode": FeatureFlag(
         expires=dt.datetime(2025, 10, 30).timestamp(),
         description="new controls added to the 25-ID undulator for step scanning faster",
@@ -224,6 +221,7 @@ DEPRECATED_KEYS = [
     ("queueserver.info_port", None),
     ("soft_glue_delay", "soft_glue_flyer_controller"),
     ("monochromator", "axilon_monochromator"),
+    ("haven.features.grid_fly_scan_by_line", None),
 ]
 
 

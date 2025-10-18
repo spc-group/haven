@@ -50,7 +50,7 @@ all_decorators = chain(
 # Apply decorators to Haven plans
 auto_gain = open_shutters_decorator()(auto_gain)
 energy_scan = all_decorators(energy_scan)
-fly_scan = baseline_decorator()(fly_scan)
+fly_scan = all_decorators(fly_scan)
 grid_fly_scan = baseline_decorator()(grid_fly_scan)
 xafs_scan = all_decorators(xafs_scan)
 
