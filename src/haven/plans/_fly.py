@@ -149,10 +149,16 @@ def fly_scan(
         deadtime=dwell_time * 0.15,
         trigger=trigger,
     )
-    # Prepare the motor info
+    # Prepare the motor trajectory
     motors = args[0::3]
     starts = args[1::3]
     stops = args[2::3]
+    lines = [
+        Line(motor, start, stop, num)
+        for (motor, start, stop) in zip(motors, starts, stops)
+    ]
+    lines = reduce(Zip, lines)
+    spec = Fly(ConstantDuration(dwell_time, lines))
     # Prepare metadata
     md_args = tuple(zip([repr(m) for m in motors], starts, stops))
     md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
@@ -160,6 +166,7 @@ def fly_scan(
         "plan_name": "fly_scan",
         "motors": [motor.name for motor in motors],
         "detectors": [det.name for det in detectors],
+        "scanspec": repr(spec),
         "plan_args": {
             "detectors": list(map(repr, detectors)),
             "*args": md_args,
@@ -171,12 +178,6 @@ def fly_scan(
     }
     md_.update(md)
     # Do the actual flying
-    lines = [
-        Line(motor, start, stop, num)
-        for (motor, start, stop) in zip(motors, starts, stops)
-    ]
-    lines = reduce(Zip, lines)
-    spec = Fly(ConstantDuration(dwell_time, lines))
     segment_plan = fly_segment(
         detectors=detectors,
         motors=motors,
@@ -315,6 +316,7 @@ def grid_fly_scan(
     md_ = {
         "shape": tuple(len(frame) for frame in frames),
         "extents": extents,
+        "scanspec": repr(spec),
         "plan_args": {
             "detectors": list(map(repr, detectors)),
             "args": args_for_md,

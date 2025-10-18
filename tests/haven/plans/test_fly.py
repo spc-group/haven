@@ -119,6 +119,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
     open_msg = messages[2]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
+    spec = Fly(1 @ Line(flyer, -20, 30, 6))
     expected_md = {
         "plan_args": {
             "detectors": list([repr(ion_chamber)]),
@@ -128,6 +129,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
             "trigger": "DetectorTrigger.INTERNAL",
             "*args": (repr(flyer), -20, 30),
         },
+        "scanspec": repr(spec),
         "plan_name": "fly_scan",
         "motors": [flyer.name],
         "detectors": [ion_chamber.name],
@@ -306,6 +308,7 @@ async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber, stepper)
     open_run_messages = [msg for msg in messages if msg.command == "open_run"]
     assert len(open_run_messages) == 1
     real_md = open_run_messages[0].kwargs
+    spec = Line(stepper, -100, 100, 11) * Fly(1.0 @ ~Line(flyer, -20, 30, 6))
     expected_md = {
         "motors": (stepper.name, flyer.name),
         "num_points": 66,
@@ -319,6 +322,7 @@ async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber, stepper)
             "snake_axes": [repr(flyer)],
             "md": {"spam": "eggs"},
         },
+        "scanspec": repr(spec),
         "plan_name": "grid_fly_scan",
         "hints": {
             "gridding": "rectilinear",
