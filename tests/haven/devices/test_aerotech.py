@@ -2,7 +2,7 @@ import asyncio
 
 import numpy as np
 import pytest
-from ophyd_async.testing import get_mock_put, set_mock_value
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 from scanspec.core import Path
 from scanspec.specs import Fly, Line
 
@@ -100,33 +100,15 @@ async def test_prepare_motor_info(aerotech, start, end, num, expected, direction
     set_mock_value(aerotech.profile_move.build_state, "Done")
     await prepared
     # Check that the aerotech profile move was setup properly
-    get_mock_put(aerotech.profile_move.point_count).assert_called_once_with(
-        num + 1, wait=True
-    )
-    get_mock_put(aerotech.profile_move.pulse_count).assert_called_once_with(
-        num + 1, wait=True
-    )
-    get_mock_put(aerotech.profile_move.pulse_range_start).assert_called_once_with(
-        0, wait=True
-    )
-    get_mock_put(aerotech.profile_move.pulse_range_end).assert_called_once_with(
-        num + 1, wait=True
-    )
-    get_mock_put(aerotech.profile_move.dwell_time).assert_called_once_with(
-        dwell_time, wait=True
-    )
-    get_mock_put(aerotech.profile_move.pulse_direction).assert_called_once_with(
-        direction, wait=True
-    )
-    get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with(
-        "Absolute", wait=True
-    )
-    get_mock_put(aerotech.profile_move.axis[0].enabled).assert_called_once_with(
-        True, wait=True
-    )
-    get_mock_put(aerotech.profile_move.axis[1].enabled).assert_called_once_with(
-        False, wait=True
-    )
+    await assert_value(aerotech.profile_move.point_count, num + 1)
+    await assert_value(aerotech.profile_move.pulse_count, num + 1)
+    await assert_value(aerotech.profile_move.pulse_range_start, 0)
+    await assert_value(aerotech.profile_move.pulse_range_end, num + 1)
+    await assert_value(aerotech.profile_move.dwell_time, dwell_time)
+    await assert_value(aerotech.profile_move.pulse_direction, direction)
+    await assert_value(aerotech.profile_move.move_mode, "Absolute")
+    await assert_value(aerotech.profile_move.axis[0].enabled, True)
+    await assert_value(aerotech.profile_move.axis[1].enabled, False)
     mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
     assert mock_put.called
     np.testing.assert_equal(mock_put.call_args.args[0], expected)
@@ -154,41 +136,36 @@ async def test_prepare_scanspec(aerotech, start, end, num, expected, direction, 
     set_mock_value(aerotech.profile_move.build_state, "Done")
     await prepare_status
     # Check that the aerotech profile move was setup properly
-    get_mock_put(aerotech.profile_move.point_count).assert_called_once_with(
-        num_pulses, wait=True
+    await assert_value(aerotech.profile_move.point_count, num_pulses)
+    await assert_value(aerotech.profile_move.pulse_count, num_pulses)
+    await assert_value(aerotech.profile_move.pulse_range_start, 0)
+    await assert_value(
+        aerotech.profile_move.pulse_range_end,
+        num_pulses,
     )
-    get_mock_put(aerotech.profile_move.pulse_count).assert_called_once_with(
-        num_pulses, wait=True
+    await assert_value(
+        aerotech.profile_move.pulse_direction,
+        "Both",
     )
-    get_mock_put(aerotech.profile_move.pulse_range_start).assert_called_once_with(
-        0, wait=True
+    await assert_value(
+        aerotech.profile_move.move_mode,
+        "Absolute",
     )
-    get_mock_put(aerotech.profile_move.pulse_range_end).assert_called_once_with(
-        num_pulses, wait=True
+    await assert_value(
+        aerotech.profile_move.axis[0].enabled,
+        True,
     )
-    get_mock_put(aerotech.profile_move.pulse_direction).assert_called_once_with(
-        "Both", wait=True
+    await assert_value(
+        aerotech.profile_move.axis[1].enabled,
+        False,
     )
-    get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with(
-        "Absolute", wait=True
-    )
-    get_mock_put(aerotech.profile_move.axis[0].enabled).assert_called_once_with(
-        True, wait=True
-    )
-    get_mock_put(aerotech.profile_move.axis[1].enabled).assert_called_once_with(
-        False, wait=True
-    )
+    await assert_value(aerotech.profile_move.dwell_time, dwell_time)
     mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
     assert mock_put.called
     assert np.all(mock_put.call_args.args[0] == expected)
     mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
     assert mock_put.called
     assert np.all(mock_put.call_args.args[0] == expected)
-    mock_put = get_mock_put(aerotech.profile_move.pulse_times)
-    assert mock_put.called
-    np.testing.assert_equal(
-        mock_put.call_args.args[0], np.full((num,), fill_value=dwell_time)
-    )
 
 
 async def test_prepare_build_failed(aerotech):

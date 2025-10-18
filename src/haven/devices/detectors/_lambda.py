@@ -3,6 +3,7 @@ from collections.abc import Iterable, Sequence
 from itertools import repeat
 
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     AsyncStatus,
     DetectorTrigger,
     PathProvider,
@@ -10,7 +11,6 @@ from ophyd_async.core import (
     StrictEnum,
     SubsetEnum,
     TriggerInfo,
-    DEFAULT_TIMEOUT,
     observe_value,
 )
 from ophyd_async.epics import adcore
@@ -100,7 +100,7 @@ class LambdaController(ADBaseController):
             )
         task = asyncio.ensure_future(asyncio.gather(*aws))
         # Make sure the number of frames is set properly (not too high)
-        
+
         async for num_images in observe_value(
             self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
         ):

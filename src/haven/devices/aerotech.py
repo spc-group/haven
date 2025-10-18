@@ -180,8 +180,7 @@ class AerotechMotor(Motor):
             raise ValueError(
                 f"Aerotech cannot handle non-constant scan durations: {dwell_time}"
             )
-        # await asyncio.gather(
-        aws = (
+        await asyncio.gather(
             stage.profile_move.point_count.set(num_pulses),
             stage.profile_move.pulse_count.set(num_pulses),
             stage.profile_move.pulse_range_start.set(0),
@@ -202,8 +201,6 @@ class AerotechMotor(Motor):
             # stage.profile_move.time_mode.set(TimeMode.ARRAY),
             # stage.profile_move.pulse_times.set(points.duration),
         )
-        for aw in aws:
-            await aw
 
     async def prepare_fly_motor_info(self, value: FlyMotorInfo):
         # Initial calculations
@@ -262,9 +259,7 @@ class AerotechMotor(Motor):
             aws.append(self.prepare_scanspec(value))
         else:
             aws.append(self.prepare_fly_motor_info(value))
-        # await asyncio.gather(*aws)
-        for aw in aws:
-            await aw
+        await asyncio.gather(*aws)
         # Go to the first point
         actual_positions, dwell_time, acceleration_time = await asyncio.gather(
             stage.profile_move.pulse_positions.get_value(),
@@ -273,7 +268,6 @@ class AerotechMotor(Motor):
         )
         step = actual_positions[1] - actual_positions[0]
         taxi_distance = acceleration_time * step / dwell_time / 2
-        print(taxi_distance)
         await self.set(actual_positions[0] - taxi_distance)
         # Build the profile
         await stage.profile_move.build.trigger()
