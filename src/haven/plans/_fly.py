@@ -765,6 +765,7 @@ def fly_segment(
         yield from bps.collect(detector)
     for motor in motors:
         yield from bps.unmonitor(motor)
+    yield from bps.checkpoint()
 
 
 def fly_scan_with_spec(

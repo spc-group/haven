@@ -85,6 +85,7 @@ def test_fly_segment(flyer, xspress):
     assert msgs[13].obj is xspress
     assert msgs[14].command == "unmonitor"
     assert msgs[14].obj is flyer
+    assert msgs[15].command == "checkpoint"
 
 
 def test_line_prepares_flyer_path(flyer):
