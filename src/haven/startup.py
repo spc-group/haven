@@ -32,6 +32,8 @@ from haven.plans import (  # noqa: F401
     calibrate,
     count,
     energy_scan,
+    fly_scan,
+    grid_fly_scan,
     grid_scan,
     list_scan,
     record_dark_current,
@@ -128,7 +130,9 @@ plan_decorators = haven.plans.chain(*plan_decorators)
 auto_gain = plan_decorators(auto_gain)
 count = plan_decorators(count)
 energy_scan = plan_decorators(energy_scan)
+fly_scan = plan_decorators(fly_scan)
 grid_scan = plan_decorators(grid_scan)
+grid_fly_scan = plan_decorators(grid_fly_scan)
 list_scan = plan_decorators(list_scan)
 rel_grid_scan = plan_decorators(rel_grid_scan)
 rel_list_scan = plan_decorators(rel_list_scan)
