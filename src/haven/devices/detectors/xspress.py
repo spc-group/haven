@@ -279,14 +279,6 @@ class Xspress3Detector(AreaDetector):
             value = value.model_copy(update={"deadtime": 1e-5})
         return value
 
-    @AsyncStatus.wrap
-    async def prepare(self, value: TriggerInfo) -> None:
-        ## This shouldn't really be necessary, but during fly scans
-        ## the xspress doesn't finish if the number of frames isn't
-        ## set on the HDF5 plugin.
-        await super().prepare(value=value)
-        await self._writer.fileio.num_capture.set(value.total_number_of_exposures)
-
 
 def ndattribute_xml(params):
     """Convert a set of NDAttribute params to XML."""

@@ -4,7 +4,6 @@ from itertools import repeat
 
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
-    AsyncStatus,
     DetectorTrigger,
     PathProvider,
     SignalR,
@@ -69,7 +68,7 @@ class LambdaController(ADBaseController):
             DetectorTrigger.EDGE_TRIGGER,
         ]
         if trigger_info.trigger == DetectorTrigger.INTERNAL:
-            return await super().prepare(trigger_info)
+            trigger_mode = LambdaTriggerMode.INTERNAL
         elif trigger_info.trigger in external_triggers:
             trigger_mode = LambdaTriggerMode.EXTERNAL_SEQUENCE
         else:
@@ -100,7 +99,6 @@ class LambdaController(ADBaseController):
             )
         task = asyncio.ensure_future(asyncio.gather(*aws))
         # Make sure the number of frames is set properly (not too high)
-
         async for num_images in observe_value(
             self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
         ):
@@ -157,14 +155,6 @@ class LambdaDetector(AreaDetector):
     @property
     def default_time_signal(self):
         return self.driver.acquire_time
-
-    @AsyncStatus.wrap
-    async def prepare(self, value: TriggerInfo) -> None:
-        ## This shouldn't really be necessary, but during fly scans
-        ## the xspress doesn't finish if the number of frames isn't
-        ## set on the HDF5 plugin.
-        await super().prepare(value=value)
-        await self._writer.fileio.num_capture.set(value.total_number_of_exposures)
 
 
 # -----------------------------------------------------------------------------
