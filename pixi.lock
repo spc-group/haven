@@ -437,6 +437,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/b3/6b4067be973ae96ba0d615946e314c5ae35f9f993eca561b356540bb0c2b/alabaster-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/39/4a/4c61d4c84cfd9befb6fa08a702535b27b21fff08c946bc2f6139decbf7f7/alembic-1.16.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/36/07/7977dffeb7007eea4e33c7d2805a4e5f66d4de0aafd2604a23fc47062090/apsbits-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
@@ -449,7 +450,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
-      - pypi: git+https://github.com/BCDA-APS/BITS.git?branch=nsls_compatibility#133763db6dd1beb8ec546984ed87cbd894614204
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
@@ -1003,6 +1003,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/b3/6b4067be973ae96ba0d615946e314c5ae35f9f993eca561b356540bb0c2b/alabaster-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/39/4a/4c61d4c84cfd9befb6fa08a702535b27b21fff08c946bc2f6139decbf7f7/alembic-1.16.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/36/07/7977dffeb7007eea4e33c7d2805a4e5f66d4de0aafd2604a23fc47062090/apsbits-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
@@ -1015,7 +1016,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
-      - pypi: git+https://github.com/BCDA-APS/BITS.git?branch=nsls_compatibility#133763db6dd1beb8ec546984ed87cbd894614204
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
@@ -2122,6 +2122,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f5/10/6c25ed6de94c49f88a91fa5018cb4c0f3625f31d5be9f771ebe5cc7cd506/aiosqlite-0.21.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/39/4a/4c61d4c84cfd9befb6fa08a702535b27b21fff08c946bc2f6139decbf7f7/alembic-1.16.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/36/07/7977dffeb7007eea4e33c7d2805a4e5f66d4de0aafd2604a23fc47062090/apsbits-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
@@ -2133,7 +2134,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/05/c0/27f55ac0c5b99861cca008cdc890316e864e99090db6005dcad4d0c601aa/autoapi-2.0.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/26/30/7d6b649ed26ac2ac3acc22f0fd3ade5daf48db7dc442b810ca4bf78ab12e/awkward-2.8.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: git+https://github.com/BCDA-APS/BITS.git?branch=nsls_compatibility#133763db6dd1beb8ec546984ed87cbd894614204
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
@@ -2663,6 +2663,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/b3/6b4067be973ae96ba0d615946e314c5ae35f9f993eca561b356540bb0c2b/alabaster-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/39/4a/4c61d4c84cfd9befb6fa08a702535b27b21fff08c946bc2f6139decbf7f7/alembic-1.16.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/36/07/7977dffeb7007eea4e33c7d2805a4e5f66d4de0aafd2604a23fc47062090/apsbits-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/53/df/606252ee0e4362f11f3a5bcf794b1be52258a92ea2eaec851c33856acbfc/apsbss-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/49/60/950025d0894198010a3184b65f67569cf967798247e2597fa6da944d3ad2/apstools-1.7.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
@@ -2675,7 +2676,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/fe/3aed5d0be4d404d12d36ab97e2f1791424d9ca39c2f754a6285d59a3b01d/beautifulsoup4-4.14.2-py3-none-any.whl
-      - pypi: git+https://github.com/BCDA-APS/BITS.git?branch=nsls_compatibility#133763db6dd1beb8ec546984ed87cbd894614204
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
@@ -3030,9 +3030,10 @@ packages:
   - pkg:pypi/appdirs?source=hash-mapping
   size: 14835
   timestamp: 1733754069532
-- pypi: git+https://github.com/BCDA-APS/BITS.git?branch=nsls_compatibility#133763db6dd1beb8ec546984ed87cbd894614204
+- pypi: https://files.pythonhosted.org/packages/36/07/7977dffeb7007eea4e33c7d2805a4e5f66d4de0aafd2604a23fc47062090/apsbits-2.0.0-py3-none-any.whl
   name: apsbits
-  version: 1.0.6.dev29+g133763db6
+  version: 2.0.0
+  sha256: 9c3fdb54ba81674caf315033f7f67245cba20743cf81ab14924e6f07364e646a
   requires_dist:
   - apstools
   - bluesky-queueserver>=0.0.22
