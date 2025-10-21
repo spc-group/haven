@@ -100,7 +100,7 @@ def fly_scan(
     *args,
     num: int,
     dwell_time: float,
-    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    trigger: DetectorTrigger = "INTERNAL",
     flyer_controllers: Sequence[Flyable] = (),
     md: Mapping = {},
 ) -> Generator[Msg, Any, None]:
@@ -234,7 +234,7 @@ def grid_fly_scan(
     detectors: Sequence[Flyable],
     *args,
     dwell_time: float,
-    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    trigger: DetectorTrigger = "INTERNAL",
     flyer_controllers: Sequence[Preparable] = [],
     snake_axes: Iterable | bool = False,
     md: Mapping = {},
