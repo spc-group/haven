@@ -6,7 +6,6 @@ from apsbits.core.run_engine_init import init_RE
 from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
-from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 from tiled.client import from_profile
 
@@ -32,7 +31,6 @@ async def _calibrate(msg: Msg):
 def run_engine(
     *,
     connect_tiled: bool = False,
-    use_bec: bool = False,
     **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
@@ -42,16 +40,11 @@ def run_engine(
     connect_tiled
       The run engine will have a callback for writing to the default
       tiled client.
-    use_bec
-      The run engine will have the bluesky BestEffortCallback
-      subscribed to it.
 
     """
     config = load_config()
-    # Add the best-effort callback if needed
-    bec = BestEffortCallback() if use_bec else None
     # Create the run engine
-    RE, *_ = init_RE(config, bec_instance=bec, **kwargs)
+    RE, *_ = init_RE(config, **kwargs)
     # Add custom verbs
     RE.register_command("calibrate", _calibrate)
     # Add a shortcut for using the run engine more efficiently

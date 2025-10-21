@@ -52,7 +52,8 @@ databroker = "==1.2.5"  # Just to make the solve work for apsbits
 ophyd = "*"  # =1.10.7",
 
 [feature.bluesky.pypi-dependencies]
-apsbits = "*"
+# apsbits = "*"
+apsbits = { git = "https://github.com/BCDA-APS/BITS.git", branch="nsls_compatibility" }
 apstools = ">=1.7.8"
 guarneri = "*"  # ==0.2.0",
 ophyd-async = "==0.13.4"

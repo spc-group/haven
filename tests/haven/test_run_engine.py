@@ -1,13 +1,13 @@
 from unittest import mock
 
 from bluesky import Msg, RunEngine
+from bluesky import plan_stubs as bps
 
-from haven import run_engine
+from haven import load_config, run_engine
 
 
 def test_run_engine_created():
     RE = run_engine(
-        use_bec=False,
         connect_tiled=False,
     )
     assert isinstance(RE, RunEngine)
@@ -16,12 +16,29 @@ def test_run_engine_created():
 def test_calibrate_message():
     device = mock.AsyncMock()
     RE = run_engine(
-        use_bec=False,
         connect_tiled=False,
     )
     assert not device.calibrate.called
     RE([Msg("calibrate", device, truth=1304, target=1314)])
     assert device.calibrate.called
+
+
+def test_default_metadata():
+    docs = []
+
+    def stash_docs(name, doc):
+        docs.append((name, doc))
+
+    RE = run_engine(connect_tiled=False)
+    RE.subscribe(stash_docs)
+
+    RE(bps.open_run())
+    start_doc = docs[0][1]
+    # Check that metadata matches iconfig_testing.toml
+    default_md = load_config()["RUN_ENGINE.DEFAULT_METADATA"]
+    assert start_doc["facility"] == default_md["facility"]
+    assert start_doc["beamline"] == default_md["beamline"]
+    assert start_doc["xray_source"] == default_md["xray_source"]
 
 
 # -----------------------------------------------------------------------------
