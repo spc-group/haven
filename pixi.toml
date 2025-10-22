@@ -14,7 +14,7 @@ httpx = "*"
 lmfit = "*"
 mergedeep = "*"
 pint = "*"
-pcdsdevices = "*"
+# pcdsdevices = "*"
 rich = "*"
 scipy = "*"
 stamina = "*"
@@ -107,16 +107,17 @@ cmd = "black src/ tests/ {{ check_flag }}"
 [feature.gui.dependencies]
 # Old dependencies until pydm is stable with pyside6
 qt = ">=5.15"
-# pyqt = ">=5.15"
-
-[feature.gui.pypi-dependencies]
-apsbss = "*"
+pyqt = ">=5.15"
 qtawesome = ">=1.4.0"
 pyqtgraph = "*"
 pydm = "==1.25.2"
 qasync = "*"
 bluesky-widgets = "*"
-PyQT5 = ">=5.15"
+
+
+[feature.gui.pypi-dependencies]
+apsbss = "*"
+# PyQT5 = ">=5.15"
 
 [feature.gui.tasks]
 firefly = "firefly"
@@ -156,7 +157,7 @@ qserver = "python -m haven_qserver.launch_queueserver"
 bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
 
 [feature.tiled.pypi-dependencies]
-bluesky-tiled-plugins = ">=2.0.0b68"
+bluesky-tiled-plugins = "==2.0.0b68"
 tiled = { version = "==0.1.6", extras = ["all"] }
 
 [feature.tiled.tasks]
