@@ -6,12 +6,15 @@ platforms = ["linux-64"]
 PYDM_DEFAULT_PROTOCOL = "ca"
 
 [dependencies]
+python = "3.12.*"
+
+[pypi-dependencies]
+haven-spc = { path = ".", editable = true }
 httpx = "*"
 lmfit = "*"
 mergedeep = "*"
 pint = "*"
 pcdsdevices = "*"
-# python = "3.12.*"
 rich = "*"
 scipy = "*"
 stamina = "*"
@@ -19,16 +22,13 @@ tomlkit = "*"
 xraydb = ">=4.5.0"
 xrayutilities = "*"
 
-[pypi-dependencies]
-haven-spc = { path = ".", editable = true }
-
 [environments]
 default = { solve-group = "default" }
 dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled", "qserver"] }
 qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-designer = { features = ["designer"] }
+# designer = { features = ["designer"] }
 
 [tasks]
 test-all = [
@@ -41,26 +41,24 @@ test-all = [
     {task = "test-integration" }
 ]
 
-[feature.bluesky.dependencies]
-aioca = "*"
-aiokafka = "*"  # ==0.12.0",
-bluesky = "==1.14.4"
-# bluesky-adaptive = "*"
-# bluesky-queueserver = ">=0.0.23",
-# bluesky-queueserver-api = "*"  #  = ">=0.0.12"
-databroker = "==1.2.5"  # Just to make the solve work for apsbits
-ophyd = "*"  # =1.10.7",
-
 [feature.bluesky.pypi-dependencies]
+aioca = ">=2.0a4"
+bluesky = "==1.14.4"
 apsbits = ">=2.0.0"
 apstools = ">=1.7.8"
-guarneri = "*"  # ==0.2.0",
-ophyd-async = "==0.13.4"
-scanspec = "==0.9.0"
+guarneri = "*"
+ophyd = ">=1.11.0"
+ophyd-async = { version = "==0.13.4", extras = ["ca"] }
+scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
-[feature.dev.dependencies]
+[feature.ipython]
+dependencies = { python = "3.12.*" }
+pypi-dependencies = { ipython = "*" }
+tasks = {ipython = "ipython -i ./src/haven/startup.py"}
+
+[feature.dev.pypi-dependencies]
 "pytest" = "*"
 "pytest-httpx" = "*"
 "pytest-mock" = "*"
@@ -78,12 +76,6 @@ bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 "scipy-stubs" = "*"
 "mypy" = "*"
 pytest-timeout = ">=2.4.0,<3"
-
-[feature.ipython]
-dependencies = {ipython = "*"}
-tasks = {ipython = "ipython -i ./src/haven/startup.py"}
-
-[feature.dev.pypi-dependencies]
 autoapi = "*"
 build = "*"
 
@@ -114,47 +106,48 @@ cmd = "black src/ tests/ {{ check_flag }}"
 
 [feature.gui.dependencies]
 # Old dependencies until pydm is stable with pyside6
+qt = ">=5.15"
+# pyqt = ">=5.15"
+
+[feature.gui.pypi-dependencies]
+apsbss = "*"
 qtawesome = ">=1.4.0"
 pyqtgraph = "*"
 pydm = "==1.25.2"
 qasync = "*"
 bluesky-widgets = "*"
-qt = ">=5.15"
-pyqt = ">=5.15"
-
-[feature.gui.pypi-dependencies]
-apsbss = "*"
+PyQT5 = ">=5.15"
 
 [feature.gui.tasks]
 firefly = "firefly"
 
-[feature.gui_pyside6.dependencies]
-qtawesome = ">=1.4.0"
-pyqtgraph = "*"
-qasync = "*"
-bluesky-widgets = "*"
-qt6-main = "*"
-pyside6 = "*"
+# [feature.gui_pyside6.dependencies]
+# qtawesome = ">=1.4.0"
+# pyqtgraph = "*"
+# qasync = "*"
+# bluesky-widgets = "*"
+# qt6-main = "*"
+# pyside6 = "*"
 
-[feature.gui_pyside6.pypi-dependencies]
-apsbss = "*"
-pydm = ">=1.28.0"
+# [feature.gui_pyside6.pypi-dependencies]
+# apsbss = "*"
+# pydm = ">=1.28.0"
 
-[feature.gui_pyside6.tasks]
-firefly = "firefly"
+# [feature.gui_pyside6.tasks]
+# firefly = "firefly"
 
-[feature.gui_pyside6.activation.env]
-QT_API = "pyside6"
+# [feature.gui_pyside6.activation.env]
+# QT_API = "pyside6"
 
-[feature.designer.dependencies]
-python = "3.10.*"
-pyqt = "==5.12.3"
-pyqtgraph = "<0.13.0"  # Last version to support pyqt 5.12
-qt = "~=5.12"
-pydm = "==1.25.2"
+# [feature.designer.dependencies]
+# python = "3.10.*"
+# pyqt = "==5.12.3"
+# pyqtgraph = "<0.13.0"  # Last version to support pyqt 5.12
+# qt = "~=5.12"
+# pydm = "==1.25.2"
 
-[feature.designer.tasks]
-designer = "designer"
+# [feature.designer.tasks]
+# designer = "designer"
 
 [feature.qserver.tasks]
 qserver = "python -m haven_qserver.launch_queueserver"

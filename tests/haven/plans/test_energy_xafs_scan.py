@@ -335,6 +335,7 @@ def test_xafs_scan_metadata(mono):
     }
 
 
+@pytest.mark.slow
 async def test_document_plan_args(mono):
     """Having numpy arrays in the arguments to a plan causes problems for
     the TiledWriter. Make sure that the start doc plan args do not
