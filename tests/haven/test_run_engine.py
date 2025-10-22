@@ -1,6 +1,5 @@
 from unittest import mock
 
-import pytest
 from bluesky import Msg, RunEngine
 from bluesky import plan_stubs as bps
 
@@ -14,7 +13,6 @@ def test_run_engine_created():
     assert isinstance(RE, RunEngine)
 
 
-@pytest.mark.slow
 def test_calibrate_message():
     device = mock.AsyncMock()
     RE = run_engine(
@@ -25,7 +23,6 @@ def test_calibrate_message():
     assert device.calibrate.called
 
 
-@pytest.mark.slow
 def test_default_metadata():
     docs = []
 

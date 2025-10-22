@@ -22,7 +22,6 @@ def units_task():
     return task
 
 
-@pytest.mark.slow
 def test_read_no_units(motor, units_task):
     # Do this in the run engine so that at least one test calls the
     # inner `describe()`

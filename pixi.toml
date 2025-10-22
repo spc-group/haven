@@ -56,7 +56,7 @@ bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 [feature.ipython]
 dependencies = { python = "3.12.*" }
 pypi-dependencies = { ipython = "*" }
-tasks = {ipython = "ipython -i ./src/haven/startup.py"}
+tasks = {haven = "ipython -i ./src/haven/startup.py"}
 
 [feature.dev.pypi-dependencies]
 "pytest" = "*"

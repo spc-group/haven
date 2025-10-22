@@ -17,7 +17,6 @@ def RE():
     return RunEngine({})
 
 
-@pytest.mark.slow
 def test_baseline_wrapper(sim_registry, aps, RE):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
@@ -40,7 +39,6 @@ def test_baseline_wrapper(sim_registry, aps, RE):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-@pytest.mark.slow
 def test_baseline_decorator(sim_registry, aps, RE):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Create the decorated function before anything else
