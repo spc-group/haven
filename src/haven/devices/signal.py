@@ -2,8 +2,9 @@ import asyncio
 import inspect
 import logging
 import numbers
+from collections.abc import Callable, Mapping
 from functools import partial
-from typing import Callable, Mapping, Optional, Type, TypeVar
+from typing import Type, TypeVar
 
 import numpy as np
 from bluesky.protocols import Reading, Subscribable
@@ -13,6 +14,7 @@ from ophyd_async.core import (
     AsyncStatus,
     CalculatableTimeout,
     Callback,
+    Device,
     SignalBackend,
     SignalDatatypeT,
     SignalR,
@@ -74,16 +76,14 @@ class DerivedSignalBackend(SoftSignalBackend):
         self,
         *args,
         derived_from: Mapping,
-        forward: Callable = None,
-        inverse: Callable = None,
+        forward: Callable | None = None,
+        inverse: Callable | None = None,
         **kwargs,
     ):
         self._derived_from = derived_from
-        if forward is not None:
-            self.forward = forward
-        if inverse is not None:
-            self.inverse = inverse
-        self._cached_readings = {}
+        self._forward = forward
+        self._inverse = inverse
+        self._cached_readings: Mapping[Device, Mapping] = {}
         super().__init__(*args, **kwargs)
 
     async def forward(self, value, **kw):
@@ -95,6 +95,8 @@ class DerivedSignalBackend(SoftSignalBackend):
         *forward* parameter when creating the backend object.
 
         """
+        if self._forward is not None:
+            return await self._forward(value, **kw)
         # Return the same value for the real signal as the derived signal.
         return {key: value for key in kw.values()}
 
@@ -109,6 +111,8 @@ class DerivedSignalBackend(SoftSignalBackend):
         creating the backend object.
 
         """
+        if self._inverse is not None:
+            return self._inverse(values, **kw)
         # Determine a sensible inverse transform value if possible
         is_numeric = all(isinstance(val, numbers.Number) for val in values.values())
         if is_numeric:
@@ -145,8 +149,8 @@ class DerivedSignalBackend(SoftSignalBackend):
 
     async def connect(self, timeout=DEFAULT_TIMEOUT) -> None:
         # Listen for changes in the derived_from signals
-        sub_signals = self._derived_from.values()
-        sub_signals = (sig for sig in sub_signals if isinstance(sig, Subscribable))
+        sub_signals = list(self._derived_from.values())
+        sub_signals = [sig for sig in sub_signals if isinstance(sig, Subscribable)]
         subs = (
             asyncio.wait_for(self._subscribe_child(sig), timeout=timeout)
             for sig in sub_signals
@@ -194,7 +198,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         super().set_callback(callback)
         self.send_latest_reading()
 
-    async def put(self, value: Optional[T], wait=True, timeout=None):
+    async def put(self, value: T | None, wait=True, timeout=None):
         write_value = (
             self.converter.write_value(value)
             if value is not None
@@ -219,20 +223,22 @@ class DerivedSignalBackend(SoftSignalBackend):
 
     async def get_reading(self) -> Reading:
         signals = self._derived_from.values()
-        readings = await asyncio.gather(*(sig.read() for sig in signals))
-        readings = {sig: reading[sig.name] for (sig, reading) in zip(signals, readings)}
+        raw_readings = await asyncio.gather(*(sig.read() for sig in signals))
+        readings = {
+            sig: reading[sig.name] for (sig, reading) in zip(signals, raw_readings)
+        }
         # Return a proper reading for this derived value
         return self.combine_readings(readings)
 
 
 def derived_signal_rw(
-    datatype: Optional[Type[T]],
+    datatype: Type[T] | None,
     *,
-    initial_value: Optional[T] = None,
+    initial_value: T | None = None,
     name: str = "",
     derived_from: Mapping,
-    forward: Callable = None,
-    inverse: Callable = None,
+    forward: Callable | None = None,
+    inverse: Callable | None = None,
     units: str | None = None,
     precision: int | None = None,
 ) -> SignalRW[T]:
@@ -311,12 +317,12 @@ def derived_signal_rw(
 
 
 def derived_signal_r(
-    datatype: Optional[Type[T]],
+    datatype: Type[T] | None,
     *,
-    initial_value: Optional[T] = None,
+    initial_value: T | None = None,
     name: str = "",
     derived_from: Mapping,
-    inverse: Callable = None,
+    inverse: Callable | None = None,
     units: str | None = None,
     precision: int | None = None,
 ) -> SignalRW[T]:
@@ -383,7 +389,7 @@ def derived_signal_x(
     *,
     name: str = "",
     derived_from: Mapping,
-    forward: Callable = None,
+    forward: Callable | None = None,
 ) -> SignalX:
     """Creates a signal linked to one or more other signals.
 

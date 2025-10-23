@@ -2,8 +2,9 @@
 
 import asyncio
 import logging
-from collections.abc import Iterable
+from collections.abc import AsyncGenerator, Iterable, Mapping
 from itertools import repeat
+from typing import Any
 
 import numpy as np
 from bluesky.protocols import Triggerable
@@ -52,6 +53,7 @@ class IonChamber(StandardReadable, Triggerable):
     _ophyd_labels_ = {"ion_chambers", "detectors"}
     _trigger_statuses: dict[str, AsyncStatus] = {}
     _clock_register_width = 32  # bits in the register
+    _fly_readings: list[dict]
 
     detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
 
@@ -407,7 +409,7 @@ class IonChamber(StandardReadable, Triggerable):
             self.mcs.erase_all.trigger(),
         )
         # Start acquiring data
-        self._fly_readings: list[dict] = []
+        self._fly_readings = []
         self._is_flying = False  # Gets set during kickoff
 
     @AsyncStatus.wrap
@@ -433,7 +435,7 @@ class IonChamber(StandardReadable, Triggerable):
         await self.mcs.stop_all.trigger()
         self._is_flying = False
 
-    async def collect_pages(self):
+    async def collect_pages(self) -> AsyncGenerator[Mapping[str, Any], Any]:
         if len(self._fly_readings) == 0:
             # No readings have been collected, so just skip this step
             return
@@ -477,7 +479,7 @@ class IonChamber(StandardReadable, Triggerable):
             "data": data,
             "timestamps": {key: timestamps for key in data.keys()},
         }
-        self._fly_readings: list[dict] = []
+        self._fly_readings = []
         yield results
 
     async def describe_collect(self) -> dict[str, dict]:

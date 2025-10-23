@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from pathlib import Path
 
 from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider
@@ -5,7 +6,7 @@ from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider
 from ..._iconfig import load_config
 
 
-def default_path_provider(path: Path = None, config=None):
+def default_path_provider(path: Path | None = None, config: Mapping | None = None):
     if config is None:
         config = load_config()
     if path is None:

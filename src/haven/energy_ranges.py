@@ -23,7 +23,7 @@ ALPHA = hbar**2 * c**2 / 2 / m_e
 ALPHA = ALPHA.to("electron_volt * angstrom * angstrom").magnitude
 
 
-def energy_to_wavenumber(energy, relative_to: float = 0):
+def energy_to_wavenumber(energy: float, relative_to: float = 0.0):
     """Convert a wavenumber (eV) to energy (Å⁻).
 
     *relative_to* can be used to calculate step sizes, e.g
@@ -36,7 +36,7 @@ def energy_to_wavenumber(energy, relative_to: float = 0):
     return k - kref
 
 
-def wavenumber_to_energy(wavenumber, relative_to: float = 0.0):
+def wavenumber_to_energy(wavenumber: float, relative_to: float = 0.0):
     """Convert a wavenumber (Å⁻) to energy (eV).
 
     *relative_to* can be used to calculate step sizes, e.g

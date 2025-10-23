@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping, Sequence
 
 from ophyd import Component as Cpt
 from ophyd import Device
@@ -68,7 +69,12 @@ class Sample(Device):
         super().__init__(*args, labels=labels, **kwargs)
 
 
-def transfer_samples(num_samples: int):
+DEFAULT_SAMPLES = [8, 9, 10, 14, 15, 16, 20, 21, 22]
+
+
+def transfer_samples(
+    samples: Sequence[int] = DEFAULT_SAMPLES,
+) -> Mapping[str, tuple[type, str, Mapping]]:
     """Create a dictionary with robot sample device definitions.
 
     For use with an ophyd DynamicDeviceComponent.
@@ -79,11 +85,8 @@ def transfer_samples(num_samples: int):
       How many samples to create.
 
     """
-    samples = {}
     # Now the sample holder bases are only located at sites [8,9,10,14,15,16,20,21,22] on the board.
-    for n in [8, 9, 10, 14, 15, 16, 20, 21, 22]:  # range(num_samples):
-        samples[f"sample{n}"] = (Sample, f":sample{n}", {})
-    return samples
+    return {f"sample{n}": (Sample, f":sample{n}", {}) for n in samples}
 
 
 class Robot(Device):
@@ -151,7 +154,7 @@ class Robot(Device):
     home = Cpt(EpicsSignal, ":home", kind="config")
     cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
 
-    samples = DCpt(transfer_samples(24))
+    samples = DCpt(transfer_samples())
 
 
 # -----------------------------------------------------------------------------

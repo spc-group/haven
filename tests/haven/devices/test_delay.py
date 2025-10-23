@@ -155,18 +155,6 @@ async def test_prepare_delay_edge_trigger(dg645):
 
 async def test_prepare_output_edge(dg645):
     tinfo = TriggerInfo(
-        trigger=DetectorTrigger.EDGE_TRIGGER,
-    )
-    output = dg645.output_AB
-    await output.prepare(tinfo)
-    await assert_value(dg645.channel_A.reference, "T0")
-    await assert_value(dg645.channel_A.delay, 0)
-    await assert_value(dg645.channel_B.reference, "T0")
-    await assert_value(dg645.channel_B.delay, 1e-8)
-
-
-async def test_prepare_output_edge(dg645):
-    tinfo = TriggerInfo(
         trigger=DetectorTrigger.CONSTANT_GATE, livetime=1.3, deadtime=0.1
     )
     output = dg645.output_AB

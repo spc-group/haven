@@ -2,6 +2,7 @@ import asyncio
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Sequence
 from itertools import repeat
+from typing import SupportsIndex
 
 import numpy as np
 from ophyd_async.core import (
@@ -209,10 +210,8 @@ class Xspress3Detector(AreaDetector):
         plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
     ):
         # Per-element MCA devices
-        try:
+        if isinstance(elements, SupportsIndex):
             elements = range(elements)
-        except TypeError:
-            pass
         self.elements = DeviceVector(
             {idx: XspressElement(prefix, element_index=idx) for idx in elements}
         )

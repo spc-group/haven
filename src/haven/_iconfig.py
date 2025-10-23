@@ -30,7 +30,7 @@ from haven.exceptions import ExpiredFeatureFlag, UndeclaredFeatureFlag
 log = logging.getLogger(__name__)
 
 
-_local_overrides = {}
+_local_overrides: Mapping[str, Any] = {}
 
 
 @dataclass(frozen=True)
@@ -76,12 +76,12 @@ class Configuration(Mapping):
     """
 
     _configs: Sequence[Mapping | Path | str]
-    _feature_flags: Mapping[str:Any]
+    _feature_flags: Mapping[str, Any]
 
     def __init__(
         self,
-        *configs: Sequence[Mapping | Path | str],
-        feature_flags: Mapping[str:Any] = FEATURE_FLAGS,
+        *configs: Mapping | Path | str,
+        feature_flags: Mapping[str, Any] = FEATURE_FLAGS,
     ):
         self._configs = configs
         self._feature_flags = feature_flags
@@ -192,9 +192,9 @@ def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
     fp = Path(file_path)
     if fp.exists():
-        with open(fp, mode="rb") as fp:
-            log.debug(f"Loading config file: {fp}")
-            config = tomli.load(fp)
+        with open(fp, mode="rb") as fd:
+            log.debug(f"Loading config file: {fd}")
+            config = tomli.load(fd)
             return config
     else:
         log.info(f"Could not find config file, skipping: {fp}")
@@ -252,7 +252,7 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(*configs: Sequence[Path | str | Mapping]) -> Configuration:
+def load_config(*configs: Path | str | Mapping) -> Configuration:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -269,7 +269,7 @@ def load_config(*configs: Sequence[Path | str | Mapping]) -> Configuration:
     return Configuration(*configs)
 
 
-def print_config_value(args: Sequence[str] = None):
+def print_config_value(args: Sequence[str] | None = None):
     """Print a config value from TOML files.
 
     Parameters
@@ -285,19 +285,16 @@ def print_config_value(args: Sequence[str] = None):
         description="Retrieve a value from Haven's config files.",
     )
     parser.add_argument("key", help="The dot-separated key to look up.")
-    args = parser.parse_args(args=args)
+    args_ = parser.parse_args(args=args)
     # Get the keys from the config file
     value = load_config()
-    for part in args.key.split("."):
+    for part in args_.key.split("."):
         value = value[part]
-    try:
-        value = value.strip()
-    except AttributeError:
-        # It's not a simple string, so pretty print it
-        pprint(value)
-    else:
+    if hasattr(value, "strip"):
         # Simple string, so just print it
         print(value)
+    else:
+        pprint(value.strip())
 
 
 # -----------------------------------------------------------------------------

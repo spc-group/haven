@@ -8,7 +8,7 @@ hardware, e.g. ``dxp.py`` for XIA's XMAP, Mercury, Saturn, and
 
 import logging
 from collections import OrderedDict
-from typing import Optional, Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 
@@ -119,7 +119,7 @@ class UseROISignal(DerivedSignal):
 
 class ROIMixin(Device):
     _original_name = None
-    _original_kinds = {}
+    _original_kinds: Mapping[str, str] = {}
     _dynamic_hint_fields = ["count"]
 
     def stage(self):
@@ -189,8 +189,8 @@ class XRFMixin(Device):
 
     def enable_rois(
         self,
-        rois: Optional[Sequence[int]] = None,
-        elements: Optional[Sequence[int]] = None,
+        rois: Sequence[int] | None = None,
+        elements: Sequence[int] | None = None,
     ) -> list:
         """Include some, or all, ROIs in the list of detectors to
         read.
@@ -225,8 +225,8 @@ class XRFMixin(Device):
 
     def disable_rois(
         self,
-        rois: Optional[Sequence[int]] = None,
-        elements: Optional[Sequence[int]] = None,
+        rois: Sequence[int] | None = None,
+        elements: Sequence[int] | None = None,
     ) -> list:
         """Remove some, or all, ROIs from the list of detectors to
         read.
@@ -278,7 +278,7 @@ class XRFMixin(Device):
     def num_elements(self):
         return len(self.mca_records())
 
-    def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
+    def mca_records(self, mca_indices: Sequence[int] | None = None):
         mcas = [
             getattr(self.mcas, m)
             for m in self.mcas.component_names

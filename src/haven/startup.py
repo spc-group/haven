@@ -110,7 +110,7 @@ for cpt in devices.root_devices:
 # ===============
 #
 # Add plan decorators that require specific devices to be loaded
-plan_decorators: Callable = []
+plan_decorators: list[Callable] = []
 
 # Suspenders for if the storage ring goes down
 if config.feature_flag("install_storage_ring_suspenders"):
@@ -125,21 +125,21 @@ if config.feature_flag("install_storage_ring_suspenders"):
             haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
         )
 
-plan_decorators = haven.plans.chain(*plan_decorators)
+plan_decorator = haven.plans.chain(*plan_decorators)
 
-auto_gain = plan_decorators(auto_gain)
-count = plan_decorators(count)
-energy_scan = plan_decorators(energy_scan)
-fly_scan = plan_decorators(fly_scan)
-grid_scan = plan_decorators(grid_scan)
-grid_fly_scan = plan_decorators(grid_fly_scan)
-list_scan = plan_decorators(list_scan)
-rel_grid_scan = plan_decorators(rel_grid_scan)
-rel_list_scan = plan_decorators(rel_list_scan)
-rel_scan = plan_decorators(rel_scan)
-scan = plan_decorators(scan)
-scan_nd = plan_decorators(scan_nd)
-xafs_scan = plan_decorators(xafs_scan)
+auto_gain = plan_decorator(auto_gain)
+count = plan_decorator(count)
+energy_scan = plan_decorator(energy_scan)
+fly_scan = plan_decorator(fly_scan)
+grid_scan = plan_decorator(grid_scan)
+grid_fly_scan = plan_decorator(grid_fly_scan)
+list_scan = plan_decorator(list_scan)
+rel_grid_scan = plan_decorator(rel_grid_scan)
+rel_list_scan = plan_decorator(rel_list_scan)
+rel_scan = plan_decorator(rel_scan)
+scan = plan_decorator(scan)
+scan_nd = plan_decorator(scan_nd)
+xafs_scan = plan_decorator(xafs_scan)
 
 
 # Apply a wrapper for keeping the beam at a fixed offset

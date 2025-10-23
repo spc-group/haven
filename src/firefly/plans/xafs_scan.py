@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 from functools import partial
@@ -174,6 +175,7 @@ class XafsRegionsManager(RegionsManager):
             widgets.step_spin_box,
         ]
         start, stop, step = [widget.value() for widget in spin_boxes]
+        convert: Callable[[float, float], float]
         if is_k_checked:
             convert = energy_to_wavenumber
         else:

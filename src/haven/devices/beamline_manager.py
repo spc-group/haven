@@ -1,4 +1,5 @@
-from typing import Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from apsbss.apsbss_ophyd import EpicsBssDevice, EpicsEsafDevice, EpicsProposalDevice
 from ophyd import Component as Cpt
@@ -67,10 +68,12 @@ class BeamlineManager(Device):
         cls: type,
         prefix: str,
         name: str,
-        iocs: Mapping = {},
+        iocs: Mapping[str, Any] = {},
         **kwargs,
     ):
-        defn = {key: (IOCManager, val, {}) for key, val in iocs.items()}
+        defn: Mapping[str, tuple] = {
+            key: (IOCManager, val, {}) for key, val in iocs.items()
+        }
         comps = {
             "iocs": DCpt(defn),
         }

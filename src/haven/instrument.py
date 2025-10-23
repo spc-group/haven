@@ -2,7 +2,7 @@
 
 import logging
 import os
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from typing import Generator
 
 from guarneri import Instrument
@@ -42,7 +42,7 @@ class make_devices[T]:
 
     """
 
-    def __init__(self, DeviceClass: Callable[[str, str], T]):
+    def __init__(self, DeviceClass: T):
         self._Klass = DeviceClass
 
     def __call__(self, **defns: Mapping[str, str]) -> Generator[T, None, None]:
@@ -53,7 +53,7 @@ class make_devices[T]:
 class HavenInstrument(Instrument):
     def load(
         self,
-        config: Mapping = None,
+        config: Mapping | None = None,
         return_devices: bool = False,
         reset_devices: bool = True,
     ):

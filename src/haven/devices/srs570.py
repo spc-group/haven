@@ -131,7 +131,7 @@ def calculate_settle_time(gain_value: int, gain_unit: int, gain_mode: str):
     except (TypeError, IndexError):
         pass
     # Get calibrated settle time, or None to use the Ophyd default
-    return settling_times.get((gain_value, gain_unit, gain_mode))
+    return settling_times.get((str(gain_value), str(gain_unit), gain_mode))
 
 
 class GainSignal(SignalRW):

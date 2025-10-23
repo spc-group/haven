@@ -193,7 +193,9 @@ class FrequencyCounter(StandardReadable, EpicsDevice):
 class Clock(StandardReadable, EpicsDevice):
     signal: A[SignalRW[str], PvSuffix("_Signal"), Format.CONFIG_SIGNAL]
 
-    def __init__(self, prefix: str, name: str = "", frequency: int | None = None):
+    def __init__(
+        self, prefix: str, name: str = "", frequency: int | float | None = None
+    ):
         self.frequency = frequency
         super().__init__(prefix=prefix, name=name)
 

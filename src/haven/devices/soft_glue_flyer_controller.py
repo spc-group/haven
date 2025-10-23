@@ -5,6 +5,7 @@ These devices will be prepared from a bluesky fly scan plan.
 """
 
 import asyncio
+from collections.abc import Awaitable, Sequence
 
 from bluesky.protocols import Preparable
 from ophyd_async.core import (
@@ -97,7 +98,7 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
-        aws = (
+        aws: Sequence[Awaitable] = (
             # Configure the specific output channels
             self.trigger_output.prepare(
                 TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER)
