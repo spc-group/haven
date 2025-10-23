@@ -1,5 +1,4 @@
 import importlib
-import os
 import time
 from collections.abc import Mapping
 from pathlib import Path
@@ -24,22 +23,16 @@ def test_loading_a_file():
     assert config["beamline"]["pv_prefix"] == "spam"
 
 
-def test_config_files_from_env():
+def test_config_files_from_env(monkeypatch):
     # Set the environmental variable with the path to a test TOML file
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-    old_env = os.environ["HAVEN_CONFIG_FILES"]
-    os.environ["HAVEN_CONFIG_FILES"] = str(test_file)
+    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(test_file))
     importlib.reload(_iconfig)
-    try:
-        # Load the configuration
-        importlib.reload(_iconfig)
-        config = _iconfig.load_config()
-        # Check that the test file was loaded
-        assert config["beamline"]["pv_prefix"] == "spam"
-    finally:
-        # Reset the old configuration to avoid breaking future tests
-        os.environ["HAVEN_CONFIG_FILES"] = old_env
-        importlib.reload(_iconfig)
+    # Load the configuration
+    importlib.reload(_iconfig)
+    config = _iconfig.load_config()
+    # Check that the test file was loaded
+    assert config["beamline"]["pv_prefix"] == "spam"
 
 
 def test_merging_dicts():

@@ -1,6 +1,20 @@
 from unittest.mock import MagicMock
 
-from haven import TiledWriter
+from haven import TiledWriter, tiled_writer
+
+
+def test_load_tiled_writer(mocker):
+    from_profile = mocker.MagicMock()
+    mocker.patch("haven._tiled_writer.from_profile", new=from_profile)
+    config = {
+        "writer_profile": "spam",
+        "writer_batch_size": 50,
+        "writer_backup_directory": "/tmp/",
+    }
+    writer = tiled_writer(config)
+    from_profile.assert_called_once_with("spam", structure_clients="numpy")
+    assert writer._batch_size == 50
+    assert writer.backup_directory == "/tmp/"
 
 
 def test_xas_spec():

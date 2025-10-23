@@ -1,20 +1,51 @@
 import copy
 import logging
 import re
-from typing import Sequence
+from typing import NotRequired, Sequence, TypedDict
 
+import httpx
+import stamina
 from bluesky.callbacks.tiled_writer import TiledWriter as BlueskyTiledWriter
 from bluesky.callbacks.tiled_writer import _RunWriter as BlueskyRunWriter
 from bluesky.utils import truncate_json_overflow
 from event_model.documents import RunStart
+from tiled.client import from_profile
 from tiled.structures.core import Spec
+
+from haven import exceptions
 
 log = logging.getLogger()
 
 xas_edge_regex = re.compile("^[A-Za-z]+[-_ ][K-Zk-z0-9]+$")
 
 
-__all__ = ["TiledWriter"]
+__all__ = ["tiled_writer", "TiledWriter"]
+
+
+class TiledConfig(TypedDict):
+    writer_profile: str
+    writer_backup_directory: NotRequired[str]
+    writer_batch_size: NotRequired[int]
+
+
+@stamina.retry(on=httpx.HTTPError, attempts=3)
+def tiled_writer(config: TiledConfig):
+    """Load a tiled writer instance as specified in *config*.
+
+    Looks for keys:
+    -"""
+    profile = config["writer_profile"]
+    try:
+        client = from_profile(config["writer_profile"], structure_clients="numpy")
+    except httpx.ConnectError as exc:
+        raise exceptions.TiledNotAvailable(profile) from exc
+    client.include_data_sources()
+    writer = TiledWriter(
+        client,
+        backup_directory=config.get("writer_backup_directory"),
+        batch_size=config.get("writer_batch_size", 100),
+    )
+    return writer
 
 
 def md_to_specs(start_doc: dict) -> Sequence[Spec]:

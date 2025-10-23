@@ -54,18 +54,10 @@ log = logging.getLogger(__name__)
 config = haven.load_config()
 
 
-# Load the Tiled catalog for reading data back
-# catalog = haven.tiled_client()
-if "tiled" in config:
-    connect_tiled = True
-else:
-    msg = "Section '[ tiled ]' not found in configuration."
-    log.info(msg)
-    connect_tiled = False
-
 # Create a run engine
+writer = haven.tiled_writer(config["tiled"]) if "tiled" in config else None
 RE = haven.run_engine(
-    connect_tiled=connect_tiled,
+    tiled_writer=writer,
     call_returns_result=not is_re_worker_active(),
 )
 try:

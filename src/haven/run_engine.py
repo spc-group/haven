@@ -1,18 +1,19 @@
 import logging
 
-import httpx
 import IPython
 from apsbits.core.run_engine_init import init_RE
 from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
+from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import ProgressBarManager, register_transform
-from tiled.client import from_profile
 
-from haven import exceptions, load_config
-from haven.tiled_writer import TiledWriter
+from haven import load_config
 
 log = logging.getLogger(__name__)
+
+
+__all__ = ["run_engine"]
 
 
 async def _calibrate(msg: Msg):
@@ -30,7 +31,7 @@ async def _calibrate(msg: Msg):
 
 def run_engine(
     *,
-    connect_tiled: bool = False,
+    tiled_writer: TiledWriter | None = None,
     **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
@@ -52,21 +53,7 @@ def run_engine(
     if (ip := IPython.get_ipython()) is not None:
         register_transform("RE", prefix="<", ip=ip)
     # Install database connections
-    if connect_tiled:
-        tiled_config = config["tiled"]
-        profile = tiled_config["writer_profile"]
-        try:
-            client = from_profile(
-                tiled_config["writer_profile"], structure_clients="numpy"
-            )
-        except httpx.ConnectError as exc:
-            raise exceptions.TiledNotAvailable(profile) from exc
-        client.include_data_sources()
-        tiled_writer = TiledWriter(
-            client,
-            backup_directory=tiled_config.get("writer_backup_directory"),
-            batch_size=tiled_config.get("writer_batch_size", 100),
-        )
+    if tiled_writer is not None:
         RE.subscribe(tiled_writer)
     else:
         log.info("Tiled Writer not installed in run engine.")

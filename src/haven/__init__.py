@@ -29,6 +29,7 @@ del Path
 
 from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
+from ._tiled_writer import TiledWriter, tiled_writer  # noqa: F401
 
 #  Top-level imports
 from .bss import BssApi  # noqa: F401
@@ -50,7 +51,6 @@ from .preprocessors import (  # noqa: F401
     open_shutters_wrapper,
 )
 from .run_engine import run_engine  # noqa: F401
-from .tiled_writer import TiledWriter  # noqa: F401
 from .utils import sanitize_name  # noqa: F401
 
 # -----------------------------------------------------------------------------
