@@ -4,6 +4,7 @@ from pathlib import Path
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
+import stamina
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
@@ -31,6 +32,12 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def deactivate_retries():
+    "Deactivate HTTP retries."
+    stamina.set_active(False)
 
 
 @pytest.fixture()

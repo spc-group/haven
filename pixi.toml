@@ -81,7 +81,7 @@ build = "*"
 
 [feature.dev.tasks]
 test-firefly = "pytest tests/firefly"
-test-integration = "pytest tests/integration --runslow"
+test-integration = "pytest tests/integration --runslow -Werror"
 check-types = "mypy"
 lint = "ruff check"
 make-docs = "make html --directory=docs/"
@@ -96,7 +96,7 @@ cmd = "pytest tests/haven -Werror {{ runslow }}"
 args = [
      { arg = "check_flag", default = "" },
 ]
-cmd = "isort src tests/ {{ check_flag }}"
+cmd = "isort src/ tests/ {{ check_flag }}"
 
 [feature.dev.tasks.format]
 args = [
@@ -161,7 +161,8 @@ bluesky-tiled-plugins = "==2.0.0b68"
 tiled = { version = "==0.1.6", extras = ["all"] }
 
 [feature.tiled.tasks]
-tiled = "tiled serve config"
+tiled-server = "tiled serve config"
+# tiled-server = "env"
 
 # Configuration for quality assurance testing before release
 [feature.qa.activation.env]
