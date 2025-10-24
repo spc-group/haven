@@ -61,7 +61,10 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
-    'src/haven/', 'tests/haven',
+    'src/haven/',
+    'tests/haven',
+    'tests/integration/',
+    'tests/end_to_end/',
     'src/firefly/bss.py', 'tests/firefly/test_bss_display.py',
     'src/firefly/energy.py', 'tests/firefly/test_energy_display.py',
     'src/firefly/devices/axilon_monochromator.py', 'tests/firefly/devices/test_monochromator.py',
@@ -77,7 +80,6 @@ files = [
     'src/firefly/plans/relative_checkbox.py', 'tests/firefly/test_relative_checkbox.py',
     'src/firefly/plans/util.py',
     'src/firefly/plans/xafs_scan.py', 'tests/firefly/plans/test_xafs_scan.py',
-    'tests/integration/',
 ]
 follow_imports = "skip"
 follow_untyped_imports = true

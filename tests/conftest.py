@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 
 # from pydm.data_plugins import plugin_modules, add_plugin
@@ -26,12 +25,15 @@ haven_dir = top_dir / "src" / "haven"
 
 
 # Specify the configuration files to use for testing
-os.environ["HAVEN_CONFIG_FILES"] = ",".join(
-    [
-        f"{haven_dir/'iconfig_testing.toml'}",
-        f"{haven_dir/'iconfig_default.toml'}",
-    ]
-)
+@pytest.fixture(autouse=True)
+def default_iconfig(monkeypatch):
+    files = ",".join(
+        [
+            f"{haven_dir/'iconfig_testing.toml'}",
+            f"{haven_dir/'iconfig_default.toml'}",
+        ]
+    )
+    monkeypatch.setenv("HAVEN_CONFIG_FILES", files)
 
 
 @pytest.fixture(autouse=True, scope="session")

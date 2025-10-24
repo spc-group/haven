@@ -10,7 +10,7 @@ python = "3.12.*"
 
 [pypi-dependencies]
 haven-spc = { path = ".", editable = true }
-httpx = "*"
+httpx = { version="*", extras = ['socks'] }
 lmfit = "*"
 mergedeep = "*"
 pint = "*"
@@ -24,10 +24,10 @@ xrayutilities = "*"
 
 [environments]
 default = { solve-group = "default" }
-dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled", "qserver"] }
+dev = { features = ["bluesky", "ipython", "dev", "pytest", "gui", "tiled", "qserver"] }
 qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc = { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idd = { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 # designer = { features = ["designer"] }
 
 [tasks]
@@ -58,13 +58,15 @@ dependencies = { python = "3.12.*" }
 pypi-dependencies = { ipython = "*" }
 tasks = {haven = "ipython -i ./src/haven/startup.py"}
 
-[feature.dev.pypi-dependencies]
+[feature.pytest.pypi-dependencies]
 "pytest" = "*"
 "pytest-httpx" = "*"
 "pytest-mock" = "*"
 "pytest-qt" = "*"
 "pytest-xvfb" = "*"
 "pytest-asyncio" = "*"
+
+[feature.dev.pypi-dependencies]
 "black" = "*"
 "twine" = "*"
 "ruff" = "*"
@@ -175,6 +177,9 @@ QSERVER_ZMQ_INFO_ADDRESS = "tcp://localhost:60627"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60627"
 
 # Per beamline configuration
+[feature.25idc.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+
 [feature.25idc.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
 HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
@@ -183,6 +188,9 @@ QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
 QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60625"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"
+
+[feature.25idd.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 
 [feature.25idd.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
