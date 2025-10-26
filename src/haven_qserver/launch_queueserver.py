@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,7 @@ def launch_queueserver():
     redis_prefix = qs_config.get("redis_prefix", "qs_default")
     # Launch the queueserver
     args = [
-        "start-re-manager",
+        shutil.which("start-re-manager"),
         "--config",
         str(this_dir / "qs_config.yml"),
         "--existing-plans-devices",

@@ -72,7 +72,7 @@ def wait_for_server(uri: str, timeout=10):
         )
 
 
-def start_server(storage_path: Path) -> TiledServerInfo:
+def start_tiled_server(storage_path: Path) -> TiledServerInfo:
     """Start a simple empty tiled server for testing.
 
     catalog_path
@@ -105,7 +105,7 @@ def start_server(storage_path: Path) -> TiledServerInfo:
     return server_info
 
 
-def stop_server(server_info: TiledServerInfo):
+def stop_tiled_server(server_info: TiledServerInfo):
     """End a Tiled server started with *start_server()*."""
     tiled_process = server_info.Popen
     if tiled_process is None:

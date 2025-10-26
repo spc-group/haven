@@ -5,72 +5,8 @@ import pytest
 from bluesky import RunEngine
 from bluesky.callbacks.tiled_writer import TiledWriter
 
-ICONFIG_DIR = Path(__file__).parent / "iconfig"
 REPO_DIR = Path(__file__).parent.parent.parent
 STARTUP_FILE = REPO_DIR / "src" / "haven" / "startup.py"
-
-
-BASE_CONFIG = """
-area_detector_root_path = "/tmp"
-
-# Metadata from the beamline scheduling system (BSS)
-####################################################
-
-[bss]
-uri = "https://localhost:12345/dm"
-beamline = "255-ID-Z"
-station_name = "255IDZ"
-username = "s255idzuser"
-password = "abc123"
-
-
-##############
-# Acquisition
-##############
-
-# This section describes how to connect to the queueserver and how
-# queueserver data reaches the database. It does not generate any
-# devices, but is intended to be read by the queueserver and Firefly
-# GUI application to determine how to interact with the queue.
-
-[ RUN_ENGINE.DEFAULT_METADATA ]
-# Additional metadata to inject in every scan
-facility = "Advanced Photon Source"
-beamline = "SPC Beamline (sector unknown)"
-xray_source = "2.8 mm planar undulator"
-"""
-
-
-TILED_CONFIG = """
-[tiled]
-default_catalog = "tiled_read_only"
-cache_filepath = "/tmp/tiled/http_response_cache.db"
-writer_profile = "tiled_writable"
-# writer_backup_directory = "/tmp/tiled_writer_backup"
-# writer_batch_size = 5
-"""
-
-
-@pytest.fixture()
-def iconfig_file(monkeypatch, tmp_path):
-    cfg_file = tmp_path / "iconfig.toml"
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(cfg_file))
-    return cfg_file
-
-
-@pytest.fixture()
-def iconfig_simple(iconfig_file):
-    with open(iconfig_file, mode="a") as fp:
-        fp.write(BASE_CONFIG)
-    return iconfig_file
-
-
-@pytest.fixture()
-def iconfig_tiled(iconfig_file):
-    with open(iconfig_file, mode="a") as fp:
-        fp.write(BASE_CONFIG)
-        fp.write(TILED_CONFIG)
-    return iconfig_file
 
 
 @pytest.mark.slow

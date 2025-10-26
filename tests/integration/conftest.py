@@ -1,6 +1,71 @@
 import pytest
+import pytest_asyncio
 
-from .tiled_server import start_server, stop_server
+from .qserver import start_qserver, stop_qserver
+from .tiled_server import start_tiled_server, stop_tiled_server
+
+BASE_CONFIG = """
+area_detector_root_path = "/tmp"
+
+# Metadata from the beamline scheduling system (BSS)
+####################################################
+
+[bss]
+uri = "https://localhost:12345/dm"
+beamline = "255-ID-Z"
+station_name = "255IDZ"
+username = "s255idzuser"
+password = "abc123"
+
+
+##############
+# Acquisition
+##############
+
+# This section describes how to connect to the queueserver and how
+# queueserver data reaches the database. It does not generate any
+# devices, but is intended to be read by the queueserver and Firefly
+# GUI application to determine how to interact with the queue.
+
+[ RUN_ENGINE.DEFAULT_METADATA ]
+# Additional metadata to inject in every scan
+facility = "Advanced Photon Source"
+beamline = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
+"""
+
+
+TILED_CONFIG = """
+[tiled]
+default_catalog = "tiled_read_only"
+cache_filepath = "/tmp/tiled/http_response_cache.db"
+writer_profile = "tiled_writable"
+# writer_backup_directory = "/tmp/tiled_writer_backup"
+# writer_batch_size = 5
+"""
+
+
+@pytest.fixture()
+def iconfig_file(monkeypatch, tmp_path):
+    cfg_file = tmp_path / "iconfig.toml"
+    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(cfg_file))
+    return cfg_file
+
+
+@pytest.fixture()
+def iconfig_simple(iconfig_file):
+    with open(iconfig_file, mode="a") as fp:
+        fp.write(BASE_CONFIG)
+    return iconfig_file
+
+
+@pytest.fixture()
+def iconfig_tiled(iconfig_file):
+    with open(iconfig_file, mode="a") as fp:
+        fp.write(BASE_CONFIG)
+        fp.write(TILED_CONFIG)
+    return iconfig_file
+
 
 TILED_PROFILES = """
 tiled_read_only:
@@ -13,7 +78,7 @@ tiled_writable:
 @pytest.fixture()
 def tiled_server(tmp_path, mocker):
     # Start the tiled server
-    server_info = start_server(tmp_path)
+    server_info = start_tiled_server(tmp_path)
     # Set up the profiles corresponding to the server
     profile_dir = tmp_path / "tiled" / "profiles"
     profile_dir.mkdir(parents=True)
@@ -26,7 +91,19 @@ def tiled_server(tmp_path, mocker):
     try:
         yield server_info
     finally:
-        stop_server(server_info)
+        stop_tiled_server(server_info)
+
+
+@pytest_asyncio.fixture()
+async def qserver(tmp_path, monkeypatch, redisdb, iconfig_simple):
+    monkeypatch.setenv("BLUESKY_DIR", str(tmp_path))
+    # Start the tiled server
+    server_info = await start_qserver(bluesky_dir=tmp_path, redisdb=redisdb)
+    # Execute tests
+    try:
+        yield server_info
+    finally:
+        stop_qserver(server_info)
 
 
 # -----------------------------------------------------------------------------
