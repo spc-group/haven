@@ -243,7 +243,7 @@ class FireflyController(QtCore.QObject):
             "move_motor": WindowAction(
                 name="move_motor",
                 text="&Move motor",
-                display_file=plans_dir / "move_motor_window.py",
+                display_file=plans_dir / "move.py",
                 shortcut="Ctrl+Shift+M",
                 icon=qta.icon("mdi.rotate-right-variant"),
                 WindowClass=PlanMainWindow,

@@ -123,6 +123,29 @@ def test_window_actions(controller, qtbot, action_name, WindowClass):
     assert isinstance(window, WindowClass)
 
 
+plan_action_targets = [
+    "count",
+    "move_motor",
+    "line_scan",
+    "grid_scan",
+    "xafs_scan",
+]
+
+
+@pytest.mark.parametrize("action_name", plan_action_targets)
+def test_window_actions(controller, qtbot, action_name):
+    action = controller.actions.plans[action_name]
+    action.blockSignals(True)
+    assert action.window is None
+    try:
+        action.show_window()
+    finally:
+        action.blockSignals(False)
+    window = action.window
+    qtbot.addWidget(window)
+    assert isinstance(window, PlanMainWindow)
+
+
 @pytest.mark.asyncio
 async def test_load_instrument_registry(controller, qtbot, monkeypatch):
     """Check that the instrument registry gets created."""
