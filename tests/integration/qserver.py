@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import time
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -35,8 +36,12 @@ trees:
 """
 
 
+TICK = 0.2  # Seconds between check-ins with the server
+
+
 @dataclass()
 class QserverInfo:
+    bluesky_dir: Path
     host: str = "127.0.0.1"
     control_port: str = "8719"
     info_port: str = ""
@@ -51,108 +56,81 @@ class QserverInfo:
     def info_addr(self):
         return f"tcp://{self.host}:{self.info_port}"
 
+    def start(self) -> None:
+        """Start a simple bluesky queue server for testing."""
+        qserver_cmd = shutil.which("start-re-manager")
+        if qserver_cmd is None:
+            raise RuntimeError("Could not locate binary for `start-re-manager`.")
+        script_dir = Path(__file__).parent.parent.parent / "src" / "haven_qserver"
+        cmds: Sequence[str] = [
+            qserver_cmd,
+            "--config",
+            str(script_dir / "qs_config.yml"),
+            "--existing-plans-devices",
+            str(self.bluesky_dir / "queueserver_existing_plans_and_devices.yaml"),
+            "--user-group-permissions",
+            str(script_dir / "queueserver_user_group_permissions.yaml"),
+            "--redis-addr",
+            "localhost:6379",
+            "--redis-name-prefix",
+            "qserver_tests",
+        ]
+        self.Popen = subprocess.Popen(cmds)
 
-# def ensure_server_not_running(uri):
-#     # Make sure the server is not running already
-#     try:
-#         httpx.get(uri)
-#     except httpx.ConnectError:
-#         pass
-#     else:
-#         raise RuntimeError(f"Tiled server already running at {uri}.")
+    def connect(self, timeout=10) -> REManagerAPI:
+        if self.api is None:
+            self.api = REManagerAPI()
+        t0 = time.monotonic()
+        while (time.monotonic() - t0) < timeout:
+            try:
+                response = self.api.ping()
+            except RequestTimeoutError:
+                time.sleep(TICK)
+                continue
+            break
+        else:
+            raise RuntimeError(
+                f"queue server at {self.control_addr} ({self.info_addr}) did not start with {timeout} seconds."
+            )
+        return self.api
 
+    def open_environment(self, timeout: int | float = 10) -> None:
+        environment_is_open = None
+        api = self.connect()
+        result = api.environment_open()
+        assert result["success"]
+        # Poll the qserver until the environment is successfully opened
+        t0 = time.monotonic()
+        while (time.monotonic() - t0) < timeout:
+            if api.status()["worker_environment_exists"]:
+                break
+            time.sleep(TICK)
+        else:
+            raise RuntimeError(
+                f"Qserver environment at {self.control_addr} ({self.info_addr}) did not open with {timeout} seconds."
+            )
 
-def connect_to_server(info: QserverInfo, timeout=10):
-    api = REManagerAPI()
-    t0 = time.monotonic()
-    while (time.monotonic() - t0) < timeout:
+    def stop(self) -> None:
+        """End a Tiled server started with *start_server()*."""
+        qserver_process = self.Popen
+        if qserver_process is None:
+            warnings.warn("Cannot stop server that was not started.")
+            return
+        qserver_process.terminate()
         try:
-            response = api.ping()
-        except RequestTimeoutError:
-            continue
-        break
-    else:
-        raise RuntimeError(
-            f"Tiled server at {info.control_addr} ({info.info_addr}) did not start with {timeout} seconds."
-        )
-    return api
+            qserver_process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            # Something went wrong, kill it the hard way
+            qserver_process.kill()
 
-
-def open_environment(qserver_info: QserverInfo):
-    environment_is_open = None
-    if qserver_info.api is None:
-        raise TypeError("Cannot open environment on qserver that was not started.")
-    while not environment_is_open:
-        if environment_is_open is None:
-            result = qserver_info.api.environment_open()
-            assert result["success"]
-        time.sleep(0.5)
-        environment_is_open = qserver_info.api.status()["worker_environment_exists"]
-
-
-async def start_qserver(bluesky_dir: Path, redisdb) -> QserverInfo:
-    """Start a simple bluesky queue server for testing."""
-    server_info = QserverInfo()
-    # Write the configuration file
-    # config_str = CONFIG.format(
-    #     catalog_path=catalog_path,
-    #     storage_path=storage_path,
-    #     port=server_info.port,
-    #     host=server_info.host,
-    #     api_key=server_info.api_key,
-    # )
-    # config_file = storage_path / "server_config.yml"
-    # with open(config_file, mode="w") as fd:
-    #     fd.write(config_str)
-    # ensure_server_not_running(server_info.uri)
-    # Launch the Tiled server
-    # cmd = [sys.executable, "-m", "haven_qserver.launch_queueserver"]
-    # server_info.Popen = subprocess.Popen(
-    #     cmd, env={"BLUESKY_DIR": str(bluesky_dir)}
-    # )
-    qserver_cmd = shutil.which("start-re-manager")
-    if qserver_cmd is None:
-        raise RuntimeError("Could not locate binary for `start-re-manager`.")
-    script_dir = Path(__file__).parent.parent.parent / "src" / "haven_qserver"
-    cmds: Sequence[str] = [
-        qserver_cmd,
-        "--config",
-        str(script_dir / "qs_config.yml"),
-        "--existing-plans-devices",
-        str(bluesky_dir / "queueserver_existing_plans_and_devices.yaml"),
-        "--user-group-permissions",
-        str(script_dir / "queueserver_user_group_permissions.yaml"),
-        "--redis-addr",
-        "localhost:6379",
-        "--redis-name-prefix",
-        "qserver_tests",
-    ]
-    # server_info.Popen = asyncio.ensure_future(asyncio.to_thread(launch_queueserver))
-    server_info.Popen = subprocess.Popen(cmds)
-    # Wait for the server to spin up
-    server_info.api = connect_to_server(server_info, timeout=30)
-    open_environment(server_info)
-    return server_info
-
-
-def stop_qserver(server_info: QserverInfo):
-    """End a Tiled server started with *start_server()*."""
-    print("STOPPING")
-    # server_info.task.cancel()
-    # try:
-    #     await server_info.task
-    # except asyncio.CancelledError:
-    #     print("Cleaned up")
-    #     raise
-    qserver_process = server_info.Popen
-    if qserver_process is None:
-        raise TypeError("Cannot stop server that was not started.")
-    qserver_process.terminate()
-    try:
-        qserver_process.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        # Something went wrong, kill it the hard way
-        qserver_process.kill()
+    def run_queue(self):
+        result = self.api.queue_start()
+        assert result["success"]
+        is_idle = False
+        tick = 0.1
+        while not is_idle:
+            is_idle = self.api.status()["manager_state"] == "idle"
+            time.sleep(tick)
 
 
 # -----------------------------------------------------------------------------

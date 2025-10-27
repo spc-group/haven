@@ -45,6 +45,10 @@ xray_source = "2.8 mm planar undulator"
 # Device support
 #################
 
+# Device settings that apply to all devices
+[ devices]
+mock = true
+
 [ synchrotron ]
 name = "advanced_photon_source"
 

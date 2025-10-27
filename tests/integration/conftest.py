@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
 
-from .qserver import start_qserver, stop_qserver
+from .qserver import QserverInfo
 from .tiled_server import start_tiled_server, stop_tiled_server
 
 BASE_CONFIG = """
@@ -35,6 +35,12 @@ xray_source = "2.8 mm planar undulator"
 """
 
 
+DEVICES_CONFIG = """
+[[ "ophyd_async.sim.SimMotor" ]]
+name = "sim_async_motor"
+
+"""
+
 TILED_CONFIG = """
 [tiled]
 default_catalog = "tiled_read_only"
@@ -56,6 +62,7 @@ def iconfig_file(monkeypatch, tmp_path):
 def iconfig_simple(iconfig_file):
     with open(iconfig_file, mode="a") as fp:
         fp.write(BASE_CONFIG)
+        fp.write(DEVICES_CONFIG)
     return iconfig_file
 
 
@@ -87,23 +94,28 @@ def tiled_server(tmp_path, mocker):
         fp.write(
             TILED_PROFILES.format(uri=server_info.uri, api_key=server_info.api_key)
         )
-    # Execute tests
     try:
+        # Execute tests
         yield server_info
     finally:
+        # Make sure the server gets cleaned up when we're done
         stop_tiled_server(server_info)
 
 
 @pytest_asyncio.fixture()
 async def qserver(tmp_path, monkeypatch, redisdb, iconfig_simple):
     monkeypatch.setenv("BLUESKY_DIR", str(tmp_path))
-    # Start the tiled server
-    server_info = await start_qserver(bluesky_dir=tmp_path, redisdb=redisdb)
+
     # Execute tests
+    server_info = QserverInfo(bluesky_dir=tmp_path)
     try:
+        # Start the tiled server
+        server_info.start()
+        server_info.open_environment()
+        # server_info = await start_qserver(bluesky_dir=tmp_path, redisdb=redisdb)
         yield server_info
     finally:
-        stop_qserver(server_info)
+        server_info.stop()
 
 
 # -----------------------------------------------------------------------------

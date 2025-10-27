@@ -72,8 +72,9 @@ beamline_name = config.get("beamline", {}).get("name", "UNKNOWN BEAMLINE")
 rich.print(f"Initializing [bold cyan]{beamline_name}[/]…", flush=True)
 loader_exception = None
 haven.beamline.load()
+use_mocks = config.get("devices", {}).get("mock", False)
 try:
-    call_in_bluesky_event_loop(haven.beamline.connect())
+    call_in_bluesky_event_loop(haven.beamline.connect(mock=use_mocks))
 except NotConnected as exc:
     log.exception(exc)
     # Save the exception so we can alert the user later

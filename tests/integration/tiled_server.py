@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -109,7 +110,8 @@ def stop_tiled_server(server_info: TiledServerInfo):
     """End a Tiled server started with *start_server()*."""
     tiled_process = server_info.Popen
     if tiled_process is None:
-        raise TypeError("Cannot stop server that was not started.")
+        warnings.warn("Cannot stop server that was not started.")
+        return
     tiled_process.terminate()
     try:
         tiled_process.wait(timeout=3)
