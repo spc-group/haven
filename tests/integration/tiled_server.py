@@ -36,6 +36,7 @@ trees:
 
 @dataclass()
 class TiledServerInfo:
+    storage_path: Path
     host: str = "127.0.0.1"
     port: str = "8719"
     Popen: subprocess.Popen | None = None
@@ -45,6 +46,47 @@ class TiledServerInfo:
     @property
     def uri(self):
         return f"{self.scheme}{self.host}:{self.port}"
+
+    def start(self) -> None:
+        """Start a simple empty tiled server for testing.
+
+        catalog_path
+          Where to create the sqlite catalog.
+
+        """
+        catalog_path = self.storage_path / "catalog.db"
+        # Write the configuration file
+        config_str = CONFIG.format(
+            catalog_path=catalog_path,
+            storage_path=self.storage_path,
+            port=self.port,
+            host=self.host,
+            api_key=self.api_key,
+        )
+        config_file = self.storage_path / "server_config.yml"
+        with open(config_file, mode="w") as fd:
+            fd.write(config_str)
+        ensure_server_not_running(self.uri)
+        # Launch the Tiled server
+        tiled_exe = shutil.which("tiled")
+        assert tiled_exe is not None
+        tiled_cmd = [tiled_exe, "serve", "config"]
+        self.Popen = subprocess.Popen(tiled_cmd, env={"TILED_CONFIG": str(config_file)})
+        # Wait for the server to spin up
+        wait_for_server(self.uri, timeout=30)
+
+    def stop(self):
+        """End a Tiled server started with *start_server()*."""
+        tiled_process = self.Popen
+        if tiled_process is None:
+            warnings.warn("Cannot stop server that was not started.")
+            return
+        tiled_process.terminate()
+        try:
+            tiled_process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            # Something went wrong, kill it the hard way
+            tiled_process.kill()
 
 
 def ensure_server_not_running(uri):
@@ -71,53 +113,6 @@ def wait_for_server(uri: str, timeout=10):
         raise RuntimeError(
             f"Tiled server at {uri} did not start with {timeout} seconds."
         )
-
-
-def start_tiled_server(storage_path: Path) -> TiledServerInfo:
-    """Start a simple empty tiled server for testing.
-
-    catalog_path
-      Where to create the sqlite catalog.
-
-    """
-    catalog_path = storage_path / "catalog.db"
-    server_info = TiledServerInfo()
-    # Write the configuration file
-    config_str = CONFIG.format(
-        catalog_path=catalog_path,
-        storage_path=storage_path,
-        port=server_info.port,
-        host=server_info.host,
-        api_key=server_info.api_key,
-    )
-    config_file = storage_path / "server_config.yml"
-    with open(config_file, mode="w") as fd:
-        fd.write(config_str)
-    ensure_server_not_running(server_info.uri)
-    # Launch the Tiled server
-    tiled_exe = shutil.which("tiled")
-    assert tiled_exe is not None
-    tiled_cmd = [tiled_exe, "serve", "config"]
-    server_info.Popen = subprocess.Popen(
-        tiled_cmd, env={"TILED_CONFIG": str(config_file)}
-    )
-    # Wait for the server to spin up
-    wait_for_server(server_info.uri, timeout=30)
-    return server_info
-
-
-def stop_tiled_server(server_info: TiledServerInfo):
-    """End a Tiled server started with *start_server()*."""
-    tiled_process = server_info.Popen
-    if tiled_process is None:
-        warnings.warn("Cannot stop server that was not started.")
-        return
-    tiled_process.terminate()
-    try:
-        tiled_process.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        # Something went wrong, kill it the hard way
-        tiled_process.kill()
 
 
 # -----------------------------------------------------------------------------

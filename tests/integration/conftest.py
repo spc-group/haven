@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 
 from .qserver import QserverInfo
-from .tiled_server import start_tiled_server, stop_tiled_server
+from .tiled_server import TiledServerInfo
 
 BASE_CONFIG = """
 area_detector_root_path = "/tmp"
@@ -84,8 +84,8 @@ tiled_writable:
 
 @pytest.fixture()
 def tiled_server(tmp_path, mocker):
+    server_info = TiledServerInfo(tmp_path)
     # Start the tiled server
-    server_info = start_tiled_server(tmp_path)
     # Set up the profiles corresponding to the server
     profile_dir = tmp_path / "tiled" / "profiles"
     profile_dir.mkdir(parents=True)
@@ -95,11 +95,12 @@ def tiled_server(tmp_path, mocker):
             TILED_PROFILES.format(uri=server_info.uri, api_key=server_info.api_key)
         )
     try:
+        server_info.start()
         # Execute tests
         yield server_info
     finally:
         # Make sure the server gets cleaned up when we're done
-        stop_tiled_server(server_info)
+        server_info.stop()
 
 
 @pytest_asyncio.fixture()

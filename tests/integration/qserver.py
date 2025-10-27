@@ -77,7 +77,7 @@ class QserverInfo:
         ]
         self.Popen = subprocess.Popen(cmds)
 
-    def connect(self, timeout=10) -> REManagerAPI:
+    def connect(self, timeout: int | float = 30) -> REManagerAPI:
         if self.api is None:
             self.api = REManagerAPI()
         t0 = time.monotonic()
@@ -94,7 +94,7 @@ class QserverInfo:
             )
         return self.api
 
-    def open_environment(self, timeout: int | float = 10) -> None:
+    def open_environment(self, timeout: int | float = 20) -> None:
         environment_is_open = None
         api = self.connect()
         result = api.environment_open()
