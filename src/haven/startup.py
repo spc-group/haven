@@ -108,7 +108,7 @@ plan_decorators: list[Callable] = []
 # Suspenders for if the storage ring goes down
 if config.feature_flag("install_storage_ring_suspenders"):
     try:
-        aps = haven.beamline.devices["APS"]
+        aps = haven.beamline.devices["synchrotrons"]
     except ComponentNotFound:
         log.info("APS device not found, suspenders not installed.")
     else:

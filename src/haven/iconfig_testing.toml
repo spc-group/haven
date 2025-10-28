@@ -49,7 +49,7 @@ xray_source = "2.8 mm planar undulator"
 [ devices]
 mock = true
 
-[ synchrotron ]
+[[ synchrotron ]]
 name = "advanced_photon_source"
 
 # PSS Shutters

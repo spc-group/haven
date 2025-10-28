@@ -49,7 +49,6 @@ def run_engine(
     # Add custom verbs
     RE.register_command("calibrate", _calibrate)
     # Add a shortcut for using the run engine more efficiently
-    RE.waiting_hook = ProgressBarManager()
     if (ip := IPython.get_ipython()) is not None:
         register_transform("RE", prefix="<", ip=ip)
     # Install database connections
