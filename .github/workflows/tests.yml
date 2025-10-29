@@ -31,7 +31,7 @@ jobs:
     - run: |
         pixi run lint
         pixi run format --check
-        pixi run isort --check
+        pixi run sort-imports --check
   type-checking:
     defaults:
       run:

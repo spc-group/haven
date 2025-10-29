@@ -6,7 +6,7 @@ from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
 from bluesky.callbacks.tiled_writer import TiledWriter
-from bluesky.utils import ProgressBarManager, register_transform
+from bluesky.utils import register_transform
 
 from haven import load_config
 

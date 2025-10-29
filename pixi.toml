@@ -34,12 +34,18 @@ qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve
 test-all = [
     {task = "lint" },
     {task = "format", args = ["--check"] },
-    {task = "isort", args = ["--check"] },
+    {task = "sort-imports", args = ["--check"] },
     {task = "check-types" },
     {task = "test-haven", args = ["--runslow"] },
     {task = "test-firefly" },
     {task = "test-integration" }
 ]
+lint-all = [
+    {task = "lint", args = ["--fix"]},
+    {task = "format"},
+    {task = "sort-imports"},
+]
+
 
 [feature.bluesky.pypi-dependencies]
 aioca = ">=2.0a4"
@@ -89,7 +95,6 @@ build = "*"
 test-firefly = "pytest tests/firefly"
 test-integration = "pytest tests/integration --runslow -Werror"
 check-types = "mypy"
-lint = "ruff check"
 make-docs = "make html --directory=docs/"
 
 [feature.dev.tasks.test-haven]
@@ -98,7 +103,13 @@ args = [
 ]
 cmd = "pytest tests/haven -Werror {{ runslow }}"
 
-[feature.dev.tasks.isort]
+[feature.dev.tasks.lint]
+args = [
+     { arg = "fix", default = "" },
+]
+cmd = "ruff check {{ fix }}"
+
+[feature.dev.tasks.sort-imports]
 args = [
      { arg = "check_flag", default = "" },
 ]
