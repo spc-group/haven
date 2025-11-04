@@ -106,6 +106,7 @@ class BasePositioner(Positioner):
         stop_signal: Signal,
         done_signal: Signal,
         name: str = "",
+        **kwargs,
     ):
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
@@ -120,7 +121,7 @@ class BasePositioner(Positioner):
         self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
         if done_signal is not None:
             self.done = derived_signal_r(self._done_to_done, done=done_signal)
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
 
     @staticmethod
     def _done_to_done(done: bool) -> bool:
@@ -355,6 +356,22 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
 
         undulator = PlanarUndulator("S25ID:USID:", name="undulator")
 
+    Parameters
+    ==========
+    prefix
+      The IOC prefix for this undulator, e.g. `"S255ID:"`.
+    offset_pv
+      PV for keeping track of the offset between ID and mono. At
+      25-ID-C this lives on the mono IOC.
+    name
+      The device name used for generating data keys
+    offset_table
+      File containing a table between ID energy and offset to apply.
+    minimum_move: float | int = 0
+      Energy moves smaller than this value (in eV) will not actually
+      move the undulator. This can solve issues where the undulator is
+      not able to make small-enough steps.
+
     """
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
@@ -386,6 +403,7 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
         offset_pv: str,
         name: str = "",
         offset_table: IO | str | Path = "",
+        minimum_move: float | int = 0,
     ):
         self._offset_table = offset_table
         # Signals for moving the undulator
@@ -414,6 +432,7 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
                 offset_pv=offset_pv,
+                minimum_move=minimum_move,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",

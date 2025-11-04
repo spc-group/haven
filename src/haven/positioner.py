@@ -42,9 +42,10 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
       The device name for this positioner.
     put_complete
       If true, wait on the setpoint to report being done.
-    min_move
-      If the readback is already within *min_move* from the commanded
-      position during ``set()``, no movement will take place.
+    minimum_move
+      If the readback is already within *minimum_move* from the
+      commanded position during ``set()``, no movement will take
+      place.
 
     """
 
@@ -56,9 +57,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     velocity: SignalR
 
     def __init__(
-        self, name: str = "", put_complete: bool = False, min_move: float = 0.0
+        self, name: str = "", put_complete: bool = False, minimum_move: float = 0.0
     ):
-        self.min_move = min_move
+        self.minimum_move = minimum_move
         self.put_complete = put_complete
         super().__init__(name=name)
 
@@ -110,7 +111,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             )
         )
         # Check for trivially small moves
-        is_small_move = abs(new_position - current_position) < self.min_move
+        is_small_move = abs(new_position - current_position) < self.minimum_move
         if is_small_move:
             return
         # Decide how long we should wait

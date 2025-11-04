@@ -61,10 +61,10 @@ async def test_set_with_put_complete():
     await positioner.set(13)
 
 
-async def test_min_move(positioner):
+async def test_minimum_move(positioner):
     """Check that we can specify how small of a move should be ignored."""
     positioner.put_complete = True
-    positioner.min_move = 5
+    positioner.minimum_move = 5
     set_mock_value(positioner.readback, 10)
     # Move the positioner
     await positioner.set(12)
