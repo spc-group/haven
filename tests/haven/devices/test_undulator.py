@@ -3,7 +3,7 @@ from io import StringIO
 
 import numpy as np
 import pytest
-from ophyd_async.testing import get_mock_put, set_mock_value
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven import exceptions
 from haven.devices import PlanarUndulator
@@ -37,6 +37,7 @@ async def test_data_keys(undulator):
         "undulator-device_limit",
         "undulator-energy-offset",
         "undulator-energy-precision",
+        "undulator-energy-dial_precision",
         "undulator-energy-units",
         "undulator-energy_taper-precision",
         "undulator-energy_taper-units",
@@ -196,6 +197,11 @@ async def test_gap_deadband_raises(undulator, signal_name):
     set_mock_value(undulator.gap_deadband, 1)
     with pytest.raises(exceptions.InvalidUndulatorDeadband):
         await getattr(undulator, signal_name).set(0)
+
+
+async def test_energy_precision(undulator):
+    set_mock_value(undulator.energy.dial_precision, 4)
+    await assert_value(undulator.energy.precision, 1)
 
 
 # -----------------------------------------------------------------------------

@@ -109,7 +109,6 @@ class BasePositioner(Positioner):
     ):
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
-            self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
         self.velocity = soft_signal_rw(
             float, initial_value=1
         )  # Need to figure out what this value is
@@ -154,6 +153,8 @@ class UndulatorPositioner(BasePositioner):
     ):
         with self.add_children_as_readables():
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
+            self.precision = epics_signal_r(int, f"{prefix}M.PREC")
         self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         super().__init__(prefix=prefix, **kwargs)
 
@@ -171,6 +172,13 @@ class EnergyPositioner(BasePositioner, Preparable):
 
         with self.add_children_as_readables():
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
+            self.dial_precision = epics_signal_r(int, f"{prefix}M.PREC")
+            self.precision = derived_signal_r(
+                _keV_to_energy_precision,
+                keV_precision=self.dial_precision,
+            )
+
         self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         # Derived signals so we can apply offsets and convert units
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
@@ -316,6 +324,10 @@ class EnergyPositioner(BasePositioner, Preparable):
 def _keV_to_energy(keV: float, offset: float) -> float:
     energy = keV * 1000 - offset
     return energy
+
+
+def _keV_to_energy_precision(keV_precision: int) -> int:
+    return keV_precision - 3
 
 
 def _energy_to_keV(energy: float, offset: float) -> float:
