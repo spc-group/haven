@@ -9,7 +9,6 @@ from typing_extensions import NotRequired, TypedDict
 
 from haven.constants import edge_energy
 from haven.instrument import beamline
-from haven.preprocessors import baseline_decorator
 from haven.protocols import DetectorList
 
 __all__ = ["energy_scan"]
@@ -25,8 +24,6 @@ class Metadata(TypedDict):
     d_spacing: NotRequired[float | dict[str, float] | None]
 
 
-# @shutter_suspend_decorator()
-@baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
     exposure: float | Sequence[float] = 0.1,
