@@ -52,7 +52,7 @@ FEATURE_FLAGS = {
         description="preprocessor that keeps 1° and 2° aligned.",
     ),
     "install_storage_ring_suspenders": FeatureFlag(
-        expires=dt.datetime(2025, 11, 5).timestamp(),
+        expires=dt.datetime(2025, 11, 12).timestamp(),
         description="suspend the run engine when the storage ring is out of spec.",
     ),
 }
