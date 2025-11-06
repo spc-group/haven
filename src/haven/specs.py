@@ -90,8 +90,16 @@ class KWeighted(Spec[Axis]):
                 self.base_duration,
             )
             Es = next(iter(dimensions[-1].midpoints.values()))
-            ks = energy_to_wavenumber(Es - self.E0)
-            dimensions[-1].duration = base_durations * ks**self.k_weight
+            # Apply any k-dependence to the duration
+            if self.k_weight == 0:
+                dimensions[-1].duration = base_durations
+            elif np.any(Es < self.E0):
+                raise ValueError(
+                    f"Cannot apply k-weight to energies below E0 {self.E0}."
+                )
+            else:
+                ks = energy_to_wavenumber(Es - self.E0)
+                dimensions[-1].duration = base_durations * ks**self.k_weight
             return dimensions
         else:
             # Had to do it like this otherwise it will complain about typing

@@ -7,7 +7,7 @@ from haven.devices import AxilonMonochromator as Monochromator
 from haven.devices import PlanarUndulator
 from haven.energy_ranges import ERange, KRange, from_tuple
 from haven.plans._energy_scan import energy_scan
-from haven.plans._xafs_scan import xafs_scan
+from haven.plans._xafs_scan import XAFSRegion, regions_to_scanspec, xafs_scan
 
 
 @pytest.fixture()
@@ -371,6 +371,17 @@ def test_from_tuple():
     assert from_tuple((10, 15, 0.25, 1.5)) == ERange(
         start=10, stop=15, step=0.25, exposure=1.5
     )
+
+
+def test_regions_to_scanspec():
+    spec = regions_to_scanspec(
+        [XAFSRegion("E", -10, 30, 3, 0.5), XAFSRegion("E", 40, 70, 2, 1.5, 1)],
+        E0=8730,
+        axes=["x"],
+    )
+    (frame,) = spec.calculate()
+    np.testing.assert_equal(frame.midpoints["x"], [8720, 8740, 8760, 8770, 8800])
+    assert np.all(frame.duration[3:] > 0.5)
 
 
 # -----------------------------------------------------------------------------

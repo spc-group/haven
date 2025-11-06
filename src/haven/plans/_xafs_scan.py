@@ -4,14 +4,19 @@ capture detector signals.
 """
 
 import logging
+import operator
+from dataclasses import dataclass
+from functools import reduce
 from typing import Mapping, Sequence
 
 from bluesky.utils import MsgGenerator
+from scanspec.specs import Concat
 
 from haven import exceptions
 from haven.energy_ranges import EnergyRange, from_tuple, merge_ranges
 from haven.plans._energy_scan import energy_scan
 from haven.protocols import DetectorList
+from haven.specs import Axis, EnergyRegion, KWeighted, Spec, WavenumberRegion
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +28,41 @@ def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i : i + n]  # noqa: E203
+
+
+@dataclass()
+class XAFSRegion:
+    domain: str
+    start: float
+    stop: float
+    num: int
+    exposure: float | None = None
+    k_weight: float = 0
+
+
+def regions_to_scanspec(
+    regions: Sequence[XAFSRegion], E0: float, axes: Sequence[Axis]
+) -> Spec:
+    segments = []
+    line_types = {"e": EnergyRegion, "k": WavenumberRegion}
+    for region in regions:
+        # Build each energy region as a trajectory of lines
+        Line = line_types[region.domain.lower()]
+        lines = [
+            Line(axis, region.start, region.stop, region.num, E0=E0) for axis in axes
+        ]
+        line_spec = reduce(operator.mul, lines)
+        # Apply exposure times weighted by wavenumber
+        if region.exposure is not None:
+            lines = KWeighted(
+                spec=line_spec,
+                E0=E0,
+                base_duration=region.exposure,
+                k_weight=region.k_weight,
+            )
+        segments.append(line_spec)
+    spec = reduce(Concat, segments)
+    return spec
 
 
 def xafs_scan(
