@@ -70,7 +70,7 @@ def test_energy_scan_basics(mono, undulator, ion_chamber, energies, tmp_path):
     spec = regions_to_scanspec(
         [XAFSRegion("E", -33, 167, 3, exposure=0.001)],
         E0=8333,
-        axes=[mono, undulator],
+        axes=[mono.energy, undulator.energy],
     )
     plan = energy_scan_from_scanspec(
         detectors=[ion_chamber],
@@ -234,7 +234,7 @@ def test_named_E0(mono, ion_chamber, array_scanning_feature_flag):
         XAFSRegion("E", -10, 0, 6, exposure=0.5),
         XAFSRegion("E", 0, 10, 11, exposure=1.0),
         E0="Ni_K",
-        energy_devices=[mono],
+        energy_devices=[mono.energy],
         time_signals=[ion_chamber.default_time_signal],
     )
     # Check that the mono motor is moved to the correct positions
@@ -294,7 +294,7 @@ def test_remove_duplicate_energies(mono, ion_chamber, array_scanning_feature_fla
         XAFSRegion("E", -4, 6, 2),
         XAFSRegion("E", 6, 40, 34),
         E0=8333,
-        energy_devices=[mono],
+        energy_devices=[mono.energy],
         time_signals=[ion_chamber.default_time_signal],
     )
     msgs = list(plan)
@@ -350,7 +350,7 @@ def test_energy_scan_metadata(mono):
     spec = regions_to_scanspec(
         [XAFSRegion("E", 10, 30, 5)],
         E0=8333,
-        axes=[mono],
+        axes=[mono.energy],
     )
     scan = energy_scan_from_scanspec(
         detectors=[],
@@ -589,14 +589,33 @@ def test_regions_to_scanspec():
     assert np.all(frame.duration[3:] > 0.5)
 
 
-def test_scanspec_duplicates_removed():
+def test_scanspec_duplicates_removed(mono):
     spec = regions_to_scanspec(
         [XAFSRegion("E", -10, 30, 3), XAFSRegion("E", 30, 60, 3)],
         E0=8730,
-        axes=["x"],
+        axes=[mono.energy],
     )
     (frame,) = spec.calculate()
-    np.testing.assert_equal(frame.midpoints["x"], [8720, 8740, 8760, 8775, 8790])
+    np.testing.assert_equal(
+        frame.midpoints[mono.energy], [8720, 8740, 8760, 8775, 8790]
+    )
+
+
+def test_undulator_prepare(undulator):
+    spec = regions_to_scanspec(
+        [XAFSRegion("E", -10, 30, 3), XAFSRegion("E", 30, 60, 3)],
+        E0=8730,
+        axes=[undulator.energy],
+    )
+    plan = energy_scan_from_scanspec(spec, detectors=[])
+    msgs = list(plan)
+    prepare_msg = msgs[2]
+    from pprint import pprint
+
+    pprint(msgs)
+    assert prepare_msg.command == "prepare"
+    assert prepare_msg.obj is undulator.energy
+    # assert False
 
 
 # -----------------------------------------------------------------------------

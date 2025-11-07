@@ -2,18 +2,22 @@
 
 import logging
 import operator
+import uuid
 from collections.abc import Mapping, Sequence
-from functools import reduce
+from functools import partial, reduce
 
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
+from bluesky import preprocessors as bpp
 from bluesky.protocols import Movable
 from bluesky.utils import MsgGenerator
 from cycler import Cycler, cycler
+from scanspec.core import Path
 from scanspec.specs import Spec
 from typing_extensions import NotRequired, TypedDict
 
 from haven.constants import edge_energy
+from haven.devices.undulator import PlanarUndulator
 from haven.instrument import beamline
 from haven.protocols import DetectorList
 
@@ -26,13 +30,16 @@ log = logging.getLogger(__name__)
 def d_spacing(energy_devices) -> MsgGenerator[float]:
     d_spacings = {}
     for device in energy_devices:
-        if not hasattr(device, "d_spacing"):
+        d_signal = getattr(device, "d_spacing", None)
+        parent = getattr(device, "parent", None)
+        d_signal = d_signal or getattr(parent, "d_spacing", None)
+        if d_signal is None:
             continue
-        reading = yield from bps.read(device.d_spacing)
+        reading = yield from bps.read(d_signal)
         if reading is None:
             log.warning(f"Did not receive reading for {device.name} d-spacing.")
             continue
-        d_spacings[device.d_spacing.name] = reading[device.d_spacing.name]["value"]
+        d_spacings[d_signal.name] = reading[d_signal.name]["value"]
     if len(d_spacings) == 1:
         # Only 1 mono, so just include the 1-and-only d-spacing
         return next(iter(d_spacings.values()))
@@ -68,6 +75,22 @@ class Metadata(TypedDict):
     E0: float
     plan_name: str
     d_spacing: NotRequired[float | dict[str, float] | None]
+
+
+def prepare_undulators(msg, undulators, spec):
+    """Plan stub to prepare generators after they have been staged."""
+    if msg.command != "open_run" or len(undulators) == 0:
+        # Nothing to prepare, so just return
+        return (None, None)
+
+    def do_prepare():
+        wait_group = uuid.uuid4()
+        for undulator in undulators:
+            path = Path(spec.calculate())
+            yield from bps.prepare(undulator, path, group=wait_group, wait=False)
+        yield from bps.wait(group=wait_group)
+
+    return (None, do_prepare())
 
 
 def energy_scan_from_scanspec(
@@ -120,7 +143,15 @@ def energy_scan_from_scanspec(
     for det in detectors:
         real_detectors.extend(beamline.devices.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    yield from bp.scan_nd(detectors, _as_cycler(spec, detectors, time_signals), md=md_)
+    # Execute the plan, and slip in some prepare messages
+    plan = bp.scan_nd(detectors, _as_cycler(spec, detectors, time_signals), md=md_)
+    undulators = [
+        axis for axis in spec.axes() if isinstance(axis.parent, PlanarUndulator)
+    ]
+    plan = bpp.plan_mutator(
+        plan, partial(prepare_undulators, undulators=undulators, spec=spec)
+    )
+    yield from plan
 
 
 def _as_cycler(spec: Spec[Movable], detectors, time_signals) -> Cycler:
@@ -141,8 +172,6 @@ def _as_cycler(spec: Spec[Movable], detectors, time_signals) -> Cycler:
     """
     midpoints = spec.frames().midpoints
     durations = spec.frames().duration
-    # We actually need the energy positioners of each device
-    midpoints = {ax.energy: values for ax, values in midpoints.items()}
     cyclers = [cycler(*args) for args in midpoints.items()]
     # Add commands for setting the exposure times
     if durations is not None:

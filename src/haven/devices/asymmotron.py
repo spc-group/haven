@@ -348,14 +348,14 @@ class EnergyTransform(Transform):
             return EnergyDerived(energy=float("nan"))
         # Step 1: Convert motor positions to geometry parameters
         theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
-        log.info(f"Inverse: {theta_M=}")
+        log.debug(f"Inverse: {theta_M=}")
         rho = y * np.cos(beta) / np.cos(theta_M)
-        log.info(f"Inverse: {rho=}")
+        log.debug(f"Inverse: {rho=}")
         # Step 1: Convert geometry params to energy
         bragg = theta_M - alpha
-        log.info(f"Inverse: {bragg=}")
+        log.debug(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
-        log.info(f"Inverse: {energy=}")
+        log.debug(f"Inverse: {energy=}")
         energy_val = float(energy.to(units["energy"]).magnitude)
         derived = EnergyDerived(energy=energy_val)
         return derived

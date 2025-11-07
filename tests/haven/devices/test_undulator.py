@@ -4,10 +4,12 @@ from io import StringIO
 import numpy as np
 import pytest
 from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
+from scanspec.core import Path
+from scanspec.specs import Line
 
 from haven import exceptions
 from haven.devices import PlanarUndulator
-from haven.devices.undulator import TrajectoryMotorInfo, UndulatorScanMode
+from haven.devices.undulator import UndulatorScanMode
 
 
 @pytest.fixture()
@@ -97,10 +99,8 @@ def test_auto_offset_lookup(undulator):
 
 async def test_prepare_energy_scan(undulator, mocker):
     energies = [1000, 1100, 1200]
-    tinfo = TrajectoryMotorInfo(
-        positions=energies,
-        times=[0, 0.5, 1.0],  # Not currently used
-    )
+    spec = Line(undulator.energy, 1000, 1200, 3)
+    path = Path(spec.calculate())
     set_mock_value(undulator.scan_mismatch_count, 0)
     set_mock_value(undulator.scan_gap_array_check, True)
     set_mock_value(undulator.scan_energy_array_check, True)
@@ -112,7 +112,7 @@ async def test_prepare_energy_scan(undulator, mocker):
     set_mock_value(undulator.scan_gap_array, gaps + [0] * (array_size - len(gaps)))
     # Prepare and check end point
     mocker.patch.object(undulator, "auto_offset", mocker.MagicMock(return_value=20))
-    await undulator.energy.prepare(tinfo)
+    await undulator.energy.prepare(path)
     # set_mock_value(undulator.busy, 1)
     # await asyncio.sleep(0.1)
     # assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL

@@ -10,6 +10,7 @@ from typing import Annotated as A
 from typing import Sequence, cast
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from bluesky.protocols import Preparable
 from ophyd_async.core import (
@@ -47,6 +48,7 @@ from ophyd_async.epics.core import (
     epics_signal_x,
 )
 from pydantic import Field
+from scanspec.core import Path as ScanPath
 
 from haven import exceptions
 from haven._iconfig import load_config
@@ -284,16 +286,17 @@ class EnergyPositioner(BasePositioner, Preparable):
         await next_scan_task
 
     @AsyncStatus.wrap
-    async def prepare(self, value: TrajectoryMotorInfo, timeout=DEFAULT_TIMEOUT):
+    async def prepare(self, path: ScanPath, timeout=DEFAULT_TIMEOUT):
         """Prepare for a scan using ASD's undulator scan controls."""
-        energies = np.asarray(value.positions)
+        frames = path.consume()
+        energies = np.asarray(frames.midpoints[self])
         offset = await self.offset.get_value()
         energies_kev = _energy_to_keV(energies, offset=offset)
         exceptions = []
         async with self.parent.prepare_scan_mode() as tg:
             gap_taper = tg.create_task(self.parent.gap_taper.readback.get_value())
             for _ in range(SCAN_SETUP_RETRIES):
-                await self.parent.scan_array_length.set(len(value.positions))
+                await self.parent.scan_array_length.set(len(energies_kev))
                 await self.parent.scan_energy_array.set(energies_kev)
                 try:
                     await self.parent.scan_setup_successful(timeout=timeout)
@@ -308,7 +311,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                     exceptions,
                 )
         # Stash the requested ranges so we can check them later
-        self.parent._energy_iter = iter(value.positions)
+        self.parent._energy_iter = iter(energies)
         # The energy->gap calcuations in the IOC don't work right with a taper
         if gap_taper.result() != 0:
             warnings.warn("Setting energy array with non-zero taper.")
@@ -331,8 +334,8 @@ def _keV_to_energy_precision(keV_precision: int) -> int:
     return keV_precision - 3
 
 
-def _energy_to_keV(energy: float, offset: float) -> float:
-    return (energy + offset) / 1000
+def _energy_to_keV[T: (float, npt.NDArray)](energy: T, offset: T) -> T:
+    return (energy + offset) / 1000.0
 
 
 class UndulatorScanMode(StrictEnum):

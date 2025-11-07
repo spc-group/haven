@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Mapping, Sequence
 
+from bluesky.protocols import HasName
 from bluesky.utils import MsgGenerator
 from scanspec.specs import Concat, Zip
 
@@ -16,7 +17,7 @@ from haven._iconfig import load_config
 from haven.energy_ranges import EnergyRange, from_tuple, merge_ranges
 from haven.instrument import beamline
 from haven.plans._energy_scan import energy_scan, energy_scan_from_scanspec, resolve_E0
-from haven.protocols import DetectorList
+from haven.protocols import DetectorList, EnergyDevice
 from haven.specs import Axis, EnergyRegion, KWeighted, Spec, WavenumberRegion
 
 log = logging.getLogger(__name__)
@@ -85,7 +86,7 @@ def xafs_scan(
     detectors: DetectorList,
     *energy_ranges: EnergyRange | XAFSRegion | tuple,
     E0: float | str,
-    energy_devices: Sequence = ["monochromators", "undulators"],
+    energy_devices: Sequence[HasName | str] = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ) -> MsgGenerator[str]:
@@ -170,7 +171,12 @@ def xafs_scan(
 
     """
     use_scan_spec = load_config().feature_flag("undulator_fast_step_scanning_mode")
+    # Resolve energy devices into the actual positioners
     energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
+    energy_devices = [
+        device.energy if isinstance(device, EnergyDevice) else device
+        for device in energy_devices
+    ]
     E0_val, E0_str = resolve_E0(E0)
     # Build up the energy scan specification
     md_ = {
