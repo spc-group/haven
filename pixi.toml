@@ -36,9 +36,7 @@ test-all = [
     {task = "format", args = ["--check"] },
     {task = "sort-imports", args = ["--check"] },
     {task = "check-types" },
-    {task = "test-haven", args = ["--runslow"] },
-    {task = "test-firefly" },
-    {task = "test-integration" }
+    {task = "tests", args = ["--runslow"] },
 ]
 lint-all = [
     {task = "lint", args = ["--fix"]},
@@ -92,16 +90,14 @@ autoapi = "*"
 build = "*"
 
 [feature.dev.tasks]
-test-firefly = "pytest tests/firefly -Werror"
-test-integration = "pytest tests/integration --runslow -Werror"
 check-types = "mypy"
 make-docs = "make html --directory=docs/"
 
-[feature.dev.tasks.test-haven]
+[feature.dev.tasks.tests]
 args = [
      { arg = "runslow", default = "" },
 ]
-cmd = "pytest tests/haven -Werror {{ runslow }}"
+cmd = "pytest -Werror {{ runslow }}"
 
 [feature.dev.tasks.lint]
 args = [
@@ -127,7 +123,7 @@ qt = ">=5.15"
 pyqt = ">=5.15"
 qtawesome = ">=1.4.0"
 pyqtgraph = "*"
-pydm = "==1.25.2"
+pydm = ">=1.28.1"
 qasync = "*"
 bluesky-widgets = "*"
 

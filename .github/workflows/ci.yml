@@ -64,10 +64,9 @@ jobs:
       with:
         pixi-version: v0.53.0
         cache: true
-    - name: Unit tests
+    - name: Tests
       run: |
-        pixi run test-haven --runslow
-        pixi run test-firefly
+        pixi run tests --runslow
   make-docs:
     defaults:
       run:
@@ -85,20 +84,3 @@ jobs:
         cache: true
     - run: |
         pixi run make-docs
-  integration-tests:
-    defaults:
-      run:
-        shell: bash -l {0}
-    runs-on: ubuntu-latest
-    needs: ["unit-tests", "type-checking"]
-    timeout-minutes: 10
-    strategy:
-      max-parallel: 5
-    steps:
-    - uses: actions/checkout@v4
-    - uses: prefix-dev/setup-pixi@v0.9.0
-      with:
-        pixi-version: v0.53.0
-        cache: true
-    - run: |
-        pixi run test-integration

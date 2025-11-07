@@ -132,7 +132,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/ply-3.11-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-h9a8bead_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.25.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.28.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyepics-3.5.8-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.2.5-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyqt-5.15.11-py312h82c0db2_2.conda
@@ -220,7 +220,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -572,7 +572,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/ply-3.11-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-h9a8bead_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.25.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.28.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyepics-3.5.8-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.2.5-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyqt-5.15.11-py312h82c0db2_2.conda
@@ -660,7 +660,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -1074,7 +1074,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/ply-3.11-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-h9a8bead_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.25.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.28.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyepics-3.5.8-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.2.5-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyqt-5.15.11-py312h82c0db2_2.conda
@@ -1164,7 +1164,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -1545,7 +1545,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/ply-3.11-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pulseaudio-client-17.0-h9a8bead_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.25.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.28.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyepics-3.5.8-py312h7900ff3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.2.5-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyqt-5.15.11-py312h82c0db2_2.conda
@@ -1632,7 +1632,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -2606,9 +2606,9 @@ packages:
   - pkg:pypi/bluesky-live?source=hash-mapping
   size: 34118
   timestamp: 1734965301665
-- pypi: git+https://github.com/bluesky/bluesky-queueserver#5319ccc50d1ee27f85a949fc2a408b0c15c708aa
+- pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
   name: bluesky-queueserver
-  version: 0.0.22.post20+g5319ccc
+  version: 0.0.23
   requires_dist:
   - bluesky>=1.7.0
   - ipykernel
@@ -6857,25 +6857,25 @@ packages:
   - tomli>=2.0.1 ; extra == 'toml'
   - pyyaml>=6.0.1 ; extra == 'yaml'
   requires_python: '>=3.9'
-- conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.25.2-pyhd8ed1ab_0.conda
-  sha256: 6d7cf3790d338b3b4e0beaf26b295dd0ff003ba1ae16f96700ef1924e6901105
-  md5: 8e2bf130024f1cd0ba4b911d3f0838cd
+- conda: https://conda.anaconda.org/conda-forge/noarch/pydm-1.28.1-pyhd8ed1ab_0.conda
+  sha256: 38e5d36c0ffd3517259dae52fe6331dd2fd9f596226d50e8cac75834adb705e0
+  md5: 74c2ab09a0e84b0c16da122d3cf1e44d
   depends:
   - entrypoints
   - numpy
   - pyepics
   - pyqt 5.*
   - pyqtgraph
-  - python >=3.9
-  - qtpy
+  - python >=3.10
+  - qtpy >=2.2.0
   - scipy
   - six
   license: LicenseRef-BSD-3-Clause-SLAC
   license_family: OTHER
   purls:
   - pkg:pypi/pydm?source=hash-mapping
-  size: 518073
-  timestamp: 1738182747899
+  size: 575934
+  timestamp: 1760116505988
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pyepics-3.5.8-py312h7900ff3_1.conda
   sha256: 39f39581b58181c00187efecb06be63fdd5f70f15175d4e5bb8b0a27fcac853b
   md5: 58d0a4a4dfc92d523d721ef22b549b8c
