@@ -92,7 +92,7 @@ autoapi = "*"
 build = "*"
 
 [feature.dev.tasks]
-test-firefly = "pytest tests/firefly"
+test-firefly = "pytest tests/firefly -Werror"
 test-integration = "pytest tests/integration --runslow -Werror"
 check-types = "mypy"
 make-docs = "make html --directory=docs/"

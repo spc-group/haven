@@ -50,7 +50,7 @@ async def test_set_row_count(manager):
 
 async def test_new_row_devices(manager, sim_registry):
     """Do devices get added to new rows in the region?"""
-    manager.update_devices(sim_registry)
+    await manager.update_devices(sim_registry)
 
 
 async def test_regions_indexing(manager):

@@ -82,7 +82,6 @@ async def test_update_mca_spectra(xrf_display, qtbot):
     assert len(data_items) == 2
 
 
-@pytest.mark.xfail()
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_mca_hovering(xrf_display):
     """Is the spectrum highlighted when the element row is selected."""

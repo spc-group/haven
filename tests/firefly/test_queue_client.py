@@ -347,7 +347,7 @@ async def test_stop_queue(client, qtbot):
     api.queue_stop.assert_called_once()
     # Check the queue stop can be cancelled
     await asyncio.sleep(0.5)
-    api.clear_mock()
+    await api.clear_mock()
     await client.stop_queue(False)
     api.queue_stop_cancel.assert_called_once()
 
