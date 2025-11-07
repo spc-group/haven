@@ -195,6 +195,22 @@ def test_expired_feature_flag():
         config.feature_flag("spam")
 
 
+def test_feature_flag_override():
+    one_day = 3600 * 24
+    flags = {
+        "test_flag": FeatureFlag(
+            expires=time.time() + one_day,
+            description="test flag for testing",
+            default="default_value",
+        ),
+    }
+    cfg = Configuration({}, feature_flags=flags)
+    assert cfg.feature_flag("test_flag") == "default_value"
+    with cfg.feature_flag_override("test_flag", "new_value"):
+        assert cfg.feature_flag("test_flag") == "new_value"
+    assert cfg.feature_flag("test_flag") == "default_value"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

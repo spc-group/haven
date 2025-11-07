@@ -1,10 +1,16 @@
 """A bluesky plan to scan the X-ray energy and capture detector signals."""
 
 import logging
-from typing import Mapping, Sequence
+import operator
+from collections.abc import Mapping, Sequence
+from functools import reduce
 
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
+from bluesky.protocols import Movable
+from bluesky.utils import MsgGenerator
+from cycler import Cycler, cycler
+from scanspec.specs import Spec
 from typing_extensions import NotRequired, TypedDict
 
 from haven.constants import edge_energy
@@ -17,11 +23,140 @@ __all__ = ["energy_scan"]
 log = logging.getLogger(__name__)
 
 
+def d_spacing(energy_devices) -> MsgGenerator[float]:
+    d_spacings = {}
+    for device in energy_devices:
+        if not hasattr(device, "d_spacing"):
+            continue
+        reading = yield from bps.read(device.d_spacing)
+        if reading is None:
+            log.warning(f"Did not receive reading for {device.name} d-spacing.")
+            continue
+        d_spacings[device.d_spacing.name] = reading[device.d_spacing.name]["value"]
+    if len(d_spacings) == 1:
+        # Only 1 mono, so just include the 1-and-only d-spacing
+        return next(iter(d_spacings.values()))
+    elif len(d_spacings) > 1:
+        # More than 1 mono, so include all d-spacings
+        return d_spacings
+
+
+def resolve_E0(E0: float | str) -> tuple[float, str]:
+    """Convert E0 from either be a number (e.g. 8330) or a string
+    (e.g. "Ni-K").
+
+    Returns
+    =======
+    E0_val
+      The energy corresponding to the input *E0*.
+    E0_str
+      The edge name. Could be an empty string.
+
+    """
+    if isinstance(E0, str):
+        # Look up E0 in the database if e.g. "Ni_K" is given as E0
+        E0_str = E0
+        E0_val = edge_energy(E0)
+    else:
+        E0_str = ""
+        E0_val = float(E0)
+    return E0_val, E0_str
+
+
 class Metadata(TypedDict):
     edge: NotRequired[str]
     E0: float
     plan_name: str
     d_spacing: NotRequired[float | dict[str, float] | None]
+
+
+def energy_scan_from_scanspec(
+    spec: Spec,
+    detectors: DetectorList = "ion_chambers",
+    md: Mapping = {},
+    time_signals: Sequence[Movable] | None = None,
+) -> MsgGenerator:
+    """Collect a spectrum by scanning X-ray energy.
+
+    For a more convenient interface for defining XAFS regions, try
+    :py:func:`~haven.plans.xafs_scan.xafs_scan` instead.
+
+    This plan will execute the scan spec provided by *spec*.
+
+    **Metadata:**
+
+    Several key pieces of metadata will be extract from the run. Any
+    device in *energy_devices* that has a *d_spacing* attribute will
+    be read for the ``"d_spacing"`` metadata entry.
+
+    Parameters
+    ==========
+    spec
+      The specification for this scan as defined by the scanspec
+      library.
+    detectors
+      The detectors to collect X-ray signal from at each energy.
+    md
+      Additional metadata to pass on the to run engine.
+    time_signals
+      Optional list of signals for setting the exposure time. If
+      omitted, the detectors will be checked for a
+      `default_time_signal` attribute.
+
+    Yields
+    ======
+    Bluesky messages to execute the scan.
+
+    """
+    md_ = {
+        "d_spacing": (yield from d_spacing(spec.axes())),
+        "plan_name": "energy_scan",
+    }
+    md_.update(md)
+    # Resolve the detector and positioner list if given by name
+    if isinstance(detectors, str):
+        detectors = beamline.devices.findall(detectors)
+    real_detectors = []
+    for det in detectors:
+        real_detectors.extend(beamline.devices.findall(det))
+    log.debug(f"Found registered detectors: {real_detectors}")
+    yield from bp.scan_nd(detectors, _as_cycler(spec, detectors, time_signals), md=md_)
+
+
+def _as_cycler(spec: Spec[Movable], detectors, time_signals) -> Cycler:
+    """Convert a scanspec to a cycler for compatibility with legacy
+    Bluesky plans such as `bp.scan_nd`. Use the midpoints of the
+    scanspec since cyclers are normally used for software triggered
+    scans. Also includes positions for setting the exposure time
+    signals based on the scan duration.
+
+    Parameters
+    ==========
+    spec: A scanspec
+
+    Returns
+    =======
+    cycler: A new cycler
+
+    """
+    midpoints = spec.frames().midpoints
+    durations = spec.frames().duration
+    # We actually need the energy positioners of each device
+    midpoints = {ax.energy: values for ax, values in midpoints.items()}
+    cyclers = [cycler(*args) for args in midpoints.items()]
+    # Add commands for setting the exposure times
+    if durations is not None:
+        if time_signals is None:
+            time_signals = [
+                det.default_time_signal
+                for det in detectors
+                if hasattr(det, "default_time_signal")
+            ]
+        cyclers.extend([cycler(det, durations) for det in time_signals])
+    # Need to "add" the cyclers for all the axes together. The code below is
+    # effectively: cycler(motor1, [...]) + cycler(motor2, [...]) + ...
+    cycler_ = reduce(operator.add, cyclers)
+    return cycler_
 
 
 def energy_scan(
@@ -137,13 +272,7 @@ def energy_scan(
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)
     # Correct for E0
-    if isinstance(E0, str):
-        # Look up E0 in the database if e.g. "Ni_K" is given as E0
-        E0_str = E0
-        E0_val = edge_energy(E0)
-    else:
-        E0_str = ""
-        E0_val = float(E0)
+    E0_val, E0_str = resolve_E0(E0)
     energies = [energy + E0_val for energy in energies]
     # Todo: sort the energies and exposure times by the energy
     # Prepare the positioners list with associated energies and exposures
@@ -156,21 +285,7 @@ def energy_scan(
     md_: Metadata = {"E0": E0_val, "plan_name": "energy_scan"}
     if E0_str != "":
         md_["edge"] = E0_str
-    d_spacings = {}
-    for device in energy_devices:
-        if not hasattr(device, "d_spacing"):
-            continue
-        reading = yield from bps.read(device.d_spacing)
-        if reading is None:
-            log.warning(f"Did not receive reading for {device.name} d-spacing.")
-            continue
-        d_spacings[device.d_spacing.name] = reading[device.d_spacing.name]["value"]
-    if len(d_spacings) == 1:
-        # Only 1 mono, so just include the 1-and-only d-spacing
-        md_["d_spacing"] = tuple(d_spacings.values())[0]
-    elif len(d_spacings) > 1:
-        # More than 1 mono, so include all d-spacings
-        md_["d_spacing"] = d_spacings
+    md_["d_spacing"] = yield from d_spacing(energy_devices)
     # Do the actual scan
     yield from bp.list_scan(
         [*real_detectors, *energy_devices],

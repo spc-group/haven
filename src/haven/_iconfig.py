@@ -16,6 +16,7 @@ import os
 import time
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
@@ -33,7 +34,7 @@ log = logging.getLogger(__name__)
 _local_overrides: Mapping[str, Any] = {}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class FeatureFlag:
     expires: float | int
     description: str = ""
@@ -186,6 +187,19 @@ class Configuration(Mapping):
             return inner
 
         return wrapper
+
+    @contextmanager
+    def feature_flag_override(self, flag_name, value):
+        """Context manager that temporarily alters a feature flag. Mostly
+        meant for testing.
+
+        """
+        old_value = self._feature_flags[flag_name].default
+        self._feature_flags[flag_name].default = value
+        try:
+            yield
+        finally:
+            self._feature_flags[flag_name].default = old_value
 
 
 def load_file(file_path: Path):
