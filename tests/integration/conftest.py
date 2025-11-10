@@ -32,12 +32,26 @@ password = "abc123"
 facility = "Advanced Photon Source"
 beamline = "SPC Beamline (sector unknown)"
 xray_source = "2.8 mm planar undulator"
+
+#################
+# Device support
+#################
+
+# Device settings that apply to all devices
+[ devices ]
+mock = true
+
 """
 
 
 DEVICES_CONFIG = """
 [[ "ophyd_async.sim.SimMotor" ]]
 name = "sim_async_motor"
+
+[[ "haven.devices.AxilonMonochromator" ]]
+name = "monochromator"
+prefix = "255idLerix:"
+
 
 """
 

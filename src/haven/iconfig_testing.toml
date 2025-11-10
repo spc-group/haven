@@ -46,7 +46,7 @@ xray_source = "2.8 mm planar undulator"
 #################
 
 # Device settings that apply to all devices
-[ devices]
+[ devices ]
 mock = true
 
 [[ synchrotron ]]

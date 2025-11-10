@@ -8,11 +8,9 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Mapping, Sequence
 
-from bluesky.protocols import HasName
 from bluesky.utils import MsgGenerator
 from scanspec.specs import Concat, Zip
 
-from haven import exceptions
 from haven._iconfig import load_config
 from haven.energy_ranges import EnergyRange, from_tuple, merge_ranges
 from haven.instrument import beamline
@@ -86,7 +84,7 @@ def xafs_scan(
     detectors: DetectorList,
     *energy_ranges: EnergyRange | XAFSRegion | tuple,
     E0: float | str,
-    energy_devices: Sequence[HasName | str] = ["monochromators", "undulators"],
+    energy_devices: Sequence[EnergyDevice | str] = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ) -> MsgGenerator[str]:
@@ -213,8 +211,6 @@ def xafs_scan(
         # Convert energy ranges to energy list and exposure list
         ranges = [from_tuple(rng) for rng in energy_ranges]
         energies, exposures = merge_ranges(*ranges)
-        if len(energies) < 1:
-            raise exceptions.NoEnergies("Plan would not produce any energy points.")
         yield from energy_scan(
             energies=energies,
             exposure=exposures,
