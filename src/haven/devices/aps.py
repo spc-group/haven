@@ -25,7 +25,7 @@ class ApsMachine(ApsMachineParametersDevice):
         # "global_feedback_v",
         "operator_messages",
     ]
-    shutter_status = Cpt(EpicsSignalRO, "RF-ACIS:FePermit:Sect1To35IdM.RVAL")
+    shutter_status = Cpt(EpicsSignalRO, "XFD:ShutterPermit", string=True)
 
     def __init__(
         self,
