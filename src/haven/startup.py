@@ -3,7 +3,6 @@ qserver."""
 
 import logging
 import time
-import warnings
 from collections.abc import Callable
 from functools import partial
 
@@ -136,18 +135,16 @@ xafs_scan = plan_decorator(xafs_scan)
 
 
 # Apply a wrapper for keeping the beam at a fixed offset
-if config.feature_flag("fixed_offset_tracking"):
-    try:
-        wrapper = partial(
-            fixed_offset_wrapper,
-            primary_mono=haven.beamline.devices["monochromator"],
-            secondary_mono=haven.beamline.devices["secondary_mono"],
-        )
-    except ComponentNotFound as exc:
-        log.warning(f"Could not couple mono offsets: {exc}")
-        warnings.warn(f"Could not couple mono offsets: {exc}")
-    else:
-        RE.preprocessors.append(wrapper)
+try:
+    wrapper = partial(
+        fixed_offset_wrapper,
+        primary_mono=haven.beamline.devices["monochromator"],
+        secondary_mono=haven.beamline.devices["secondary_mono"],
+    )
+except ComponentNotFound as exc:
+    log.info(f"Could not couple mono offsets: {exc}")
+else:
+    RE.preprocessors.append(wrapper)
 
 # Print helpful information to the console
 custom_theme = rich.theme.Theme(
