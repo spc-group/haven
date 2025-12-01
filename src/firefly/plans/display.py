@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 from bluesky_queueserver_api import BPlan
@@ -88,6 +89,10 @@ class PlanDisplay(PlanStubDisplay):
             **self._bss_metadata,
             **self.metadata_widget.metadata(),
         }
+
+    def update_bss_metadata(self, md: Mapping[str, Any]):
+        super().update_bss_metadata(md)
+        self.ui.metadata_widget.update_bss_metadata(md)
 
 
 # -----------------------------------------------------------------------------

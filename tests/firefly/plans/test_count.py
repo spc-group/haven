@@ -84,6 +84,17 @@ async def test_update_devices(display, sim_registry):
     assert display.detectors_list.update_devices.called
 
 
+def test_update_bss_metadata(display):
+    md = {
+        "esaf_title": "Xenonite XAFS",
+        "esaf_id": "12345",
+        "proposal_title": "New materials for interstellar space travel",
+        "proposal_id": "5678",
+    }
+    display.update_bss_metadata(md)
+    assert display.ui.metadata_widget.esaf_id_label.text() == "12345"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

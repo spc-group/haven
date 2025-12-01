@@ -233,6 +233,17 @@ def test_queue_plan(display, qtbot):
         display.queue_plan()
 
 
+def test_update_bss_metadata(display):
+    md = {
+        "esaf_title": "Xenonite XAFS",
+        "esaf_id": "12345",
+        "proposal_title": "New materials for interstellar space travel",
+        "proposal_id": "5678",
+    }
+    display.update_bss_metadata(md)
+    assert display.ui.metadata_widget.esaf_id_label.text() == "12345"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman, Juan Juan Huang
 # :email:     wolfman@anl.gov, juanjuan.huang@anl.gov

@@ -220,7 +220,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#b8ee112b248e697258ee1b0a4e25534905d819ff
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -663,7 +663,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#b8ee112b248e697258ee1b0a4e25534905d819ff
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -1170,7 +1170,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#b8ee112b248e697258ee1b0a4e25534905d819ff
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -1641,7 +1641,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/41/497f55b454aa64e2cb3f27990e5cb76c64457d54365b07d6c125bdac7b38/bluesky-1.14.4-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#b8ee112b248e697258ee1b0a4e25534905d819ff
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
@@ -2618,9 +2618,9 @@ packages:
   - pkg:pypi/bluesky-live?source=hash-mapping
   size: 34118
   timestamp: 1734965301665
-- pypi: git+https://github.com/bluesky/bluesky-queueserver#0ec0e5c09a823148833c6ab3ebef62c6e71e05b9
+- pypi: git+https://github.com/bluesky/bluesky-queueserver#b8ee112b248e697258ee1b0a4e25534905d819ff
   name: bluesky-queueserver
-  version: 0.0.23
+  version: 0.0.23.post5+gb8ee112
   requires_dist:
   - bluesky>=1.7.0
   - ipykernel
@@ -3951,7 +3951,7 @@ packages:
 - pypi: ./
   name: haven-spc
   version: 2025.2.1
-  sha256: 2ca134e16b259adabd23285ab6b83ac9e2ca70522a22e00b7f7ba24641c219a0
+  sha256: 09bc8030894bda563cb657213783c7aaf10a952b35c07cfedb500f83823fd866
   editable: true
 - pypi: https://files.pythonhosted.org/packages/ba/db/8d85bd3f5b9ee894518f9d9ed1019fd8b7014340beca512dfb76d5632ec9/hdf5plugin-5.1.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
   name: hdf5plugin

@@ -71,7 +71,7 @@ files = [
     'src/firefly/devices/undulator.py', 'tests/firefly/devices/test_undulator.py',
     'src/firefly/plans/count.py', 'tests/firefly/plans/test_count.py',
     'src/firefly/plans/duration_label.py', 'tests/firefly/plans/test_duration_label.py',
-    'src/firefly/plans/metadata.py', 'tests/firefly/test_metadata_widget.py',
+    'src/firefly/plans/metadata.py', 'tests/firefly/plans/test_metadata_widget.py',
     'src/firefly/plans/move.py', 'tests/firefly/plans/test_move.py',
     'src/firefly/plans/regions.py', 'tests/firefly/plans/test_regions.py',
     'src/firefly/plans/display.py', 'tests/firefly/plans/test_display.py',

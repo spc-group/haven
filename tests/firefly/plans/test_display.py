@@ -48,11 +48,9 @@ def test_plan_metadata(display):
     display.metadata_widget.purpose_combo_box.setCurrentText("dancing")
     display.metadata_widget.standard_check_box.setChecked(True)
     # Set metadata from the beamline scheduling system
-    display.update_bss_metadata(
-        {
-            "proposal_id": "123456",
-        }
-    )
+    display._bss_metadata = {
+        "proposal_id": "123456",
+    }
     md = display.plan_metadata()
     assert md == {
         "is_standard": True,

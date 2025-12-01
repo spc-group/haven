@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -45,3 +46,9 @@ class MetadataWidget(QWidget):
         # Only include metadata that isn't an empty string
         md = {key: val for key, val in md.items() if is_valid_value(val)}
         return md
+
+    def update_bss_metadata(self, md: Mapping[str, str]):
+        self.ui.proposal_id_label.setText(md.get("proposal_id", ""))
+        self.ui.proposal_title_label.setText(md.get("proposal_title", ""))
+        self.ui.esaf_id_label.setText(md.get("esaf_id", ""))
+        self.ui.esaf_title_label.setText(md.get("esaf_title", ""))
