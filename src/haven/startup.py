@@ -19,7 +19,7 @@ from bluesky.run_engine import (  # noqa: F401
 )
 from bluesky.simulators import summarize_plan  # noqa: F401
 from bluesky_queueserver import is_re_worker_active
-from ophyd_async.core import NotConnected
+from ophyd_async.core import NotConnectedError
 from ophydregistry import ComponentNotFound
 
 import haven  # noqa: F401
@@ -74,7 +74,7 @@ haven.beamline.load()
 use_mocks = config.get("devices", {}).get("mock", False)
 try:
     call_in_bluesky_event_loop(haven.beamline.connect(mock=use_mocks))
-except NotConnected as exc:
+except NotConnectedError as exc:
     log.exception(exc)
     # Save the exception so we can alert the user later
     loader_exception = exc
@@ -197,6 +197,6 @@ del time
 del RunEngine
 del autoawait_in_bluesky_event_loop
 del call_in_bluesky_event_loop
-del NotConnected
+del NotConnectedError
 del ComponentNotFound
 del rich

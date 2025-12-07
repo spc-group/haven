@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from firefly.plans.move import MoveMotorDisplay
 from haven.devices import Motor

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Mapping
 
 import qtawesome as qta
-from ophyd_async.core import NotConnected
+from ophyd_async.core import NotConnectedError
 from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
@@ -112,7 +112,7 @@ class FireflyController(QtCore.QObject):
             beamline.load()
             try:
                 await beamline.connect()
-            except NotConnected as exc:
+            except NotConnectedError as exc:
                 log.exception(exc)
                 msg = (
                     "One or more devices failed to load. See console logs for details."

@@ -491,7 +491,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         # Send the current value as well so widgets can update
         if self.is_subscribable:
             try:
-                self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+                self.signal._get_cache()._notify(self.send_new_value)
             except RuntimeError:
                 pass
         elif self.is_triggerable:

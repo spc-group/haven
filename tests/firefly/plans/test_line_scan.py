@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.devices.motor import Motor

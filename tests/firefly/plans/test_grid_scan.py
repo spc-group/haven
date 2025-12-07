@@ -2,7 +2,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from firefly.plans.grid_scan import GridScanDisplay
 
