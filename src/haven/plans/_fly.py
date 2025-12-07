@@ -1,3 +1,4 @@
+import logging
 import operator
 import uuid
 from collections import abc
@@ -20,6 +21,9 @@ from scanspec.core import Path, SnakedDimension
 from scanspec.specs import ConstantDuration, Fly, Line, Spec, Zip
 
 __all__ = ["fly_scan", "grid_fly_scan"]
+
+
+log = logging.getLogger("haven")
 
 
 def declare_streams(
@@ -341,7 +345,7 @@ def grid_fly_scan(
     }
     md_.update(md)
 
-    @stage_decorator([*detectors, *step_motors, *fly_motors, *flyer_controllers])
+    @stage_decorator([*step_motors, *fly_motors, *flyer_controllers])
     @run_decorator(md=md_)
     def inner_loop():
         while len(step_path) > 0:
@@ -357,7 +361,7 @@ def grid_fly_scan(
             # Execute the fly segment
             for motor in step_motors:
                 yield from bps.monitor(motor, name=motor.name)
-            yield from fly_segment(
+            segment = fly_segment(
                 detectors=detectors,
                 motors=fly_motors,
                 spec=spec,
@@ -366,6 +370,9 @@ def grid_fly_scan(
                 num=num_fly_points,
                 trigger_info=trigger_info,
             )
+            # We need to stage the detectors each time so the writer gets properly closed
+            yield from stage_wrapper(segment, detectors)
+            # Now clean up
             for motor in step_motors:
                 yield from bps.unmonitor(motor)
 

@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from haven.devices.xia_pfcu import (
     FilterState,

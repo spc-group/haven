@@ -190,15 +190,19 @@ def test_grid_fly_scan_setup(flyer, stepper, xspress, controller):
     )
     messages = list(plan)
     # Check initial setup messages
+    from pprint import pprint
+
+    pprint(messages)
     assert messages[0].command == "stage"
-    assert messages[0].obj is xspress
+    assert messages[0].obj is stepper
     assert messages[1].command == "stage"
-    assert messages[1].obj is stepper
+    assert messages[1].obj is flyer
     assert messages[2].command == "stage"
-    assert messages[2].obj is flyer
-    assert messages[3].command == "stage"
-    assert messages[3].obj is controller
-    assert messages[4].command == "open_run"
+    assert messages[2].obj is controller
+    assert messages[3].command == "open_run"
+    # Detectors are staged per-line later in the plan
+    assert messages[7].command == "stage"
+    assert messages[7].obj is xspress
 
 
 def test_grid_fly_scan_stepper_positions(flyer, stepper, xspress, controller):

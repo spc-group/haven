@@ -69,9 +69,10 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         self.readback.set_name(name, *args, **kwargs)
 
     def watch_done(
-        self, value, done_event: asyncio.Event, started_event: asyncio.Event
+        self, reading, done_event: asyncio.Event, started_event: asyncio.Event
     ):
         """Update the event when the done value is actually done."""
+        value = reading[self.done.name]["value"]
         log.debug(f"Received new done value: {value}.")
         if value != self.done_value:
             # The movement has started
@@ -147,7 +148,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             log.debug(
                 f"Monitoring progress via ``done`` signal: {self.done.name}, {self.done.source}."
             )
-            self.done.subscribe_value(
+            self.done.subscribe_reading(
                 partial(
                     self.watch_done, done_event=done_event, started_event=started_event
                 )

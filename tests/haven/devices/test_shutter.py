@@ -1,6 +1,6 @@
 import pytest
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.testing import get_mock_put, set_mock_value
+from ophyd_async.core import get_mock_put, set_mock_value
 
 from haven.devices.shutter import PssShutter, ShutterState
 

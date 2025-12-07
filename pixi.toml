@@ -46,13 +46,13 @@ lint-all = [
 
 
 [feature.bluesky.pypi-dependencies]
-aioca = ">=2.0a4"
+aioca = ">=2.0"
 bluesky = "==1.14.4"
 apsbits = ">=2.0.0"
 apstools = ">=1.7.8"
 guarneri = "*"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.13.4", extras = ["ca"] }
+ophyd-async = { version = "==0.14.0", extras = ["ca"] }
 scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"

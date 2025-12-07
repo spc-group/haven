@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from bluesky import RunEngine
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from haven._iconfig import load_config
 from haven.devices import AxilonMonochromator as Monochromator

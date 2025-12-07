@@ -2,7 +2,8 @@ import asyncio
 
 import numpy as np
 import pytest
-from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
+from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.testing import assert_value
 from scanspec.core import Path
 from scanspec.specs import Fly, Line
 

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from collections.abc import AsyncGenerator, Iterable, Mapping
 from itertools import repeat
 from typing import Any
@@ -53,7 +54,8 @@ class IonChamber(StandardReadable, Triggerable):
     _ophyd_labels_ = {"ion_chambers", "detectors"}
     _trigger_statuses: dict[str, AsyncStatus] = {}
     _clock_register_width = 32  # bits in the register
-    _fly_readings: list[dict]
+    _fly_start_timestamp_remote: int | float | None = None
+    _fly_start_timestamp_local: int | float | None = None
 
     detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
 
@@ -376,14 +378,18 @@ class IonChamber(StandardReadable, Triggerable):
         count_signal = self.mcs.scaler.count
         await wait_for_value(count_signal, False, timeout=timeout)
 
-    def record_fly_reading(self, reading, **kwargs):
-        if self._is_flying:
-            self._fly_readings.append(reading)
+    def record_fly_start(self, reading, **kwargs):
+        this_reading = reading[self.mcs.current_channel.name]
+        FIRST_CHANNEL = 1
+        if this_reading["value"] == FIRST_CHANNEL:
+            self._is_flying = True
+            self._fly_start_timestamp_remote = this_reading["timestamp"]
+            log.debug(f"Fly first channel at {self._fly_start_timestamp_remote}")
 
     @AsyncStatus.wrap
     async def prepare(self, value: TriggerInfo):
         """Prepare the ion chamber for fly scanning."""
-        self.start_timestamp = None
+        self._fly_start_timestamp = None
         # Set some configuration PVs on the MCS
         max_channels = await self.mcs.num_channels_max.get_value()
         if value.trigger == DetectorTrigger.INTERNAL:
@@ -409,24 +415,23 @@ class IonChamber(StandardReadable, Triggerable):
             self.mcs.erase_all.trigger(),
         )
         # Start acquiring data
-        self._fly_readings = []
         self._is_flying = False  # Gets set during kickoff
 
     @AsyncStatus.wrap
     async def kickoff(self):
         """Start recording data for the fly scan."""
+        # Watch for new data being collected so we can save timestamps
+        self.mcs.current_channel.subscribe(self.record_fly_start)
         # Decide how many frames we expect
         num_channels = next(self._trigger_channel_nums)
         await self.mcs.num_channels.set(num_channels)
-        # Watch for new data being collected so we can save timestamps
-        self.mcs.current_channel.subscribe(self.record_fly_reading)
         # Start acquiring
         self.mcs.erase_start.trigger(wait=False)
         # Wait for acquisition to start
         await wait_for_value(
             self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT
         )
-        self._is_flying = True
+        self._fly_start_timestamp_local = time.time()
         return
 
     @AsyncStatus.wrap
@@ -436,9 +441,6 @@ class IonChamber(StandardReadable, Triggerable):
         self._is_flying = False
 
     async def collect_pages(self) -> AsyncGenerator[Mapping[str, Any], Any]:
-        if len(self._fly_readings) == 0:
-            # No readings have been collected, so just skip this step
-            return
         # Prepare the individual signal data-sets
         raw_counts, raw_times, clock_freq, offset_rate, num_points = (
             await asyncio.gather(
@@ -452,11 +454,12 @@ class IonChamber(StandardReadable, Triggerable):
         raw_counts = raw_counts[:num_points]
         times = raw_times / clock_freq
         # Fill in any missing timestamps
-        timestamps = [
-            d[self.mcs.current_channel.name]["timestamp"] for d in self._fly_readings
-        ]
         elapsed_times = np.cumsum(times[1:])
-        t0 = min(timestamps)
+        t0 = (
+            self._fly_start_timestamp_remote
+            if self._fly_start_timestamp_remote is not None
+            else self._fly_start_timestamp_local
+        )
         timestamps = [t0, *(t0 + elapsed_times)]
         # Apply the dark current correction
         net_counts = raw_counts - offset_rate * times
@@ -467,19 +470,18 @@ class IonChamber(StandardReadable, Triggerable):
             self.scaler_channel.net_count.name: net_counts,
             self.mcs.scaler.elapsed_time.name: times,
             self.mcs.scaler.channels[0].net_count.name: null_data,
-            self.mcs.scaler.channels[0].raw_count.name: null_data,
+            self.mcs.scaler.channels[0].raw_count.name: raw_times,
             self.voltmeter_channel.final_value.name: null_data,
-            self.net_count_rate.name: null_data,
+            self.net_count_rate.name: net_counts / times,
             self.net_current.name: null_data,
             self.raw_current.name: null_data,
-            self.raw_count_rate.name: null_data,
+            self.raw_count_rate.name: raw_counts / times,
         }
         results = {
-            "time": max(timestamps),
+            "time": time.time(),
             "data": data,
             "timestamps": {key: timestamps for key in data.keys()},
         }
-        self._fly_readings = []
         yield results
 
     async def describe_collect(self) -> dict[str, dict]:

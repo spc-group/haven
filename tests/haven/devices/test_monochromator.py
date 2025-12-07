@@ -1,6 +1,6 @@
 import pytest
 from bluesky import protocols
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value
 
 from haven.devices.axilon_monochromator import AxilonMonochromator as Monochromator
 

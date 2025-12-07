@@ -1,11 +1,12 @@
 import asyncio
+import time
 from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import DetectorTrigger, TriggerInfo
-from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
+from ophyd_async.core import DetectorTrigger, TriggerInfo, get_mock_put, set_mock_value
+from ophyd_async.testing import assert_value
 
 from haven.devices.ion_chamber import IonChamber
 
@@ -293,7 +294,6 @@ async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     assert erase_mock_put.called
     await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
-    assert ion_chamber._fly_readings == []
 
 
 async def test_flyscan_prepare_external_trigger(ion_chamber):
@@ -316,7 +316,6 @@ async def test_flyscan_prepare_external_trigger(ion_chamber):
     assert next(ion_chamber._trigger_channel_nums) == 5
     assert next(ion_chamber._trigger_channel_nums) == 7
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
-    assert ion_chamber._fly_readings == []
 
 
 async def test_flyscan_kickoff(ion_chamber, trigger_info):
@@ -333,8 +332,9 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     # Check that the scan was started
     assert start_mock_put.called
     # Check that timestamps get recorded when new data are available
-    set_mock_value(ion_chamber.mcs.current_channel, 0)
-    assert len(ion_chamber._fly_readings) == 1
+    set_mock_value(ion_chamber.mcs.current_channel, 1)
+    assert ion_chamber._fly_start_timestamp_local is not None
+    assert ion_chamber._fly_start_timestamp_remote is not None
 
 
 async def test_flyscan_complete(ion_chamber):
@@ -360,22 +360,13 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     set_mock_value(ion_chamber.mcs.current_channel, 6)
     channel_numbers = range(len(sim_times) + 1)
     expected_timestamps = [1004, 1008, 1012, 1016, 1020, 1024]
-    ion_chamber._fly_readings = [
-        {
-            ion_chamber.mcs.current_channel.name: {
-                "value": datum,
-                "timestamp": timestamp,
-                "alarm_severity": 0,
-            }
-        }
-        for (datum, timestamp) in zip(channel_numbers, expected_timestamps)
-    ]
+    ion_chamber._fly_start_timestamp_remote = expected_timestamps[0]
     # The real timestamps should be midway between PSO pulses
     collected = [c async for c in ion_chamber.collect_pages()]
     assert len(collected) == 1
     collected = collected[0]
     # Confirm data have the right structure
-    assert collected["time"] == 1024
+    assert collected["time"] == pytest.approx(time.time())
     assert_allclose(
         collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:6]
     )

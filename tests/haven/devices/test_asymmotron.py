@@ -2,8 +2,7 @@ import asyncio
 import math
 
 import pytest
-from ophyd_async.core import soft_signal_rw
-from ophyd_async.testing import set_mock_value
+from ophyd_async.core import set_mock_value, soft_signal_rw
 
 from haven.devices.asymmotron import (
     Analyzer,
