@@ -49,7 +49,7 @@ FEATURE_FLAGS = {
         description="new controls added to the 25-ID undulator for step scanning faster",
     ),
     "install_storage_ring_suspenders": FeatureFlag(
-        expires=dt.datetime(2025, 12, 8).timestamp(),
+        expires=dt.datetime(2026, 1, 8).timestamp(),
         description="suspend the run engine when the storage ring is out of spec.",
     ),
 }

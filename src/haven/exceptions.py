@@ -1,4 +1,4 @@
-from ophydregistry.exceptions import (  # noqa: F401
+from guarneri.exceptions import (  # noqa: F401
     ComponentNotFound,
     InvalidComponentLabel,
     MultipleComponentsFound,

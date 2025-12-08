@@ -19,8 +19,8 @@ from bluesky.run_engine import (  # noqa: F401
 )
 from bluesky.simulators import summarize_plan  # noqa: F401
 from bluesky_queueserver import is_re_worker_active
+from guarneri.exceptions import ComponentNotFound
 from ophyd_async.core import NotConnectedError
-from ophydregistry import ComponentNotFound
 
 import haven  # noqa: F401
 

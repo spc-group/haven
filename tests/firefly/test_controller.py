@@ -1,9 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from guarneri import Registry
 from ophyd import Device
 from ophyd.sim import make_fake_device
-from ophydregistry import Registry
 
 import firefly
 from firefly.action import WindowAction

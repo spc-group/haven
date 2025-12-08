@@ -4,6 +4,7 @@ import pytest
 from ophyd_async.core import set_mock_value
 
 from firefly.plans.line_scan import LineScanDisplay
+from haven.devices import SoftGlueFlyerController
 from haven.devices.motor import Motor
 
 
@@ -38,7 +39,17 @@ async def motors(sim_registry, sync_motors):
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber):
+async def soft_glue(sim_registry):
+    sg = SoftGlueFlyerController(name="soft_glue", prefix="")
+    await sg.connect(mock=True)
+    sim_registry.register(sg)
+    return sg
+
+
+@pytest.fixture()
+async def display(
+    qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber, soft_glue
+):
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -149,6 +160,77 @@ async def test_plan_args(display, qtbot, xspress, ion_chamber):
             "notes": "notes",
         },
     }
+
+
+def test_flyer_controller_options(display, soft_glue):
+    assert display.fly_controller_list.count() == 1
+    item0 = display.fly_controller_list.item(0)
+    assert item0.text() == soft_glue.name
+
+
+@pytest.mark.asyncio
+async def test_fly_plan_args(display, qtbot, xspress, ion_chamber, soft_glue):
+    # Set up fly-scan parameters
+    display.ui.fly_checkbox.setChecked(True)
+    display.ui.fly_dwell_time.setValue(0.3)
+    list_widget = display.ui.fly_controller_list
+    list_widget.setCurrentItem(list_widget.item(0))
+    # set up motor num
+    await display.regions.set_region_count(2)
+    # set up a test motor 1
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.combo_box.setCurrentText("async motor-1")
+    widgets.start_spin_box.setValue(1)
+    widgets.stop_spin_box.setValue(111)
+    # set up a test motor 2
+    widgets = display.regions.row_widgets(2)
+    widgets.device_selector.combo_box.setCurrentText("sync_motor_2")
+    widgets.start_spin_box.setValue(2)
+    widgets.stop_spin_box.setValue(222)
+    # set up scan num of points
+    display.ui.scan_pts_spin_box.setValue(10)
+    # time is calculated when the selection is changed
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=[xspress, ion_chamber]
+    )
+    # set up meta data
+    display.ui.metadata_widget.sample_line_edit.setText("sam")
+    display.ui.metadata_widget.purpose_combo_box.setCurrentText("test")
+    display.ui.metadata_widget.notes_text_edit.setText("notes")
+    # Check the arguments that will get used by the plan
+    assert display.plan_type == "fly_scan"
+    args, kwargs = display.plan_args()
+    assert args == (
+        ["vortex_me4", "I00"],
+        "async motor-1",
+        1.0,
+        111.0,
+        "sync_motor_2",
+        2.0,
+        222.0,
+    )
+    assert kwargs == {
+        "num": 10,
+        "dwell_time": 0.3,
+        "trigger": "INTERNAL",
+        "flyer_controllers": [soft_glue.name],
+        "md": {
+            "sample_name": "sam",
+            "purpose": "test",
+            "notes": "notes",
+        },
+    }
+
+
+def test_relative_fly_checkboxes(display):
+    """Check that the widgets enable/disable each other properly."""
+    assert display.ui.relative_scan_checkbox.isChecked()
+    # Turn on fly scanning, then scans should be absolute
+    display.ui.fly_checkbox.setChecked(True)
+    assert not display.ui.relative_scan_checkbox.isChecked()
+    # Relative scans should turn off fly scanning
+    display.ui.relative_scan_checkbox.setChecked(True)
+    assert not display.ui.fly_checkbox.isChecked()
 
 
 async def test_full_motor_parameters(display, motors):

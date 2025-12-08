@@ -157,6 +157,16 @@ class LineScanDisplay(display.PlanDisplay):
         self.relative_scan_checkbox.stateChanged.connect(
             self.regions.set_relative_position
         )
+        # Fly controls are hidden until requested
+        self.ui.fly_groupbox.setVisible(False)
+        self.ui.relative_scan_checkbox.stateChanged.connect(
+            partial(
+                self.update_scan_mode_checkboxes, source=self.ui.relative_scan_checkbox
+            )
+        )
+        self.ui.fly_checkbox.stateChanged.connect(
+            partial(self.update_scan_mode_checkboxes, source=self.ui.fly_checkbox)
+        )
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
@@ -167,6 +177,14 @@ class LineScanDisplay(display.PlanDisplay):
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
+
+    def update_scan_mode_checkboxes(self, value, source: QCheckBox = None):
+        if source is self.ui.fly_checkbox and value > 0:
+            # If flying, needs to be absolute positions
+            self.ui.relative_scan_checkbox.setChecked(False)
+        elif source is self.ui.relative_scan_checkbox and value > 0:
+            # If flying, needs to be absolute positions
+            self.ui.fly_checkbox.setChecked(False)
 
     def scan_durations(self, detector_time):
         num_points = self.ui.scan_pts_spin_box.value()
@@ -192,6 +210,11 @@ class LineScanDisplay(display.PlanDisplay):
             self.regions.update_devices(registry),
             self.detectors_list.update_devices(registry),
         )
+        # Update the list of available flyer controllers
+        controllers = registry.findall("flyer_controllers", allow_none=True)
+        controller_names = [ctrl.name for ctrl in controllers]
+        self.fly_controller_list.clear()
+        self.fly_controller_list.addItems(controller_names)
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets
@@ -207,11 +230,20 @@ class LineScanDisplay(display.PlanDisplay):
             "num": self.ui.scan_pts_spin_box.value(),
             "md": self.plan_metadata(),
         }
+        # Fly scans have some extra kwargs
+        if self.ui.fly_checkbox.isChecked():
+            kwargs["dwell_time"] = self.ui.fly_dwell_time.value()
+            kwargs["trigger"] = "INTERNAL"
+            kwargs["flyer_controllers"] = [
+                item.text() for item in self.ui.fly_controller_list.selectedItems()
+            ]
         return args, kwargs
 
     @property
     def plan_type(self) -> str:
         """Determine what kind of scan we're running based on user input."""
+        if self.ui.fly_checkbox.isChecked():
+            return "fly_scan"
         return {
             # Rel, log
             (True, True): "rel_log_scan",

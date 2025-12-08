@@ -5,7 +5,7 @@ from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky.preprocessors import finalize_wrapper
 from bluesky.utils import make_decorator
-from ophydregistry import Registry
+from guarneri import Registry
 
 from haven.devices.shutter import ShutterState
 from haven.instrument import beamline

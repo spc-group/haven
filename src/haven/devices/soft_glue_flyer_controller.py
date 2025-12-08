@@ -75,6 +75,8 @@ class SoftGlueTriggerOutput(StandardReadable, Preparable):
 
 
 class SoftGlueFlyerController(StandardReadable, Preparable):
+    _ophyd_labels_ = {"flyer_controllers"}
+
     def __init__(self, prefix: str, name="", pulse_input: int = 0):
         self.output_permitted_gate = soft_glue.LogicGate(f"{prefix}AND-1")
         self.pulse_counter = soft_glue.Counter(

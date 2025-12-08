@@ -1,7 +1,7 @@
 import asyncio
 
+from guarneri import Registry
 from ophyd_async.core import Device
-from ophydregistry import Registry
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QListView
 

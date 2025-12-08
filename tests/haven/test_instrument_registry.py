@@ -1,6 +1,14 @@
+"""These tests are left over from when the instrument registry was
+part of Haven.
+
+Now that the registry is in the guarneri package, these tests are just
+kept around to verify the registry works the way Haven expects.
+
+"""
+
 import pytest
+from guarneri import Registry
 from ophyd import Device, sim
-from ophydregistry import Registry
 
 from haven.exceptions import ComponentNotFound, MultipleComponentsFound
 

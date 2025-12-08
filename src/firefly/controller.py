@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Mapping
 
 import qtawesome as qta
+from guarneri import Registry
 from ophyd_async.core import NotConnectedError
-from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
@@ -15,7 +15,7 @@ from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
 from haven import beamline
-from haven.exceptions import ComponentNotFound, InvalidConfiguration
+from haven.exceptions import InvalidConfiguration
 from haven.utils import titleize
 
 from .action import Action, ActionsRegistry, WindowAction
@@ -485,13 +485,12 @@ class FireflyController(QtCore.QObject):
         """
         # We need a UI file, unless a custom window_slot is given
         # Get needed devices from the device registry
-        try:
-            devices = sorted(
-                self.registry.findall(label=device_label), key=lambda x: x.name
-            )
-        except ComponentNotFound:
+        devices = sorted(
+            self.registry.findall(label=device_label, allow_none=True),
+            key=lambda x: x.name,
+        )
+        if len(devices) == 0:
             log.warning(f"No {device_label} found, menu will be empty.")
-            devices = []
         # Create menu actions for each device
         actions = {
             device.name: WindowAction(
