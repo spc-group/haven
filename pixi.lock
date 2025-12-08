@@ -262,7 +262,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c0/ca/4bb48a26ed95a1e7eba175535fe5805887682140ee0a0d10a88e1de84208/fonttools-4.60.1-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/19/0d/6660d55f7373b2ff8152401a83e02084956da23ae58cddbfb0b330978fe9/greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/10/6a/acb1b0b29be9361d477a0a19dacd510fa32fd0477d9d762a58b3e30c7225/guarneri-0.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ca/42cc9bf323e1202a3fe86b26dcb27b0bd363ce49d095529ec4cf1bb73006/guarneri-0.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d6/49/1f35189c1ca136b2f041b72402f2eb718bdcb435d9e88729fe6f6909c45d/h5netcdf-1.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3a/30/d1c94066343a98bb2cea40120873193a4fed68c4ad7f8935c11caf74c681/h5py-3.15.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -705,7 +705,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c0/ca/4bb48a26ed95a1e7eba175535fe5805887682140ee0a0d10a88e1de84208/fonttools-4.60.1-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/19/0d/6660d55f7373b2ff8152401a83e02084956da23ae58cddbfb0b330978fe9/greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/10/6a/acb1b0b29be9361d477a0a19dacd510fa32fd0477d9d762a58b3e30c7225/guarneri-0.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ca/42cc9bf323e1202a3fe86b26dcb27b0bd363ce49d095529ec4cf1bb73006/guarneri-0.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d6/49/1f35189c1ca136b2f041b72402f2eb718bdcb435d9e88729fe6f6909c45d/h5netcdf-1.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3a/30/d1c94066343a98bb2cea40120873193a4fed68c4ad7f8935c11caf74c681/h5py-3.15.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -1214,7 +1214,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/ca/4bb48a26ed95a1e7eba175535fe5805887682140ee0a0d10a88e1de84208/fonttools-4.60.1-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/0d/6660d55f7373b2ff8152401a83e02084956da23ae58cddbfb0b330978fe9/greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/10/6a/acb1b0b29be9361d477a0a19dacd510fa32fd0477d9d762a58b3e30c7225/guarneri-0.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ca/42cc9bf323e1202a3fe86b26dcb27b0bd363ce49d095529ec4cf1bb73006/guarneri-0.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5b/f5/ac71e692aad076d50a0f5f073204346d5f5577daffd21bb4b72c485f8959/h5netcdf-1.6.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3a/30/d1c94066343a98bb2cea40120873193a4fed68c4ad7f8935c11caf74c681/h5py-3.15.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -1683,7 +1683,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c0/ca/4bb48a26ed95a1e7eba175535fe5805887682140ee0a0d10a88e1de84208/fonttools-4.60.1-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/19/0d/6660d55f7373b2ff8152401a83e02084956da23ae58cddbfb0b330978fe9/greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/10/6a/acb1b0b29be9361d477a0a19dacd510fa32fd0477d9d762a58b3e30c7225/guarneri-0.4.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ca/42cc9bf323e1202a3fe86b26dcb27b0bd363ce49d095529ec4cf1bb73006/guarneri-0.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d6/49/1f35189c1ca136b2f041b72402f2eb718bdcb435d9e88729fe6f6909c45d/h5netcdf-1.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3a/30/d1c94066343a98bb2cea40120873193a4fed68c4ad7f8935c11caf74c681/h5py-3.15.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -3869,17 +3869,16 @@ packages:
   purls: []
   size: 2021832
   timestamp: 1745093493354
-- pypi: https://files.pythonhosted.org/packages/10/6a/acb1b0b29be9361d477a0a19dacd510fa32fd0477d9d762a58b3e30c7225/guarneri-0.4.0-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/c2/ca/42cc9bf323e1202a3fe86b26dcb27b0bd363ce49d095529ec4cf1bb73006/guarneri-0.5.0-py3-none-any.whl
   name: guarneri
-  version: 0.4.0
-  sha256: 54650f0ee743514287c5830e19282ef2749e12338e6a24728ab5192543a36fe5
+  version: 0.5.0
+  sha256: 02ba9877e66c359b92341c0d85244a18f0646751510f576b4ed274ab5043c883
   requires_dist:
   - ophyd
-  - ophyd-async
-  - ophyd-registry>=2.0.0
+  - ophyd-async>=0.13.5
   - tomlkit
   - pyyaml
-  requires_python: '>=3.10'
+  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
   name: h11
   version: 0.16.0
