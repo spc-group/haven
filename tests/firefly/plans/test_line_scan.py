@@ -163,8 +163,8 @@ async def test_plan_args(display, qtbot, xspress, ion_chamber):
 
 
 def test_flyer_controller_options(display, soft_glue):
-    assert display.fly_controller_list.count() == 1
-    item0 = display.fly_controller_list.item(0)
+    assert display.ui.fly_scan_widget.ui.controller_list.count() == 1
+    item0 = display.ui.fly_scan_widget.ui.controller_list.item(0)
     assert item0.text() == soft_glue.name
 
 
@@ -172,8 +172,8 @@ def test_flyer_controller_options(display, soft_glue):
 async def test_fly_plan_args(display, qtbot, xspress, ion_chamber, soft_glue):
     # Set up fly-scan parameters
     display.ui.fly_checkbox.setChecked(True)
-    display.ui.fly_dwell_time.setValue(0.3)
-    list_widget = display.ui.fly_controller_list
+    display.ui.fly_scan_widget.ui.dwell_time_spinbox.setValue(0.3)
+    list_widget = display.ui.fly_scan_widget.ui.controller_list
     list_widget.setCurrentItem(list_widget.item(0))
     # set up motor num
     await display.regions.set_region_count(2)

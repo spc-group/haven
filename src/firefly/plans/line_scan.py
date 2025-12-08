@@ -158,7 +158,8 @@ class LineScanDisplay(display.PlanDisplay):
             self.regions.set_relative_position
         )
         # Fly controls are hidden until requested
-        self.ui.fly_groupbox.setVisible(False)
+        self.ui.fly_scan_widget.ui.fly_groupbox.setVisible(False)
+        self.ui.fly_scan_widget.ui.snake_checkbox.setVisible(False)
         self.ui.relative_scan_checkbox.stateChanged.connect(
             partial(
                 self.update_scan_mode_checkboxes, source=self.ui.relative_scan_checkbox
@@ -213,8 +214,8 @@ class LineScanDisplay(display.PlanDisplay):
         # Update the list of available flyer controllers
         controllers = registry.findall("flyer_controllers", allow_none=True)
         controller_names = [ctrl.name for ctrl in controllers]
-        self.fly_controller_list.clear()
-        self.fly_controller_list.addItems(controller_names)
+        self.ui.fly_scan_widget.ui.controller_list.clear()
+        self.ui.fly_scan_widget.ui.controller_list.addItems(controller_names)
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets
@@ -232,11 +233,13 @@ class LineScanDisplay(display.PlanDisplay):
         }
         # Fly scans have some extra kwargs
         if self.ui.fly_checkbox.isChecked():
-            kwargs["dwell_time"] = self.ui.fly_dwell_time.value()
+            kwargs["dwell_time"] = self.ui.fly_scan_widget.ui.dwell_time_spinbox.value()
             kwargs["trigger"] = "INTERNAL"
-            kwargs["flyer_controllers"] = [
-                item.text() for item in self.ui.fly_controller_list.selectedItems()
-            ]
+            selected_controllers = (
+                self.ui.fly_scan_widget.ui.controller_list.selectedItems()
+            )
+            controllers = [item.text() for item in selected_controllers]
+            kwargs["flyer_controllers"] = controllers
         return args, kwargs
 
     @property
