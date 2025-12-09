@@ -58,12 +58,14 @@ class LineRegionsManager(RegionsManager):
         start_spin_box.lineEdit().setPlaceholderText("Start…")
         start_spin_box.setMinimum(float("-inf"))
         start_spin_box.setMaximum(float("inf"))
+        start_spin_box.setMinimumWidth(100)
 
         # Stop point
         stop_spin_box = QDoubleSpinBox()
         stop_spin_box.lineEdit().setPlaceholderText("Stop…")
         stop_spin_box.setMinimum(float("-inf"))
         stop_spin_box.setMaximum(float("inf"))
+        stop_spin_box.setMinimumWidth(100)
 
         # Step size (non-editable)
         step_label = QLabel()
@@ -158,8 +160,7 @@ class LineScanDisplay(display.PlanDisplay):
             self.regions.set_relative_position
         )
         # Fly controls are hidden until requested
-        self.ui.fly_scan_widget.ui.fly_groupbox.setVisible(False)
-        self.ui.fly_scan_widget.ui.snake_checkbox.setVisible(False)
+        self.ui.fly_scan_widget.setVisible(False)
         self.ui.relative_scan_checkbox.stateChanged.connect(
             partial(
                 self.update_scan_mode_checkboxes, source=self.ui.relative_scan_checkbox
@@ -210,12 +211,8 @@ class LineScanDisplay(display.PlanDisplay):
         await asyncio.gather(
             self.regions.update_devices(registry),
             self.detectors_list.update_devices(registry),
+            self.ui.fly_scan_widget.update_devices(registry),
         )
-        # Update the list of available flyer controllers
-        controllers = registry.findall("flyer_controllers", allow_none=True)
-        controller_names = [ctrl.name for ctrl in controllers]
-        self.ui.fly_scan_widget.ui.controller_list.clear()
-        self.ui.fly_scan_widget.ui.controller_list.addItems(controller_names)
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets

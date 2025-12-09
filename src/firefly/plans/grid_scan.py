@@ -34,7 +34,6 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         num_points_spin_box: QSpinBox
         step_label: QLabel
         snake_checkbox: QCheckBox
-        fly_checkbox: QCheckBox
 
     @dataclass(frozen=True, eq=True)
     class Region(RegionsManager.Region):
@@ -65,10 +64,12 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         start_spin_box = QDoubleSpinBox()
         start_spin_box.setMinimum(float("-inf"))
         start_spin_box.setMaximum(float("inf"))
+        start_spin_box.setMinimumWidth(100)
         # Stop point
         stop_spin_box = QDoubleSpinBox()
         stop_spin_box.setMinimum(float("-inf"))
         stop_spin_box.setMaximum(float("inf"))
+        stop_spin_box.setMinimumWidth(100)
         # Number of scan points
         scan_pts_spin_box = QSpinBox()
         scan_pts_spin_box.setMinimum(1)
@@ -82,10 +83,6 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         snake_checkbox.setText("Snake")
         is_first_row = row == self.header_rows
         snake_checkbox.setEnabled(not is_first_row)
-        # Fly checkbox # not available right now
-        fly_checkbox = QCheckBox()
-        fly_checkbox.setText("Fly")
-        fly_checkbox.setEnabled(False)
         # Connect signals
         update_step_size = partial(self.update_step_size, row=row)
         start_spin_box.valueChanged.connect(update_step_size)
@@ -102,7 +99,6 @@ class GridRegionsManager[WidgetsType](RegionsManager):
             scan_pts_spin_box,
             step_label,
             snake_checkbox,
-            fly_checkbox,
         ]
 
     @asyncSlot(Device)
@@ -191,6 +187,16 @@ class GridScanDisplay(display.PlanDisplay):
         self.relative_scan_checkbox.stateChanged.connect(
             self.regions.set_relative_position
         )
+        # Fly controls are hidden until requested
+        self.ui.fly_scan_widget.setVisible(False)
+        self.ui.relative_scan_checkbox.stateChanged.connect(
+            partial(
+                self.update_scan_mode_checkboxes, source=self.ui.relative_scan_checkbox
+            )
+        )
+        self.ui.fly_checkbox.stateChanged.connect(
+            partial(self.update_scan_mode_checkboxes, source=self.ui.fly_checkbox)
+        )
         # Connect scan points change to update total time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
@@ -198,6 +204,14 @@ class GridScanDisplay(display.PlanDisplay):
         )
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
+
+    def update_scan_mode_checkboxes(self, value, source: QCheckBox = None):
+        if source is self.ui.fly_checkbox and value > 0:
+            # If flying, needs to be absolute positions
+            self.ui.relative_scan_checkbox.setChecked(False)
+        elif source is self.ui.relative_scan_checkbox and value > 0:
+            # If flying, needs to be absolute positions
+            self.ui.fly_checkbox.setChecked(False)
 
     def scan_durations(self, detector_time: float) -> tuple[float, float]:
         num_points = self.regions.num_points()
@@ -238,11 +252,14 @@ class GridScanDisplay(display.PlanDisplay):
         await asyncio.gather(
             self.regions.update_devices(registry),
             self.detectors_list.update_devices(registry),
+            self.ui.fly_scan_widget.update_devices(registry),
         )
 
     @property
     def plan_type(self):
-        if self.ui.relative_scan_checkbox.isChecked():
+        if self.ui.fly_checkbox.isChecked():
+            return "grid_fly_scan"
+        elif self.ui.relative_scan_checkbox.isChecked():
             return "rel_grid_scan"
         else:
             return "grid_scan"
@@ -273,6 +290,15 @@ class GridScanDisplay(display.PlanDisplay):
         # Prepare the argument collections
         args = (detector_names, *device_args)
         kwargs = {"snake_axes": snake_axes, "md": self.plan_metadata()}
+        # Fly scans have some extra kwargs
+        if self.ui.fly_checkbox.isChecked():
+            kwargs["dwell_time"] = self.ui.fly_scan_widget.ui.dwell_time_spinbox.value()
+            kwargs["trigger"] = "INTERNAL"
+            selected_controllers = (
+                self.ui.fly_scan_widget.ui.controller_list.selectedItems()
+            )
+            controllers = [item.text() for item in selected_controllers]
+            kwargs["flyer_controllers"] = controllers
         return args, kwargs
 
     def ui_filename(self):

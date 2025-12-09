@@ -55,6 +55,7 @@ class MotorRegionsManager(RegionsManager):
         position_spin_box.lineEdit().setPlaceholderText("Position…")
         position_spin_box.setMinimum(float("-inf"))
         position_spin_box.setMaximum(float("inf"))
+        position_spin_box.setMinimumWidth(100)
 
         # Add widgets to the layout
         return [

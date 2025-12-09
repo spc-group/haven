@@ -455,5 +455,22 @@
   <tabstop>scan_pts_spin_box</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>fly_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fly_scan_widget</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>654</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
