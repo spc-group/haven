@@ -333,10 +333,10 @@ async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber, stepper)
             "dimensions": [([stepper.name], "primary"), ([flyer.name], "primary")],
         },
         "shape": (11, 6),
-        "extents": (
-            {"stepper": (-100, 100)},
-            {"flyer": (-20, 30)},
-        ),
+        "extents": [
+            (-100, 100),
+            (-20, 30),
+        ],
         "snaking": (False, True),
         "plan_pattern": "outer_product",
         "spam": "eggs",
