@@ -175,6 +175,7 @@ async def test_fly_plan_args(display, qtbot, xspress, ion_chamber, soft_glue):
     display.ui.fly_scan_widget.ui.dwell_time_spinbox.setValue(0.3)
     list_widget = display.ui.fly_scan_widget.ui.controller_list
     list_widget.setCurrentItem(list_widget.item(0))
+    display.ui.fly_scan_widget.ui.trigger_combobox.setCurrentText("EDGE_TRIGGER")
     # set up motor num
     await display.regions.set_region_count(2)
     # set up a test motor 1
@@ -212,7 +213,7 @@ async def test_fly_plan_args(display, qtbot, xspress, ion_chamber, soft_glue):
     assert kwargs == {
         "num": 10,
         "dwell_time": 0.3,
-        "trigger": "INTERNAL",
+        "trigger": "EDGE_TRIGGER",
         "flyer_controllers": [soft_glue.name],
         "md": {
             "sample_name": "sam",

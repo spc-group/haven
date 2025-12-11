@@ -14,7 +14,7 @@ from bluesky.preprocessors import (
     stage_decorator,
     stage_wrapper,
 )
-from bluesky.protocols import Flyable, HasName, Preparable
+from bluesky.protocols import Flyable, HasName
 from bluesky.utils import Msg
 from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from scanspec.core import Path, SnakedDimension
@@ -239,7 +239,7 @@ def grid_fly_scan(
     *args,
     dwell_time: float,
     trigger: DetectorTrigger = "INTERNAL",
-    flyer_controllers: Sequence[Preparable] = [],
+    flyer_controllers: Sequence[Flyable] = [],
     snake_axes: Iterable | bool = False,
     md: Mapping = {},
 ):

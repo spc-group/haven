@@ -287,13 +287,20 @@ class GridScanDisplay(display.PlanDisplay):
         snake_axes = [region.device for region in self.regions if region.snake]
         if snake_axes == []:
             snake_axes = False
+        # This path is only there to work around a bug in bluesky-queueserver.
+        #   Remove the following "else:" block once this issue is fixed:
+        #   https://github.com/bluesky/bluesky-queueserver/issues/340
+        else:
+            snake_axes = True
         # Prepare the argument collections
         args = (detector_names, *device_args)
         kwargs = {"snake_axes": snake_axes, "md": self.plan_metadata()}
         # Fly scans have some extra kwargs
         if self.ui.fly_checkbox.isChecked():
             kwargs["dwell_time"] = self.ui.fly_scan_widget.ui.dwell_time_spinbox.value()
-            kwargs["trigger"] = "INTERNAL"
+            kwargs["trigger"] = (
+                self.ui.fly_scan_widget.ui.trigger_combobox.currentText()
+            )
             selected_controllers = (
                 self.ui.fly_scan_widget.ui.controller_list.selectedItems()
             )
