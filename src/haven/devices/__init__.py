@@ -5,6 +5,7 @@ from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .channel_cut_monochromator import ChannelCutMonochromator  # noqa: F401
+from .cl3000 import CL3000 as CL3000
 from .delay import DG645Delay  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401

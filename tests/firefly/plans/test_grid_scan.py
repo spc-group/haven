@@ -145,7 +145,9 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
         10,
     )
     assert kwargs == dict(
-        snake_axes=["async_motor_2"],
+        # Waiting on fix for https://github.com/bluesky/bluesky-queueserver/issues/340
+        # snake_axes=["async_motor_2"],
+        snake_axes=True,
         md={
             "sample_name": "sam",
             "purpose": "test",
@@ -204,7 +206,9 @@ async def test_fly_plan_args(display, xspress, ion_chamber, qtbot, soft_glue):
         10,
     )
     assert kwargs == dict(
-        snake_axes=["async_motor_2"],
+        # Waiting on fix for https://github.com/bluesky/bluesky-queueserver/issues/340
+        # snake_axes=["async_motor_2"],
+        snake_axes=True,
         dwell_time=0.3,
         trigger="EDGE_TRIGGER",
         flyer_controllers=[soft_glue.name],

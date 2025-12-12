@@ -300,17 +300,10 @@ def grid_fly_scan(
         trigger=trigger,
     )
     # Determine the min, max of each scanning axis for metadata
-    extents: tuple[dict[str, tuple[float, float]], ...] = tuple(
-        {
-            axis.name: (float(np.min(points)), float(np.max(points)))
-            for axis, points in frame.midpoints.items()
-        }
-        for frame in frames
-    )
-    # Collapse the extents if every dimension is a single axis
-    extent_dims = [len(dim) for dim in extents]
-    if all(dim == 1 for dim in extent_dims):
-        extents = [list(dim.values())[0] for dim in extents]
+    extents: list[tuple[float, float]] = []
+    for frame in frames:
+        (points,) = frame.midpoints.values()
+        extents.append((float(np.min(points)), float(np.max(points))))
     # Other plan-specific metadata
     args_for_md = [repr(arg) if isinstance(arg, HasName) else arg for arg in args]
     snake_repr = (

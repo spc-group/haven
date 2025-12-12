@@ -347,3 +347,13 @@ ip6 = "255idVac:qpc03b"
 [[ vacuum_gauges ]]
 ig1 = "255idVac:VSA5"
 ig2 = "255idVac:VSA9"
+
+
+# Displacement detector
+# =====================
+#
+# A.K.A. rainbow detector
+
+[[ cl3000 ]]
+name = "raindbow"
+prefix = "255idc:CL3000:1:"
