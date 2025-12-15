@@ -125,11 +125,11 @@ class Analyzer(StandardReadable):
 
     Parameters
     ==========
-    horizontal_motor_prefix
+    chord_motor_prefix
       The PV prefix for the motor moving the crystal inboard/outboard.
-    vertical_motor_prefix
-      The PV prefix for the motor moving the crystal closer to the
-      ceiling.
+    pitch_motor_prefix
+      The PV prefix for the motor moving the crystal angle relative to
+      the incoming beam.
     yaw_motor_prefix
       The PV prefix for the motor rotating the crystal around its
       optical axis.
@@ -138,7 +138,7 @@ class Analyzer(StandardReadable):
     lattice_constant
       The lattice constant of the analyzer (e.g. Si 111) crystal.
     wedge_angle
-      The angle of the horizontal motor axis.
+      The angle of the chord motor axis.
     surface_plane
       The cut of the analyzer crystal. Either as a tuple (e.g.
       ``(2, 1, 1)`` or a string (e.g. ``"211"``).
@@ -151,8 +151,8 @@ class Analyzer(StandardReadable):
     def __init__(
         self,
         *,
-        horizontal_motor_prefix: str,
-        vertical_motor_prefix: str,
+        chord_motor_prefix: str,
+        pitch_motor_prefix: str,
         yaw_motor_prefix: str,
         rowland_diameter: float = 0.5,
         lattice_constant: float = 0.543095,
@@ -162,8 +162,8 @@ class Analyzer(StandardReadable):
     ):
         surface_plane_hkl: tuple[int, ...] = tuple(int(i) for i in surface_plane)
         # Create the real motors
-        self.horizontal = Motor(horizontal_motor_prefix)
-        self.vertical = Motor(vertical_motor_prefix)
+        self.chord = Motor(chord_motor_prefix)
+        self.crystal_pitch = Motor(pitch_motor_prefix)
         self.crystal_yaw = Motor(yaw_motor_prefix)
         # Reciprocal space geometry
         self.reflection = HKL(initial_value="111")
@@ -217,8 +217,8 @@ class Analyzer(StandardReadable):
         self.add_readables([self.energy.readback], StandardReadableFormat.HINTED_SIGNAL)
         self.add_readables(
             [
-                self.vertical,
-                self.horizontal,
+                self.crystal_pitch,
+                self.chord,
             ]
         )
         self.add_readables(
@@ -228,11 +228,11 @@ class Analyzer(StandardReadable):
             StandardReadableFormat.CONFIG_SIGNAL,
         )
         super().__init__(name=name)
-        # We don't have vertical/horizontal to be hinted, but still configuration
+        # We don't have pitch/chord to be hinted, but still configuration
         self._has_hints = tuple(
             device
             for device in self._has_hints
-            if device not in [self.vertical, self.horizontal]
+            if device not in [self.crystal_pitch, self.chord]
         )
 
     async def connect(
@@ -246,8 +246,8 @@ class Analyzer(StandardReadable):
         )
         # Stash units for later. Assumes they won't change
         device_names: list[str] = [
-            "horizontal",
-            "vertical",
+            "chord",
+            "crystal_pitch",
             "crystal_yaw",
             "lattice_constant",
             "rowland_diameter",
@@ -284,8 +284,8 @@ class Analyzer(StandardReadable):
 
 
 class EnergyRaw(TypedDict):
-    horizontal: float
-    vertical: float
+    chord: float
+    crystal_pitch: float
 
 
 class EnergyDerived(TypedDict):
@@ -312,33 +312,31 @@ class EnergyTransform(Transform):
         alpha = self.asymmetry_angle * units["asymmetry_angle"]
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=d)
-        # Step 1: Convert energy params to geometry params
+        # Convert energy params to geometry params
         theta_M = bragg + alpha
         rho = D * np.sin(theta_M)
-        # Step 2: Convert geometry params to motor positions
-        y = rho * np.cos(theta_M) / np.cos(beta)
-        x = -y * np.sin(beta) + rho * np.sin(theta_M)
-        # Unroll the units
-        x = x.to(units["horizontal"]).magnitude
-        y = y.to(units["vertical"]).magnitude
-        return EnergyRaw(horizontal=x, vertical=y)
+        raw = EnergyRaw(
+            chord=float(rho.to(units["chord"]).magnitude),
+            crystal_pitch=float(theta_M.to(units["crystal_pitch"]).magnitude),
+        )
+        return raw
 
-    def raw_to_derived(self, horizontal: float, vertical: float) -> EnergyDerived:
+    def raw_to_derived(self, chord: float, crystal_pitch: float) -> EnergyDerived:
         """Run an inverse (real -> pseudo) calculation"""
-        x, y, D, d, beta, alpha = (
-            horizontal,
-            vertical,
+        rho, theta_M, D, d, beta, alpha = (
+            chord,
+            crystal_pitch,
             self.rowland_diameter,
             self.d_spacing,
             self.wedge_angle,
             self.asymmetry_angle,
         )
-        log.debug(f"Inverse: {x=}, {y=}, {D=}, {d=}, {beta=}, {alpha=}")
+        log.debug(f"Inverse: θM={theta_M}, ρ={rho}, {D=}, {d=}, {beta=}, {alpha=}")
         # Resolve signals into their quantities (with units)
         try:
             units = self.xtal.units
-            x = x * units["horizontal"]
-            y = y * units["vertical"]
+            rho = rho * units["chord"]
+            theta_M = theta_M * units["crystal_pitch"]
             D = D * units["rowland_diameter"]
             d = d * units["d_spacing"]
             beta = beta * units["wedge_angle"]
@@ -346,12 +344,7 @@ class EnergyTransform(Transform):
         except (AttributeError, KeyError) as exc:
             log.info(exc)
             return EnergyDerived(energy=float("nan"))
-        # Step 1: Convert motor positions to geometry parameters
-        theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
-        log.debug(f"Inverse: {theta_M=}")
-        rho = y * np.cos(beta) / np.cos(theta_M)
-        log.debug(f"Inverse: {rho=}")
-        # Step 1: Convert geometry params to energy
+        # Convert geometry params to energy
         bragg = theta_M - alpha
         log.debug(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
@@ -385,8 +378,8 @@ class EnergyPositioner(Positioner):
         self._setpoint_factory = DerivedSignalFactory(
             this_transform,
             self._set_from_energy,
-            horizontal=xtal.horizontal.user_setpoint,
-            vertical=xtal.vertical.user_setpoint,
+            chord=xtal.chord.user_setpoint,
+            crystal_pitch=xtal.crystal_pitch.user_setpoint,
             **xtal_signals,
         )
         self.setpoint = self._setpoint_factory.derived_signal_rw(
@@ -396,8 +389,8 @@ class EnergyPositioner(Positioner):
         )
         self._readback_factory = DerivedSignalFactory(
             this_transform,
-            horizontal=xtal.horizontal.user_readback,
-            vertical=xtal.vertical.user_readback,
+            chord=xtal.chord.user_readback,
+            crystal_pitch=xtal.crystal_pitch.user_readback,
             **xtal_signals,
         )
         with self.add_children_as_readables():
@@ -419,8 +412,8 @@ class EnergyPositioner(Positioner):
         # Set the new calculated signals
         xtal = self._xtals["xtal"]
         await asyncio.gather(
-            xtal.horizontal.set(raw["horizontal"]),
-            xtal.vertical.set(raw["vertical"]),
+            xtal.chord.set(raw["chord"]),
+            xtal.crystal_pitch.set(raw["crystal_pitch"]),
         )
 
 

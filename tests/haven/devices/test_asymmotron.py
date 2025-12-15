@@ -83,26 +83,13 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     assert new_bragg == pytest.approx(theta, rel=0.001)
 
 
-analyzer_values = [
-    # (θB,  α,  β,      y,     x)
-    (70, 15, 25, 4.79, 47.60),
-    (80, 7, 10, 2.65, 49.40),
-    (60, 20, 30, 9.87, 43.56),
-    (65, 0, 0, 19.15, 41.07),
-    (80, 30, 10, -16.32, 46.98),
-]
-
-
-Si311_d_spacing = 0.1637  # in nm
-
-
 @pytest.fixture()
 async def xtal(sim_registry):
     # Create the analyzer documents
     xtal = Analyzer(
         name="analyzer",
-        horizontal_motor_prefix="",
-        vertical_motor_prefix="",
+        chord_motor_prefix="",
+        pitch_motor_prefix="",
         yaw_motor_prefix="",
         surface_plane=(0, 0, 1),
     )
@@ -116,8 +103,8 @@ async def xtal(sim_registry):
     set_mock_value(xtal.reflection.l, 1)
     set_mock_value(xtal.lattice_constant, 0.5431)
     set_mock_value(xtal.rowland_diameter, 500)
-    xtal.units["horizontal"] = ureg.cm
-    xtal.units["vertical"] = ureg.cm
+    xtal.units["chord"] = ureg.cm
+    xtal.units["crystal_pitch"] = ureg.radians
     xtal.units["rowland_diameter"] = ureg.mm
     xtal.units["d_spacing"] = ureg.nm
     xtal.units["wedge_angle"] = ureg.degrees
@@ -136,8 +123,21 @@ async def test_set_hkl(xtal):
     assert tuple(hkl) == (1, 3, 7)
 
 
-@pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
-async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
+analyzer_values = [
+    # (θB,  α,  β, θM /rad,  ρ /cm)
+    (70, 15, 25, 1.4835, 49.810),
+    (80, 7, 10, 1.5184, 49.931),
+    (60, 20, 30, 1.3963, 49.240),
+    (65, 0, 0, 1.1345, 45.315),
+    (80, 30, 10, 1.92, 46.985),
+]
+
+
+Si311_d_spacing = 0.1637  # in nm
+
+
+@pytest.mark.parametrize("bragg,alpha,beta,thetaM,rho", analyzer_values)
+async def test_rowland_circle_forward(xtal, bragg, alpha, beta, thetaM, rho):
     NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
     transform = NewTransform(
         rowland_diameter=await xtal.rowland_diameter.get_value(),
@@ -149,12 +149,13 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
     energy_val = energy.to(ureg.electron_volt).magnitude
     new_position = transform.derived_to_raw(energy=energy_val)
     # Check the result is correct (convert cm -> m)
-    expected = {"horizontal": x, "vertical": y}
+    expected = {"chord": rho, "crystal_pitch": thetaM}
     assert new_position == pytest.approx(expected, abs=0.1)
 
 
-@pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
-async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
+@pytest.mark.parametrize("bragg,alpha,beta,thetaM,rho", analyzer_values)
+async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, thetaM, rho):
+    real_thetaM = ((bragg + alpha) * ureg.degree).to(ureg.radians)
     # Calculate the new energy
     NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
     transform = NewTransform(
@@ -163,7 +164,7 @@ async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
         wedge_angle=beta,
         asymmetry_angle=alpha,
     )
-    new_energy = transform.raw_to_derived(horizontal=x, vertical=y)["energy"]
+    new_energy = transform.raw_to_derived(chord=rho, crystal_pitch=thetaM)["energy"]
     # Compare to the calculated inverse
     expected_energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
     expected_energy = expected_energy.to(ureg.electron_volt).magnitude
@@ -215,20 +216,20 @@ async def test_d_spacing(xtal, hkl, d):
 
 async def test_energy_setpoint(xtal):
     # Set the limits so the motor can move properly
-    set_mock_value(xtal.horizontal.low_limit_travel, -100)
-    set_mock_value(xtal.vertical.high_limit_travel, 100)
-    set_mock_value(xtal.horizontal.velocity, 1)
-    set_mock_value(xtal.vertical.velocity, 1)
+    set_mock_value(xtal.chord.low_limit_travel, -100)
+    set_mock_value(xtal.crystal_pitch.high_limit_travel, 100)
+    set_mock_value(xtal.chord.velocity, 1)
+    set_mock_value(xtal.crystal_pitch.velocity, 1)
     await xtal.energy.set(8333)
-    assert await xtal.horizontal.user_setpoint.get_value() != 0
+    assert await xtal.chord.user_setpoint.get_value() != 0
 
 
 async def test_readings(xtal):
     reading = await xtal.read()
     assert set(reading.keys()) == {
         "analyzer-energy",
-        "analyzer-horizontal",
-        "analyzer-vertical",
+        "analyzer-chord",
+        "analyzer-crystal_pitch",
     }
     assert xtal.hints == {"fields": ["analyzer-energy"]}
     config = await xtal.read_configuration()
@@ -237,11 +238,11 @@ async def test_readings(xtal):
         "analyzer-bragg_offset",
         "analyzer-crystal_yaw",
         "analyzer-d_spacing",
-        "analyzer-horizontal-description",
-        "analyzer-horizontal-motor_egu",
-        "analyzer-horizontal-offset",
-        "analyzer-horizontal-offset_dir",
-        "analyzer-horizontal-velocity",
+        "analyzer-chord-description",
+        "analyzer-chord-motor_egu",
+        "analyzer-chord-offset",
+        "analyzer-chord-offset_dir",
+        "analyzer-chord-velocity",
         "analyzer-lattice_constant",
         "analyzer-reflection-h",
         "analyzer-reflection-k",
@@ -250,11 +251,11 @@ async def test_readings(xtal):
         "analyzer-surface_plane-h",
         "analyzer-surface_plane-k",
         "analyzer-surface_plane-l",
-        "analyzer-vertical-description",
-        "analyzer-vertical-motor_egu",
-        "analyzer-vertical-offset",
-        "analyzer-vertical-offset_dir",
-        "analyzer-vertical-velocity",
+        "analyzer-crystal_pitch-description",
+        "analyzer-crystal_pitch-motor_egu",
+        "analyzer-crystal_pitch-offset",
+        "analyzer-crystal_pitch-offset_dir",
+        "analyzer-crystal_pitch-velocity",
         "analyzer-wedge_angle",
     }
     desc = await xtal.describe()
