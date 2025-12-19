@@ -7,7 +7,7 @@ from firefly.plans.count import CountDisplay
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, dxp, ion_chamber):
+async def display(qtbot, sim_registry, xspress, ion_chamber):
     display = CountDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)

@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 import stamina
 from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
 
 import haven
@@ -13,8 +12,6 @@ from haven import devices
 from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
-from haven.devices.dxp import DxpDetector
-from haven.devices.dxp import add_mcas as add_dxp_mcas
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
@@ -103,24 +100,6 @@ def beamline_manager(sim_registry):
     )
     sim_registry.register(manager)
     return manager
-
-
-class DxpVortex(DxpDetector):
-    mcas = DCpt(
-        add_dxp_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
-@pytest.fixture()
-def dxp(sim_registry):
-    FakeDXP = make_fake_device(DxpVortex)
-    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
-    # vortex.net_cdf.dimensions.set([1477326, 1, 1])
-    sim_registry.register(vortex)
-    yield vortex
 
 
 @pytest.fixture()

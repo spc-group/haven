@@ -18,7 +18,7 @@ async def soft_glue(sim_registry):
 
 @pytest.fixture()
 async def display(
-    qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber, soft_glue
+    qtbot, sim_registry, sync_motors, async_motors, xspress, ion_chamber, soft_glue
 ):
     display = GridScanDisplay()
     motor1 = async_motors[0]

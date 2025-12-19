@@ -48,7 +48,7 @@ async def soft_glue(sim_registry):
 
 @pytest.fixture()
 async def display(
-    qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber, soft_glue
+    qtbot, sim_registry, sync_motors, motors, xspress, ion_chamber, soft_glue
 ):
     display = LineScanDisplay()
     qtbot.addWidget(display)
@@ -77,7 +77,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
     set_mock_value(ion_chamber.default_time_signal, 0.6255)
-    detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
+    await detectors["vortex_me4"].default_time_signal.set(0.5)
 
     # Trigger an update of the time calculator
     display.detectors_list.acquire_times = mock.AsyncMock(return_value=[1.0])

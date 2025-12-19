@@ -11,7 +11,6 @@ from haven import devices
 
 from .devices.aerotech import AerotechStage
 from .devices.beamline_manager import BeamlineManager
-from .devices.dxp import make_dxp_device
 from .devices.heater import CapillaryHeater
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
@@ -122,7 +121,6 @@ beamline = HavenInstrument(
         "capillary_heater": CapillaryHeater,
         "power_supply": NHQ203MChannel,
         "robot": Robot,
-        "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
     },
 )
