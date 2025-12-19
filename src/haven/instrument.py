@@ -12,7 +12,6 @@ from haven import devices
 from .devices.aerotech import AerotechStage
 from .devices.beamline_manager import BeamlineManager
 from .devices.heater import CapillaryHeater
-from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
 from .devices.shutter import PssShutter
 from .devices.stage import XYStage
@@ -119,7 +118,6 @@ beamline = HavenInstrument(
         "xy_stage": XYStage,
         # Threaded ophyd devices
         "capillary_heater": CapillaryHeater,
-        "power_supply": NHQ203MChannel,
         "robot": Robot,
         "beamline_manager": BeamlineManager,
     },

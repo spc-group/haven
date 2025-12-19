@@ -144,16 +144,6 @@ name = "aerotech"
 prefix = "255idc:"
 
 
-# External high-voltage power supplies
-# ====================================
-
-[[ power_supply ]]
-# An NHQ203M power supply
-name = "NHQ01"
-prefix = "ps_ioc:NHQ01"
-ch_num = 1
-
-
 # Slits
 # =====
 
