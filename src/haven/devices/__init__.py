@@ -1,4 +1,4 @@
-from .aerotech import AerotechStage  # noqa: F401
+from .aerotech import AerotechStage as AerotechStage
 from .aperture_slits import ApertureSlits  # noqa: F401
 from .aps import ApsMachine as ApsMachine
 from .asymmotron import Analyzer  # noqa: F401
@@ -17,13 +17,16 @@ from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401
 from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
-from .shutter import PssShutter, ShutterState  # noqa: F401
+from .shutter import PssShutter as PssShutter
+from .shutter import ShutterState as ShutterState
 from .soft_glue import SoftGlueZynq  # noqa: F401
 from .soft_glue_flyer_controller import SoftGlueFlyerController  # noqa: F401
+from .stage import XYStage as XYStage
 from .table import Table  # noqa: F401
 from .undulator import PlanarUndulator  # noqa: F401
 from .vacuum import PumpController, TelevacIonGauge  # noqa: F401
-from .xia_pfcu import PFCUFilter, PFCUFilterBank  # noqa: F401
+from .xia_pfcu import PFCUFilter as PFCUFilter
+from .xia_pfcu import PFCUFilterBank as PFCUFilterBank
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

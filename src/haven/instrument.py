@@ -9,13 +9,8 @@ from guarneri import Instrument
 
 from haven import devices
 
-from .devices.aerotech import AerotechStage
-from .devices.beamline_manager import BeamlineManager
 from .devices.heater import CapillaryHeater
 from .devices.robot import Robot
-from .devices.shutter import PssShutter
-from .devices.stage import XYStage
-from .devices.xia_pfcu import PFCUFilterBank
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +83,7 @@ class HavenInstrument(Instrument):
 beamline = HavenInstrument(
     {
         # Ophyd-async devices
-        "aerotech_stage": AerotechStage,
+        "aerotech_stage": devices.AerotechStage,
         "analyzer": devices.Analyzer,
         "aperture_slits": devices.ApertureSlits,
         "blade_slits": devices.BladeSlits,
@@ -104,8 +99,8 @@ beamline = HavenInstrument(
         "axilon_monochromator": devices.AxilonMonochromator,
         "motor": devices.Motor,
         "motors": devices.load_motors,
-        "pfcu4": PFCUFilterBank,
-        "pss_shutter": PssShutter,
+        "pfcu4": devices.PFCUFilterBank,
+        "pss_shutter": devices.PssShutter,
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "soft_glue_flyer_controller": devices.SoftGlueFlyerController,
@@ -115,11 +110,10 @@ beamline = HavenInstrument(
         "vacuum_gauges": make_devices(devices.TelevacIonGauge),
         "vacuum_pumps": make_devices(devices.PumpController),
         "xspress3": devices.Xspress3Detector,
-        "xy_stage": XYStage,
+        "xy_stage": devices.XYStage,
         # Threaded ophyd devices
         "capillary_heater": CapillaryHeater,
         "robot": Robot,
-        "beamline_manager": BeamlineManager,
     },
 )
 beamline.devices.use_typhos = False

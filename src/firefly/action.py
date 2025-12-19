@@ -102,7 +102,6 @@ class ActionsRegistry:
     # Actions for showing specific windows
     bss: WindowAction = None
     energy: WindowAction = None
-    iocs: WindowAction = None
     log: WindowAction = None
     status: WindowAction = None
     voltmeter: WindowAction = None
@@ -169,7 +168,6 @@ class ActionsRegistry:
         return [
             self.bss,
             self.energy,
-            self.iocs,
             self.log,
             self.status,
             self.voltmeter,

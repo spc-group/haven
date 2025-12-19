@@ -4,14 +4,12 @@ from pathlib import Path
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
 import stamina
-from ophyd import DynamicDeviceComponent as DCpt
 from ophyd.sim import instantiate_fake_device, make_fake_device
 
 import haven
 from haven import devices
 from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
-from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
@@ -72,34 +70,6 @@ async def ion_chamber(sim_registry):
     await ion_chamber.connect(mock=True)
     sim_registry.register(ion_chamber)
     return ion_chamber
-
-
-class SimpleBeamlineManager(BeamlineManager):
-    """For a fake class, we need to un-override __new__ to just make
-    itself.
-
-    """
-
-    iocs = DCpt(
-        {
-            "ioc255idb": (IOCManager, "ioc255idb:", {}),
-            "ioc255idc": (IOCManager, "ioc255idc:", {}),
-        }
-    )
-
-    def __new__(cls, *args, **kwargs):
-        return object.__new__(cls)
-
-
-@pytest.fixture()
-def beamline_manager(sim_registry):
-    """A fake set of slits using the 4-blade setup."""
-    FakeManager = make_fake_device(SimpleBeamlineManager)
-    manager = FakeManager(
-        prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
-    )
-    sim_registry.register(manager)
-    return manager
 
 
 @pytest.fixture()

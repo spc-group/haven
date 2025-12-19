@@ -200,7 +200,6 @@ class FireflyMainWindow(PyDMMainWindow):
             xrf_detector_actions=actions.xrf_detectors,
             status_window_action=actions.status,
             bss_window_action=actions.bss,
-            iocs_window_action=actions.iocs,
         )
 
     def _setup_menu_actions(
@@ -226,7 +225,6 @@ class FireflyMainWindow(PyDMMainWindow):
         xrf_detector_actions,
         status_window_action,
         bss_window_action,
-        iocs_window_action,
     ):
         # Log viewer window
         if logs_window_action is not None:
@@ -325,8 +323,6 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuView.addAction(status_window_action)
         if bss_window_action is not None:
             self.ui.setup_menu.addAction(bss_window_action)
-        if iocs_window_action is not None:
-            self.ui.setup_menu.addAction(iocs_window_action)
         # Make tooltips show up for menu actions
         for menu in [self.ui.setup_menu, self.ui.detectors_menu, self.ui.queue_menu]:
             menu.setToolTipsVisible(True)

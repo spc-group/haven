@@ -282,13 +282,6 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("fa6s.calendar"),
         )
         self.actions.bss.window_created.connect(self.finalize_bss_window)
-        # Action for shoing the IOC start/restart/stop window
-        self.actions.iocs = WindowAction(
-            name="show_iocs_window_action",
-            text="&IOCs",
-            display_file=ui_dir / "iocs.py",
-            WindowClass=FireflyMainWindow,
-        )
         # Launch ion chamber voltmeters window
         self.actions.voltmeter = WindowAction(
             name="show_voltmeters_window_action",
