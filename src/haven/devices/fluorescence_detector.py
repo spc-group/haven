@@ -11,8 +11,6 @@ from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-
-# from apstools.utils import cleanupText
 from ophyd import Component as Cpt
 from ophyd import Device, Kind
 from ophyd.signal import DerivedSignal, InternalSignal

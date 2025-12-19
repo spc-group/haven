@@ -1,4 +1,3 @@
-from apstools.synApps import TransformRecord
 from ophyd_async.core import Device
 
 from .motor import Motor

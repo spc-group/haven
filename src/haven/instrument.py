@@ -10,7 +10,6 @@ from guarneri import Instrument
 from haven import devices
 
 from .devices.aerotech import AerotechStage
-from .devices.aps import ApsMachine
 from .devices.beamline_manager import BeamlineManager
 from .devices.dxp import make_dxp_device
 from .devices.heater import CapillaryHeater
@@ -18,7 +17,6 @@ from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
 from .devices.shutter import PssShutter
 from .devices.stage import XYStage
-from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
 
 log = logging.getLogger(__name__)
@@ -113,7 +111,8 @@ beamline = HavenInstrument(
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "soft_glue_flyer_controller": devices.SoftGlueFlyerController,
-        "table": Table,
+        "synchrotron": devices.ApsMachine,
+        "table": devices.Table,
         "undulator": devices.PlanarUndulator,
         "vacuum_gauges": make_devices(devices.TelevacIonGauge),
         "vacuum_pumps": make_devices(devices.PumpController),
@@ -122,7 +121,6 @@ beamline = HavenInstrument(
         # Threaded ophyd devices
         "capillary_heater": CapillaryHeater,
         "power_supply": NHQ203MChannel,
-        "synchrotron": ApsMachine,
         "robot": Robot,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,

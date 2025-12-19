@@ -1,41 +1,58 @@
 import logging
 
-from apstools.devices.aps_machine import ApsMachineParametersDevice
-from ophyd import Component as Cpt
-from ophyd import EpicsSignalRO
+from ophyd_async.core import (
+    StandardReadable,
+)
+from ophyd_async.core import StandardReadableFormat as Format
+from ophyd_async.core import (
+    StrictEnum,
+    SubsetEnum,
+)
+from ophyd_async.epics.core import epics_signal_r
 
 log = logging.getLogger(__name__)
 
 
-class ApsMachine(ApsMachineParametersDevice):
-    _default_read_attrs = [
-        "current",
-        # "lifetime",
-    ]
-    _default_configuration_attrs = [
-        "aps_cycle",
-        "machine_status",
-        "operating_mode",
-        "shutter_status",
-        "fill_number",
-        "orbit_correction",
-        # Removed in apstools 1.6.20
-        # "global_feedback",
-        # "global_feedback_h",
-        # "global_feedback_v",
-        "operator_messages",
-    ]
-    shutter_status = Cpt(EpicsSignalRO, "XFD:ShutterPermit", string=True)
+class ApsMachine(StandardReadable):
 
-    def __init__(
-        self,
-        prefix: str = "",
-        *,
-        name: str,
-        labels: set[str] = {"synchrotrons"},
-        **kwargs,
-    ):
-        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
+    _ophyd_labels_ = {"synchrotrons"}
+
+    class MachineStatus(SubsetEnum):
+        UNKNOWN = "State Unknown"
+        USER_OPERATIONS = "USER OPERATIONS"
+        SUPPLEMENTAL_TIME = "SUPLEMENTAL TIME"
+        ASD_STUDIES = "ASD Studies"
+        NO_BEAM = "NO BEAM"
+        MAINTENANCE = "MAINTENANCE"
+
+    class OperatingMode(StrictEnum):
+        STATE_UNKNOWN = "State Unknown"
+        NO_BEAM = "NO BEAM"
+        INJECTING = "Injecting"
+        STORED_BEAM = "Stored Beam"
+        DELIVERED_BEAM = "Delivered Beam"
+        MAINTENANCE = "MAINTENANCE"
+
+    def __init__(self, prefix: str = "APS:", *, name: str = ""):
+        with self.add_children_as_readables():
+            self.current = epics_signal_r(float, "S-DCCT:CurrentM")
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
+            self.operators = epics_signal_r(str, "OPS:message1")
+            self.floor_coordinator = epics_signal_r(str, "OPS:message2")
+            self.fill_pattern = epics_signal_r(str, "OPS:message3")
+            self.last_problem_message = epics_signal_r(str, "OPS:message4")
+            self.last_trip_message = epics_signal_r(str, "OPS:message5")
+            # messages 6-8: meaning?
+            self.message6 = epics_signal_r(str, "OPS:message6")
+            self.message7 = epics_signal_r(str, "OPS:message7")
+            self.message8 = epics_signal_r(str, "OPS:message8")
+            self.machine_status = epics_signal_r(self.MachineStatus, "S:DesiredMode")
+            self.operating_mode = epics_signal_r(self.OperatingMode, "S:ActualMode")
+            self.shutter_status = epics_signal_r(bool, "XFD:ShutterPermit")
+            self.shutters_open = epics_signal_r(int, "NoOfShuttersOpenA")
+            self.fill_number = epics_signal_r(int, "S:FillNumber")
+            self.orbit_correction = epics_signal_r(float, "S:OrbitCorrection:CC")
+        super().__init__(name=name)
 
 
 # -----------------------------------------------------------------------------
