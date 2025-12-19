@@ -3,8 +3,9 @@ from pathlib import Path
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
+import pytest_asyncio
 import stamina
-from ophyd.sim import instantiate_fake_device, make_fake_device
+from ophyd.sim import instantiate_fake_device
 
 import haven
 from haven import devices
@@ -80,10 +81,10 @@ async def xspress(sim_registry):
     yield vortex
 
 
-@pytest.fixture()
-def robot(sim_registry):
-    RobotClass = make_fake_device(Robot)
-    robot = RobotClass(name="robotA", prefix="255idA:")
+@pytest_asyncio.fixture()
+async def robot(sim_registry):
+    robot = Robot(name="robotA", prefix="255idA:")
+    await robot.connect(mock=True)
     sim_registry.register(robot)
     return robot
 

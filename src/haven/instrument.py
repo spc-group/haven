@@ -10,7 +10,6 @@ from guarneri import Instrument
 from haven import devices
 
 from .devices.heater import CapillaryHeater
-from .devices.robot import Robot
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +100,7 @@ beamline = HavenInstrument(
         "motors": devices.load_motors,
         "pfcu4": devices.PFCUFilterBank,
         "pss_shutter": devices.PssShutter,
+        "robot": devices.Robot,
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "soft_glue_flyer_controller": devices.SoftGlueFlyerController,
@@ -113,7 +113,6 @@ beamline = HavenInstrument(
         "xy_stage": devices.XYStage,
         # Threaded ophyd devices
         "capillary_heater": CapillaryHeater,
-        "robot": Robot,
     },
 )
 beamline.devices.use_typhos = False

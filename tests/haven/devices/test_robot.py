@@ -4,9 +4,9 @@ from haven.devices import Robot
 def test_robot_components():
     robot = Robot("25idAustin", name="robot")
     # Check PVs are correct
-    assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
-    assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
-    assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
+    assert robot.i.user_readback.source == "ca://25idAustin:i.RBV"
+    assert robot.samples[8].present.source == "ca://25idAustin:sample8:present"
+    assert robot.samples[8].rz.source == "ca://25idAustin:sample8:rz"
 
 
 # -----------------------------------------------------------------------------

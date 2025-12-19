@@ -90,9 +90,9 @@ def robot_transfer_sample(
 
     else:
         # Load sampleN after all the other motor arrive at (pos1, pos2, pos3...)
-        sample = getattr(
-            robot.samples, f"sample{sampleN}"
-        )  # Access the Sample device corresponding to sampleN
+        sample = robot.samples[
+            sampleN
+        ]  # Access the Sample device corresponding to sampleN
         yield from bps.mv(sample.load, ON)  # Assuming '1' initiates the loading action
 
     # Return to the initial position

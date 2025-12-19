@@ -264,15 +264,6 @@ name="austin"
 prefix = "255idAustin"
 
 
-# Managed IOC control PVs
-# =======================
-
-[[ beamline_manager ]]
-name = "GLaDOS"
-prefix = "255idc:glados:"
-iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
-
-
 # Fluorescence Detectors
 # ======================
 

@@ -1,18 +1,22 @@
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 
-from ophyd import Component as Cpt
-from ophyd import Device
-from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd_async.core import (
+    DeviceVector,
+    StandardReadable,
+)
+from ophyd_async.core import StandardReadableFormat as Format
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
+
+from haven.devices import Motor
 
 log = logging.getLogger(__name__)
 
 
-LOAD_TIMEOUT = 80
+# LOAD_TIMEOUT = 80
 
 
-class Sample(Device):
+class Sample(StandardReadable):
     """An individual robot sample that can be loaded.
 
     Signals
@@ -42,119 +46,119 @@ class Sample(Device):
 
     """
 
-    present = Cpt(EpicsSignalRO, ":present")
-    empty = Cpt(EpicsSignalRO, ":empty")
-    load = Cpt(
-        EpicsSignal,
-        ":load",
-        kind="omitted",
-        write_timeout=LOAD_TIMEOUT,
-        put_complete=True,
-    )
-    unload = Cpt(
-        EpicsSignal,
-        ":unload",
-        kind="omitted",
-        write_timeout=LOAD_TIMEOUT,
-        put_complete=True,
-    )
-    x = Cpt(EpicsSignalRO, ":x")
-    y = Cpt(EpicsSignalRO, ":y")
-    z = Cpt(EpicsSignalRO, ":z")
-    rx = Cpt(EpicsSignalRO, ":rx")
-    ry = Cpt(EpicsSignalRO, ":ry")
-    rz = Cpt(EpicsSignalRO, ":rz")
+    def __init__(self, prefix: str, *, name: str = ""):
+        with self.add_children_as_readables():
+            self.present = epics_signal_r(float, f"{prefix}:present")
+            self.empty = epics_signal_r(float, f"{prefix}:empty")
+            self.x = epics_signal_r(float, f"{prefix}:x")
+            self.y = epics_signal_r(float, f"{prefix}:y")
+            self.z = epics_signal_r(float, f"{prefix}:z")
+            self.rx = epics_signal_r(float, f"{prefix}:rx")
+            self.ry = epics_signal_r(float, f"{prefix}:ry")
+            self.rz = epics_signal_r(float, f"{prefix}:rz")
 
-    def __init__(self, *args, labels={"robots"}, **kwargs):
-        super().__init__(*args, labels=labels, **kwargs)
+        self.load = epics_signal_rw(
+            float,
+            f"{prefix}:load",
+            # write_timeout=LOAD_TIMEOUT,
+            # put_complete=True,
+        )
+        self.unload = epics_signal_rw(
+            float,
+            f"{prefix}:unload",
+            # write_timeout=LOAD_TIMEOUT,
+            # put_complete=True,
+        )
+        super().__init__(name=name)
 
 
 DEFAULT_SAMPLES = [8, 9, 10, 14, 15, 16, 20, 21, 22]
 
 
-def transfer_samples(
-    samples: Sequence[int] = DEFAULT_SAMPLES,
-) -> Mapping[str, tuple[type, str, Mapping]]:
-    """Create a dictionary with robot sample device definitions.
+class Robot(StandardReadable):
+    _ophyd_labels_ = {"robots"}
 
-    For use with an ophyd DynamicDeviceComponent.
+    def __init__(
+        self, prefix: str, *, name: str = "", samples: Sequence[int] = DEFAULT_SAMPLES
+    ):
+        with self.add_children_as_readables():
+            # Joints and positions
+            self.i = Motor(f"{prefix}:i")
+            self.j = Motor(f"{prefix}:i")
+            self.k = Motor(f"{prefix}:i")
+            self.l = Motor(f"{prefix}:i")
+            self.m = Motor(f"{prefix}:i")
+            self.n = Motor(f"{prefix}:i")
+            self.x = Motor(f"{prefix}:i")
+            self.y = Motor(f"{prefix}:i")
+            self.z = Motor(f"{prefix}:i")
+            self.rx = Motor(f"{prefix}:i")
+            self.ry = Motor(f"{prefix}:i")
+            self.rz = Motor(f"{prefix}:i")
+            self.gripper_rbv = epics_signal_rw(float, f"{prefix}:gripper.RBV")
+            self.gripper_val = epics_signal_rw(float, f"{prefix}:gripper.VAL")
+            self.samples = DeviceVector(
+                {n: Sample(f"{prefix}:sample{n}") for n in samples}
+            )
 
-    Parameters
-    ==========
-    num_samples
-      How many samples to create.
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
+            self.acc = epics_signal_rw(float, f"{prefix}:acceleration")
+            self.vel = epics_signal_rw(float, f"{prefix}:velocity")
+            self.remote_control = epics_signal_r(
+                float, f"{prefix}:dashboard:remote_control"
+            )
+            self.program_rbv = epics_signal_r(float, f"{prefix}:dashboard:program_rbv")
+            self.installation = epics_signal_rw(
+                float, f"{prefix}:dashboard:installation"
+            )
+            self.close_safety_popup = epics_signal_rw(
+                float, f"{prefix}:dashboard:close_safety_popup"
+            )
+            self.unlock_protective_stop = epics_signal_rw(
+                float, f"{prefix}:dashboard:unlock_protective_stop"
+            )
+            self.restart_safety = epics_signal_rw(
+                float, f"{prefix}:dashboard:restart_safety"
+            )
+            self.program_running = epics_signal_rw(
+                float, f"{prefix}:dashboard:program_running"
+            )
+            self.safety_status = epics_signal_rw(
+                float, f"{prefix}:dashboard:safety_status"
+            )
+            self.power_rbv = epics_signal_r(float, f"{prefix}:dashboard:power_rbv")
+            self.gripper_activated = epics_signal_rw(float, f"{prefix}:gripper.ACR")
+            self.gripper_force = epics_signal_rw(float, f"{prefix}:gripper.FRC")
+            self.current_sample = epics_signal_r(float, f"{prefix}:current_sample")
+            self.home = epics_signal_rw(float, f"{prefix}:home")
+            self.cal_stage = epics_signal_rw(float, f"{prefix}:cal_stage")
 
-    """
-    # Now the sample holder bases are only located at sites [8,9,10,14,15,16,20,21,22] on the board.
-    return {f"sample{n}": (Sample, f":sample{n}", {}) for n in samples}
+        self.power = epics_signal_rw(float, f"{prefix}:dashboard:power")
+        self.program = epics_signal_rw(float, f"{prefix}:dashboard:program_rbv")
+        self.playRbt = epics_signal_rw(float, f"{prefix}:dashboard:play")
+        self.stopRbt = epics_signal_rw(float, f"{prefix}:dashboard:stop")
+        self.pauseRbt = epics_signal_rw(float, f"{prefix}:dashboard:pause")
+        self.quitRbt = epics_signal_rw(float, f"{prefix}:dashboard:quit")
+        self.shutdown = epics_signal_rw(float, f"{prefix}:dashboard:shutdown")
+        self.release_brake = epics_signal_rw(float, f"{prefix}:dashboard:release_brake")
 
+        # gripper
+        self.gripper_activate = epics_signal_rw(float, f"{prefix}:gripper.ACT")
+        self.gripper_close = epics_signal_rw(float, f"{prefix}:gripper.CLS")
+        self.gripper_open = epics_signal_rw(float, f"{prefix}:gripper.OPN")
 
-class Robot(Device):
-    # joints and position
-    i = Cpt(EpicsMotor, ":i")
-    j = Cpt(EpicsMotor, ":j")
-    k = Cpt(EpicsMotor, ":k")
-    l = Cpt(EpicsMotor, ":l")
-    m = Cpt(EpicsMotor, ":m")
-    n = Cpt(EpicsMotor, ":n")
-    x = Cpt(EpicsMotor, ":x")
-    y = Cpt(EpicsMotor, ":y")
-    z = Cpt(EpicsMotor, ":z")
-    rx = Cpt(EpicsMotor, ":rx")
-    ry = Cpt(EpicsMotor, ":ry")
-    rz = Cpt(EpicsMotor, ":rz")
-    acc = Cpt(EpicsSignal, ":acceleration", kind="config")
-    vel = Cpt(EpicsSignal, ":velocity", kind="config")
+        self.busy = epics_signal_rw(float, f"{prefix}:busy")
 
-    # dashboard
-    remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", kind="config")
-    program = Cpt(EpicsSignal, ":dashboard:program_rbv", kind="omitted")
-    program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", kind="config")
-    installation = Cpt(EpicsSignal, ":dashboard:installation", kind="config")
-    playRbt = Cpt(EpicsSignal, ":dashboard:play", kind="omitted")
-    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", kind="omitted")
-    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", kind="omitted")
-    quitRbt = Cpt(EpicsSignal, ":dashboard:quit", kind="omitted")
-    shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", kind="omitted")
-    release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", kind="omitted")
-    close_safety_popup = Cpt(
-        EpicsSignal, ":dashboard:close_safety_popup", kind="config"
-    )
-    unlock_protective_stop = Cpt(
-        EpicsSignal, ":dashboard:unlock_protective_stop", kind="config"
-    )
-    restart_safety = Cpt(EpicsSignal, ":dashboard:restart_safety", kind="config")
-    program_running = Cpt(EpicsSignal, ":dashboard:program_running", kind="config")
-    safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", kind="config")
-    power = Cpt(EpicsSignal, ":dashboard:power", kind="omitted")
-    power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", kind="config")
+        # sample transfer
+        #   unload_current_sample ophyd device used write_timeout=LOAD_TIMEOUT, put_complete=True
+        self.unload_current_sample = epics_signal_rw(
+            float, f"{prefix}:unload_current_sample"
+        )
+        self.current_sample_reset = epics_signal_rw(
+            float, f"{prefix}:current_sample_reset"
+        )
 
-    # gripper
-    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", kind="omitted")
-    gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", kind="config")
-    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", kind="omitted")
-    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", kind="omitted")
-    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV")
-    gripper_val = Cpt(EpicsSignal, ":gripper.VAL")
-    gripper_force = Cpt(EpicsSignal, ":gripper.FRC", kind="config")
-
-    # busy
-    busy = Cpt(EpicsSignal, ":busy", kind="omitted")
-
-    # sample transfer
-    current_sample = Cpt(EpicsSignalRO, ":current_sample", kind="config")
-    unload_current_sample = Cpt(
-        EpicsSignal,
-        ":unload_current_sample",
-        kind="omitted",
-        write_timeout=LOAD_TIMEOUT,
-        put_complete=True,
-    )
-    current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", kind="omitted")
-    home = Cpt(EpicsSignal, ":home", kind="config")
-    cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
-
-    samples = DCpt(transfer_samples())
+        super().__init__(name=name)
 
 
 # -----------------------------------------------------------------------------

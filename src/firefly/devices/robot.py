@@ -20,10 +20,7 @@ class RobotDisplay(display.PlanDisplay):
     default_num_regions = 0
 
     def sample_numbers(self):
-        sample_names = [name for name, device in self.device.samples.walk_subdevices()]
-        sample_numbers = [int(name.replace("sample", "")) for name in sample_names]
-        sample_numbers.append(None)
-        return sample_numbers
+        return [*self.device.samples.keys(), None]
 
     def customize_ui(self):
         super().customize_ui()
