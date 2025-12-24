@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 import numpy as np
-import pint
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -23,8 +22,6 @@ from haven import exceptions
 from haven.devices.motor import Motor
 
 log = logging.getLogger(__name__)
-
-ureg = pint.UnitRegistry()
 
 
 """

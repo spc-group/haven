@@ -9,8 +9,6 @@ from guarneri import Instrument
 
 from haven import devices
 
-from .devices.heater import CapillaryHeater
-
 log = logging.getLogger(__name__)
 
 
@@ -87,6 +85,7 @@ beamline = HavenInstrument(
         "aperture_slits": devices.ApertureSlits,
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
+        "capillary_heater": devices.CapillaryHeater,
         "cl3000": devices.CL3000,
         "delay_generator": devices.DG645Delay,
         "eiger": devices.EigerDetector,
@@ -112,7 +111,6 @@ beamline = HavenInstrument(
         "xspress3": devices.Xspress3Detector,
         "xy_stage": devices.XYStage,
         # Threaded ophyd devices
-        "capillary_heater": CapillaryHeater,
     },
 )
 beamline.devices.use_typhos = False

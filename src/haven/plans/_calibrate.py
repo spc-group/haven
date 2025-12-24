@@ -1,11 +1,8 @@
 from typing import Any, Generator
 
 from bluesky import Msg
-from pint import UnitRegistry
 
 from haven.protocols import Calibratable
-
-ureg = UnitRegistry()
 
 
 def calibrate(

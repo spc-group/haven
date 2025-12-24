@@ -4,6 +4,7 @@ from .aps import ApsMachine as ApsMachine
 from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
+from .capillary_heater import CapillaryHeater as CapillaryHeater
 from .channel_cut_monochromator import ChannelCutMonochromator  # noqa: F401
 from .cl3000 import CL3000 as CL3000
 from .delay import DG645Delay  # noqa: F401
@@ -15,6 +16,10 @@ from .detectors.xspress import Xspress3Detector  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401
+from .ptc10 import PTC10Controller as PTC10Controller
+from .ptc10 import PTC10OutputChannel as PTC10OutputChannel
+from .ptc10 import PTC10RTDChannel as PTC10RTDChannel
+from .ptc10 import PTC10ThermocoupleChannel as PTC10ThermocoupleChannel
 from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter as PssShutter
