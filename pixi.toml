@@ -170,8 +170,8 @@ qserver = "python -m haven_qserver.launch_queueserver"
 bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
 
 [feature.tiled.pypi-dependencies]
-bluesky-tiled-plugins = "==2.0.0b68"
-tiled = { version = "==0.2.0", extras = ["all"] }
+bluesky-tiled-plugins = "==2.0.0"
+tiled = { version = "==0.2.3", extras = ["all"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
