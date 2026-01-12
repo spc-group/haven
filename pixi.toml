@@ -24,11 +24,11 @@ xrayutilities = "*"
 
 [environments]
 default = { solve-group = "default" }
-dev = { features = ["bluesky", "ipython", "dev", "pytest", "gui", "tiled", "qserver"] }
-qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idc = { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idd = { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-9bm = { features = ["bluesky", "ipython", "9bm", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled"] }
+qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
+9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 # designer = { features = ["designer"] }
 
 [tasks]
@@ -177,6 +177,16 @@ tiled = { version = "==0.2.3", extras = ["all"] }
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
 # tiled-server = "env"
+
+# 'ai' feature pulls in dependencies for the following capabilities:
+# - ML alignment of KB mirrors (OPT group)
+# - Bayesian optimization of XAFS scan points (CAI group)
+[feature.ai.dependencies]
+pixi-pycharm = "*"
+
+[feature.ai.pypi-dependencies]
+aps-ai-beamline-controller = ">=0.0.1, <0.0.2"
+aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
 
 # Configuration for quality assurance testing before release
 [feature.qa.activation.env]
