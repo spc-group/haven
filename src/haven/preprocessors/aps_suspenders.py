@@ -9,7 +9,6 @@ from bluesky.suspenders import SuspendFloor, SuspendWhenChanged
 from bluesky.utils import make_decorator
 from ophyd_async.core import Device
 
-from haven._iconfig import load_config
 from haven.devices import ApsMachine
 from haven.plans._shutters import open_shutters
 
@@ -36,9 +35,6 @@ def aps_suspenders_wrapper(
     open_these_shutters = partial(open_shutters, shutters=shutters)
 
     def install_suspenders():
-        if not load_config().feature_flag("install_storage_ring_suspenders"):
-            yield from plan
-            return
         # If we start a scan outside of user mode, we're probably testing
         in_user_operations = (yield from bps.rd(aps.machine_status)) not in [
             "ASD Studies",

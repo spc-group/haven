@@ -105,17 +105,16 @@ for cpt in devices.root_devices:
 plan_decorators: list[Callable] = []
 
 # Suspenders for if the storage ring goes down
-if config.feature_flag("install_storage_ring_suspenders"):
-    try:
-        aps = haven.beamline.devices["synchrotrons"]
-    except ComponentNotFound:
-        log.info("APS device not found, suspenders not installed.")
-    else:
-        # Suspend when shutter permit is disabled or storage ring current is too low
-        shutters = haven.beamline.devices.findall("endstation_shutter", allow_none=True)
-        plan_decorators.append(
-            haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
-        )
+try:
+    aps = haven.beamline.devices["synchrotrons"]
+except ComponentNotFound:
+    log.info("APS device not found, suspenders not installed.")
+else:
+    # Suspend when shutter permit is disabled or storage ring current is too low
+    shutters = haven.beamline.devices.findall("endstation_shutter", allow_none=True)
+    plan_decorators.append(
+        haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
+    )
 
 plan_decorator = haven.plans.chain(*plan_decorators)
 

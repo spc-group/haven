@@ -33,7 +33,7 @@ def test_default_metadata():
     # Check that metadata matches iconfig_testing.toml
     default_md = load_config()["RUN_ENGINE.DEFAULT_METADATA"]
     assert start_doc["facility"] == default_md["facility"]
-    assert start_doc["beamline"] == default_md["beamline"]
+    assert start_doc["beamline_id"] == default_md["beamline_id"]
     assert start_doc["xray_source"] == default_md["xray_source"]
 
 

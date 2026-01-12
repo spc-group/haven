@@ -1,19 +1,9 @@
-import pytest
 from bluesky import plan_stubs as bps
 
 from haven.preprocessors import aps_suspenders_wrapper
 
 
-@pytest.fixture()
-def feature_flag(mocker):
-    # Mock the feature flag for now
-    mock_config = mocker.MagicMock()
-    mock_config.feature_flag.return_value = True
-    mocker.patch("haven.preprocessors.aps_suspenders.load_config", mock_config)
-    return mock_config
-
-
-def test_storage_ring_current_suspender(aps, feature_flag):
+def test_storage_ring_current_suspender(aps):
     # Simulate a valid read on the APS status
     wrapped = aps_suspenders_wrapper(bps.null(), aps)
     msgs = list(wrapped)
@@ -27,7 +17,7 @@ def test_storage_ring_current_suspender(aps, feature_flag):
     assert msgs[5].command == "remove_suspender"
 
 
-def test_not_user_mode(aps, feature_flag):
+def test_not_user_mode(aps):
     # Simulate a valid read on the APS status
     wrapped = aps_suspenders_wrapper(bps.null(), aps)
     msg = next(wrapped)
@@ -40,15 +30,7 @@ def test_not_user_mode(aps, feature_flag):
     assert len(msgs) == 2
 
 
-def test_without_feature_flag(aps):
-    # Simulate a valid read on the APS status
-    wrapped = aps_suspenders_wrapper(bps.null(), aps)
-    msgs = list(wrapped)
-    assert len(msgs) == 1
-    assert msgs[0].command == "null"
-
-
-def test_open_shutters(aps, shutters, feature_flag):
+def test_open_shutters(aps, shutters):
     shutter = shutters[0]
     plan = aps_suspenders_wrapper(bps.null(), aps=aps, shutters=[shutter])
     msgs = list(plan)
