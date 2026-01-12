@@ -47,7 +47,7 @@ lint-all = [
 
 [feature.bluesky.pypi-dependencies]
 aioca = ">=2.0"
-bluesky = "==1.14.4"
+bluesky = "==1.14.6"
 apsbits = ">=2.0.0"
 apstools = ">=1.7.8"
 guarneri = ">=0.5.0"

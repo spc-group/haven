@@ -37,7 +37,7 @@ USE_PROGRESS_BAR = true
 [ RUN_ENGINE.DEFAULT_METADATA ]
 # Additional metadata to inject in every scan
 facility = "Advanced Photon Source"
-beamline = "SPC Beamline (sector unknown)"
+beamline_id = "SPC Beamline (sector unknown)"
 xray_source = "2.8 mm planar undulator"
 
 
