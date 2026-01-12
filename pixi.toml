@@ -28,6 +28,7 @@ dev = { features = ["bluesky", "ipython", "dev", "pytest", "gui", "tiled", "qser
 qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc = { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idd = { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+9bm = { features = ["bluesky", "ipython", "9bm", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 # designer = { features = ["designer"] }
 
 [tasks]
@@ -211,3 +212,16 @@ QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60616"
 QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60626"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60626"
+
+# Per beamline configuration
+[feature.9bm.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+
+[feature.9bm.activation.env]
+BLUESKY_DIR = "/net/s9data/xorApps/bluesky/9bm/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60615"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60625"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"
