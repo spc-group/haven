@@ -24,7 +24,7 @@ xrayutilities = "*"
 
 [environments]
 default = { solve-group = "default" }
-dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled"] }
+dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
 qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
 9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }

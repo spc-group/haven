@@ -18,6 +18,7 @@ from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
 from ._energy_scan import energy_scan
 from ._fly import fly_scan, grid_fly_scan  # noqa: F401
+from ._focus_kb_mirrors import _focus_kb_mirrors as focus_kb_mirrors
 from ._record_dark_current import record_dark_current  # noqa: F401
 from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
 from ._set_energy import set_energy  # noqa: F401
@@ -69,6 +70,29 @@ del beamline
 del open_shutters_decorator
 del baseline_decorator
 del bp
+
+__all__ = [
+    "align_monochromators",
+    "auto_gain",
+    "calibrate",
+    "energy_scan",
+    "grid_fly_scan",
+    "focus_kb_mirrors",
+    "record_dark_current",
+    "robot_transfer_sample",
+    "set_energy",
+    "close_shutters",
+    "open_shutters",
+    "xafs_scan",
+    "count",
+    "grid_scan",
+    "list_scan",
+    "rel_grid_scan",
+    "rel_list_scan",
+    "rel_scan",
+    "scan",
+    "scan_nd",
+]
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
