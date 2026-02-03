@@ -21,7 +21,9 @@ trees:
     tree: catalog
     args:
       uri: "sqlite:///{catalog_path}"
-      writable_storage: "{storage_path}"
+      writable_storage:
+        - "{storage_path}"
+        - "sqlite:///{catalog_path}"
       # This creates the database if it does not exist. This is convenient, but in
       # a horizontally-scaled deployment, this can be a race condition and multiple
       # containers may simultaneously attempt to create the database.

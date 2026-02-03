@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from bluesky import RunEngine
-from bluesky.callbacks.tiled_writer import TiledWriter
+from bluesky_tiled_plugins import TiledWriter
 
 REPO_DIR = Path(__file__).parent.parent.parent
 STARTUP_FILE = REPO_DIR / "src" / "haven" / "startup.py"
