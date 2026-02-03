@@ -70,6 +70,29 @@ del open_shutters_decorator
 del baseline_decorator
 del bp
 
+__all__ = [
+    "align_monochromators",
+    "auto_gain",
+    "calibrate",
+    "energy_scan",
+    "grid_fly_scan",
+    "focus_kb_mirrors",
+    "record_dark_current",
+    "robot_transfer_sample",
+    "set_energy",
+    "close_shutters",
+    "open_shutters",
+    "xafs_scan",
+    "count",
+    "grid_scan",
+    "list_scan",
+    "rel_grid_scan",
+    "rel_list_scan",
+    "rel_scan",
+    "scan",
+    "scan_nd",
+]
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
