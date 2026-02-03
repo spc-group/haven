@@ -226,7 +226,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
@@ -673,7 +673,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
@@ -1120,7 +1120,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
@@ -1631,7 +1631,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cb/8c/2b30c12155ad8de0cf641d76a8b396a16d2c36bc6d50b621a62b7c4567c1/build-1.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
@@ -2107,7 +2107,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
@@ -3135,10 +3135,10 @@ packages:
   - websockets
   - httpx
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/0f/ea/98d5623a61da12e8b93f0699d010cffe073d92052e8db620147fbd6dfa6e/bluesky_tiled_plugins-2.0.1-py3-none-any.whl
   name: bluesky-tiled-plugins
-  version: 2.0.0
-  sha256: 08b414601e3d9f3d8b8d10609fd93f92d75d3b4beddde34b169a67f5784b5c55
+  version: 2.0.1
+  sha256: 8a0c88c50086d1c6893dbd1c6203a28e70015d33a2d4772c19609ffacc4b6127
   requires_dist:
   - dask
   - event-model
