@@ -28,6 +28,7 @@ from ophyd_async.core import (
 )
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 from ophyd_async.epics.core._signal import _epics_signal_backend
+from ophyd_async.epics.core._util import EpicsOptions
 
 from .. import exceptions
 from .signal import derived_signal_r, derived_signal_rw
@@ -158,17 +159,20 @@ class GainSignal(SignalRW):
 
     @AsyncStatus.wrap
     async def set(
-        self, value: T, wait=True, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+        self, value: T, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
     ) -> AsyncStatus:
-        aw = super().set(value=value, wait=wait, timeout=timeout)
-        if wait:
-            await aw
-            settle_time = await self.calculate_settle_time(value)
-            await asyncio.sleep(settle_time)
+        aw = super().set(value=value, timeout=timeout)
+        await aw
+        settle_time = await self.calculate_settle_time(value)
+        await asyncio.sleep(settle_time)
 
 
 def gain_signal(
-    datatype: Type[T], read_pv: str, write_pv: Optional[str] = None, name: str = ""
+    datatype: Type[T],
+    read_pv: str,
+    write_pv: Optional[str] = None,
+    name: str = "",
+    wait: bool = True,
 ) -> SignalRW[T]:
     """Create a `SignalRW` for changing gain and waiting for settling time.
 
@@ -185,7 +189,9 @@ def gain_signal(
         If given, use this PV to write to, otherwise use read_pv
 
     """
-    backend = _epics_signal_backend(datatype, read_pv, write_pv or read_pv)
+    backend = _epics_signal_backend(
+        datatype, read_pv, write_pv or read_pv, EpicsOptions(wait=wait)
+    )
     return GainSignal(backend, name=name)
 
 

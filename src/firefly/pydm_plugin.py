@@ -531,14 +531,14 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     async def put_value(self, new_value):
         if self.is_triggerable:
             # Just trigger the signal and be done
-            await self.signal.trigger(wait=False)
+            await self.signal.trigger()
         else:
             # Put the proper value to the signal
             old_value = await self.signal.get_value()
             log.info(
                 f"Moving signal '{self.signal.name}' from {old_value} to {new_value}"
             )
-            await self.signal.set(new_value, wait=False)
+            await self.signal.set(new_value)
 
 
 class HavenPlugin(SignalPlugin):

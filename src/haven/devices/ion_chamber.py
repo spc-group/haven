@@ -426,7 +426,7 @@ class IonChamber(StandardReadable, Triggerable):
         num_channels = next(self._trigger_channel_nums)
         await self.mcs.num_channels.set(num_channels)
         # Start acquiring
-        self.mcs.erase_start.trigger(wait=False)
+        self.mcs.erase_start.trigger()
         # Wait for acquisition to start
         await wait_for_value(
             self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT

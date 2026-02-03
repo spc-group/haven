@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import logging
 import numbers
 from collections.abc import Callable, Mapping
@@ -198,7 +197,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         super().set_callback(callback)
         self.send_latest_reading()
 
-    async def put(self, value: T | None, wait=True, timeout=None):
+    async def put(self, value: T | None, timeout=None):
         write_value = (
             self.converter.write_value(value)
             if value is not None
@@ -211,14 +210,9 @@ class DerivedSignalBackend(SoftSignalBackend):
         for sig, val in new_values.items():
             if isinstance(sig, SignalX):
                 # SignalX objects can't be set, so it must have been triggered
-                aws.append(sig.trigger(wait=wait, timeout=timeout))
+                aws.append(sig.trigger(timeout=timeout))
             else:
-                # Check that the independent signal accepts "wait" args
-                params = inspect.signature(sig.set).parameters
-                kw = {}
-                if "wait" in params:
-                    kw["wait"] = wait
-                aws.append(sig.set(val, timeout=timeout, **kw))
+                aws.append(sig.set(val, timeout=timeout))
         await asyncio.gather(*aws)
 
     async def get_reading(self) -> Reading:
@@ -455,16 +449,14 @@ class SignalXVal(SignalX):
         super().__init__(*args, **kwargs)
 
     @AsyncStatus.wrap
-    async def trigger(
-        self, wait=True, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
-    ) -> None:
+    async def trigger(self, timeout: CalculatableTimeout = CALCULATE_TIMEOUT) -> None:
         """Trigger the action and return a status saying when it's done"""
         if timeout == CALCULATE_TIMEOUT:
             timeout = self._timeout
         source = self._connector.backend.source(self.name, read=False)
         self.log.debug(f"Putting default value to backend at source {source}")
         await _wait_for(
-            self._connector.backend.put(self.trigger_value, wait=wait), timeout, source
+            self._connector.backend.put(self.trigger_value), timeout, source
         )
         self.log.debug(f"Successfully put default value to backend at source {source}")
 

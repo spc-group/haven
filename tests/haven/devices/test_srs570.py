@@ -147,7 +147,6 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     # Check that the signal's ``set`` was called with correct arguments
     get_mock_put(preamp.sensitivity_value).assert_called_once_with(
         gain_value,
-        wait=True,
     )
     # Check that the settle time was included
     sleep_mock.assert_called_once_with(settle_time)

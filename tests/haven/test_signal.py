@@ -171,7 +171,7 @@ async def test_signal_x_trigger(device):
     # Now trigger the parent
     mocked_put = get_mock_put(signal)
     await derived.trigger()
-    mocked_put.assert_called_once_with(None, wait=True)
+    mocked_put.assert_called_once_with(None)
 
 
 async def test_device_vector_parent():

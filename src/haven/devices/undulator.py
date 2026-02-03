@@ -136,14 +136,13 @@ class BasePositioner(Positioner):
     async def _set(
         self,
         value: float,
-        wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
         gap_deadband = await self.parent.gap_deadband.get_value()
         if gap_deadband != 0:
             msg = f"This device cannot be set properly if the gap deadband is not zero: {gap_deadband}"
             raise exceptions.InvalidUndulatorDeadband(msg)
-        async for update in super()._set(value=value, wait=wait, timeout=timeout):
+        async for update in super()._set(value=value, timeout=timeout):
             yield update
 
 
@@ -217,7 +216,6 @@ class EnergyPositioner(BasePositioner, Preparable):
     async def set(
         self,
         value: float,
-        wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
         use_scanning = load_config().feature_flag("undulator_fast_step_scanning_mode")
@@ -226,10 +224,9 @@ class EnergyPositioner(BasePositioner, Preparable):
         )
         if not (use_scanning and is_scanning):
             # No scan array is active, so just move as normal
-            async for update in super()._set(value, wait=wait, timeout=timeout):
+            async for update in super()._set(value, timeout=timeout):
                 yield update
             return
-        assert wait is True, "Cannot handle not waiting in scan mode."
         next_gap = next(self.parent._gap_iter)
         next_energy = next(self.parent._energy_iter)
         current_index, current_mode = await asyncio.gather(

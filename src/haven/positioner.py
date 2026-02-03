@@ -96,10 +96,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     async def _set(
         self,
         value: float,
-        wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
-        log.info(f"Moving {self.name} to {value} ({wait=}, {timeout=}).")
+        log.info(f"Moving {self.name} to {value} ({timeout=}).")
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -130,15 +129,11 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         # Start the move
         if hasattr(self, "actuate"):
             # Set the setpoint, then click "go"
-            await self.setpoint.set(new_position, wait=True)
-            set_status = self.actuate.trigger(wait=self.put_complete, timeout=timeout)
+            await self.setpoint.set(new_position)
+            set_status = self.actuate.trigger(timeout=timeout)
         else:
             # Wait for the value to set, but don't wait for put completion callback
-            set_status = self.setpoint.set(
-                new_position, wait=(wait and self.put_complete), timeout=timeout
-            )
-        if not wait:
-            return
+            set_status = self.setpoint.set(new_position, timeout=timeout)
         # Decide on how we will wait for completion
         if self.put_complete:
             # await the set call directly
@@ -159,9 +154,6 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             # Monitor based on readback position
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
-        # If we don't care to wait for the return value, we can end
-        if not wait:
-            return
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

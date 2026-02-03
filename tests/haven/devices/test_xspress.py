@@ -51,15 +51,13 @@ async def test_trigger(detector):
     set_mock_value(detector.fileio.num_captured, 1)
     await status
     # Check that signals were set
-    get_mock_put(detector.driver.num_images).assert_called_once_with(1, wait=True)
+    get_mock_put(detector.driver.num_images).assert_called_once_with(1)
 
 
 async def test_stage(detector):
     assert not get_mock_put(detector.driver.erase).called
     await detector.stage()
-    get_mock_put(detector.driver.erase_on_start).assert_called_once_with(
-        False, wait=True
-    )
+    get_mock_put(detector.driver.erase_on_start).assert_called_once_with(False)
     assert get_mock_put(detector.driver.erase).called
 
 

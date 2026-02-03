@@ -53,7 +53,7 @@ apsbits = ">=2.0.0"
 apstools = ">=1.7.8"
 guarneri = ">=0.5.0"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.14.0", extras = ["ca"] }
+ophyd-async = { version = "==0.15.0", extras = ["ca"] }
 scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
