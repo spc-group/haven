@@ -56,7 +56,7 @@ ophyd = ">=1.11.0"
 ophyd-async = { version = "==0.14.0", extras = ["ca"] }
 scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
-bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 
 [feature.ipython]
 dependencies = { python = "3.12.*" }
@@ -93,6 +93,9 @@ build = "*"
 [feature.dev.tasks]
 check-types = "mypy"
 make-docs = "make html --directory=docs/"
+
+[feature.dev.activation.env]
+QSERVER_HTTP_SERVER_CONFIG = "${PWD}qserver_http_config.yml"
 
 [feature.dev.tasks.tests]
 args = [
@@ -166,9 +169,12 @@ firefly = "firefly"
 
 [feature.qserver.tasks]
 qserver = "python -m haven_qserver.launch_queueserver"
+# httpserver = "pixi run -e 25idc uvicorn bluesky_httpserver.server:app"
+httpserver = "start-bluesky-httpserver"
 
 [feature.qserver.pypi-dependencies]
-bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
+bluesky-queueserver = ">=0.0.24"
+bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = "==2.0.0"
@@ -208,6 +214,7 @@ test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
 HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_HTTP_SERVER_CONFIG = "${BLUESKY_DIR}qserver_http_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
 QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60625"

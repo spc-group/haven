@@ -221,10 +221,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/23/e6572cf2aca82938c241e02e150e2102f5b04a3f2f82c4720f6838c42a63/bluesky-1.14.6-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
@@ -301,6 +302,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/dd/ead9d8ea85bf202d90cc513b533f9c363121c7792674f78e0d8a854b63b4/jupyterlab_pygments-0.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/07/a000fe835f76b7e1143242ab1122e6362ef1c03f23f83a045c38859c2ae0/jupyterlab_server-2.28.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/70/90/6d240beb0f24b74371762873e9b7f499f1e02166a2d9c5801f4dbf8fa12e/kiwisolver-1.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/76/0f7154952f037cb320b83e1c952ec4a19d5d689cf7d27cb8a26887d7bbc1/llvmlite-0.45.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/38/7e/7b91c89a4cf0f543a83be978657afb20c86af6d725253e319589dcc4ce52/lmfit-1.3.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -336,6 +338,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/73/88/5d601014bad38f574ea4d80729ea144cf0734e1086278eaa9dfb28f96c20/ophyd_async-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl
@@ -665,10 +668,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/23/e6572cf2aca82938c241e02e150e2102f5b04a3f2f82c4720f6838c42a63/bluesky-1.14.6-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
@@ -745,6 +749,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/dd/ead9d8ea85bf202d90cc513b533f9c363121c7792674f78e0d8a854b63b4/jupyterlab_pygments-0.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/07/a000fe835f76b7e1143242ab1122e6362ef1c03f23f83a045c38859c2ae0/jupyterlab_server-2.28.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/70/90/6d240beb0f24b74371762873e9b7f499f1e02166a2d9c5801f4dbf8fa12e/kiwisolver-1.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/76/0f7154952f037cb320b83e1c952ec4a19d5d689cf7d27cb8a26887d7bbc1/llvmlite-0.45.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/38/7e/7b91c89a4cf0f543a83be978657afb20c86af6d725253e319589dcc4ce52/lmfit-1.3.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -780,6 +785,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/73/88/5d601014bad38f574ea4d80729ea144cf0734e1086278eaa9dfb28f96c20/ophyd_async-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl
@@ -1109,10 +1115,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/23/e6572cf2aca82938c241e02e150e2102f5b04a3f2f82c4720f6838c42a63/bluesky-1.14.6-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/c5/1e741d26306c42e2bf6ab740b2202872727e0f606033c9dd713f8b93f5a8/cachetools-6.2.1-py3-none-any.whl
@@ -1189,6 +1196,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b1/dd/ead9d8ea85bf202d90cc513b533f9c363121c7792674f78e0d8a854b63b4/jupyterlab_pygments-0.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e0/07/a000fe835f76b7e1143242ab1122e6362ef1c03f23f83a045c38859c2ae0/jupyterlab_server-2.28.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/70/90/6d240beb0f24b74371762873e9b7f499f1e02166a2d9c5801f4dbf8fa12e/kiwisolver-1.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/76/0f7154952f037cb320b83e1c952ec4a19d5d689cf7d27cb8a26887d7bbc1/llvmlite-0.45.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/38/7e/7b91c89a4cf0f543a83be978657afb20c86af6d725253e319589dcc4ce52/lmfit-1.3.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -1224,6 +1232,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/73/88/5d601014bad38f574ea4d80729ea144cf0734e1086278eaa9dfb28f96c20/ophyd_async-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl
@@ -1617,10 +1626,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/23/e6572cf2aca82938c241e02e150e2102f5b04a3f2f82c4720f6838c42a63/bluesky-1.14.6-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cb/8c/2b30c12155ad8de0cf641d76a8b396a16d2c36bc6d50b621a62b7c4567c1/build-1.3.0-py3-none-any.whl
@@ -1706,6 +1716,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e0/07/a000fe835f76b7e1143242ab1122e6362ef1c03f23f83a045c38859c2ae0/jupyterlab_server-2.28.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d3/32/da7f44bcb1105d3e88a0b74ebdca50c59121d2ddf71c9e34ba47df7f3a56/keyring-25.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/70/90/6d240beb0f24b74371762873e9b7f499f1e02166a2d9c5801f4dbf8fa12e/kiwisolver-1.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/76/0f7154952f037cb320b83e1c952ec4a19d5d689cf7d27cb8a26887d7bbc1/llvmlite-0.45.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/38/7e/7b91c89a4cf0f543a83be978657afb20c86af6d725253e319589dcc4ce52/lmfit-1.3.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/d1/232b3309a02d60f11e71857778bfcd4acbdb86c07db8260caf7d008b08f8/lxml-6.0.2-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
@@ -1748,6 +1759,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/84/a6/11b0eb65eeafa87260d36858b69ec4e0072d09e37ea6714280960030bc93/optype-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl
@@ -2096,10 +2108,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fc/55/96142937f66150805c25c4d0f31ee4132fd33497753400734f9dfdcbdc66/bleach-6.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/19/db/d44fa6a6c3d28964ad2b092e4cca9e036f1d0228cb130a6981a34fdcf29d/blosc2-3.10.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/23/e6572cf2aca82938c241e02e150e2102f5b04a3f2f82c4720f6838c42a63/bluesky-1.14.6-py3-none-any.whl
-      - pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/45/7f/0e961cf3908bc4c1c3e027de2794f867c6c89fb4916fc7dba295a0e80a2d/boltons-25.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/0f/ad2f852c2c881bf7dcdbe4116b513089637fb8cb5f8515f3a5593b2200e4/botorch-0.9.4-py3-none-any.whl
@@ -2186,6 +2199,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ab/b5/36c712098e6191d1b4e349304ef73a8d06aed77e56ceaac8c0a306c7bda1/jupyterlab_widgets-3.0.16-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/70/90/6d240beb0f24b74371762873e9b7f499f1e02166a2d9c5801f4dbf8fa12e/kiwisolver-1.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/09/f05028540be70995435c57b71a96250d1257d6e9aafe848981baa4427a2a/linear_operator-0.5.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/96/76/0f7154952f037cb320b83e1c952ec4a19d5d689cf7d27cb8a26887d7bbc1/llvmlite-0.45.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/38/7e/7b91c89a4cf0f543a83be978657afb20c86af6d725253e319589dcc4ce52/lmfit-1.3.4-py3-none-any.whl
@@ -2244,6 +2258,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/23/cd/066e86230ae37ed0be70aae89aabf03ca8d9f39c8aea0dec8029455b5540/opt_einsum-3.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/58/de/3d8455b08cb6312f8cc46aacdf16c71d4d881a1db4a4140fc5ef31108422/optuna-4.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/af/4fbc8cab944db5d21b7e2a5b8e9211a03a79852b1157e2c102fcc61ac440/pandocfilters-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl
@@ -3215,6 +3230,27 @@ packages:
   - databroker[all]>=2.0.0b1,<3.0.0 ; extra == 'all'
   - bluesky-tiled-plugins ; extra == 'all'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/08/04/0cfb507bf58ae4b3bc560ad2233c84faa7b7c3777146840af96b6a45dbc6/bluesky_httpserver-0.0.14-py3-none-any.whl
+  name: bluesky-httpserver
+  version: 0.0.14
+  sha256: 7f6dfdef72794cbde6299f00e60545de05c9f5d51270be5dcc26205eaa740314
+  requires_dist:
+  - alembic
+  - bluesky-queueserver
+  - bluesky-queueserver-api
+  - fastapi
+  - ldap3
+  - orjson
+  - pamela
+  - pydantic
+  - pydantic-settings
+  - python-jose
+  - pyzmq
+  - sqlalchemy
+  - starlette
+  - typing-extensions ; python_full_version < '3.8'
+  - uvicorn
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
   name: bluesky-kafka
   version: 0.10.0
@@ -3243,9 +3279,10 @@ packages:
   - pkg:pypi/bluesky-live?source=hash-mapping
   size: 34118
   timestamp: 1734965301665
-- pypi: git+https://github.com/bluesky/bluesky-queueserver#1d16701354cbf748772b6d664081c3f6bb64b71d
+- pypi: https://files.pythonhosted.org/packages/b3/94/bba8d188d38609578a14de227c2abf2a7e783b9851ce6ced218896bbba8b/bluesky_queueserver-0.0.24-py3-none-any.whl
   name: bluesky-queueserver
-  version: 0.0.23.post31+g1d16701
+  version: 0.0.24
+  sha256: f97a59733a0150adb2c2bf53d8ce4a397988a126b985e7de08d7d2bb905a663c
   requires_dist:
   - bluesky>=1.7.0
   - ipykernel
@@ -3264,12 +3301,13 @@ packages:
   - requests
   - typing-extensions ; python_full_version < '3.8'
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/5f/85/115246eeec396feedc81bed42f832c97bf433a803688a4bf0e5d763e808a/bluesky_queueserver_api-0.0.13-py3-none-any.whl
   name: bluesky-queueserver-api
-  version: 0.0.12
-  sha256: 3e2f425370591da4de7af6129d8fdde388ee61c9f0618dcd1862a894b857c1d8
+  version: 0.0.13
+  sha256: e00c22e611f47dbcd464f7a7c28d764422366d04b9f9cbfc4012fc1b1ba7056c
   requires_dist:
   - bluesky-queueserver
+  - websockets
   - httpx
   requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/24/4a/6acb1dba5e6301739048490263777af29f79302fe8ea3c536a16267ee0cd/bluesky_tiled_plugins-2.0.0-py3-none-any.whl
@@ -5652,6 +5690,12 @@ packages:
   purls: []
   size: 747158
   timestamp: 1758810907507
+- pypi: https://files.pythonhosted.org/packages/4e/f6/71d6ec9f18da0b2201287ce9db6afb1a1f637dedb3f0703409558981c723/ldap3-2.9.1-py2.py3-none-any.whl
+  name: ldap3
+  version: 2.9.1
+  sha256: 5869596fc4948797020d3f03b7939da938778a0f9e2009f7a072ccf92b8e8d70
+  requires_dist:
+  - pyasn1>=0.4.6
 - conda: https://conda.anaconda.org/conda-forge/linux-64/lerc-4.0.0-h0aef613_1.conda
   sha256: 412381a43d5ff9bbed82cd52a0bbca5b90623f62e41007c9c42d3870c60945ff
   md5: 9344155d33912347b37f0ae6c410a835
@@ -7358,6 +7402,10 @@ packages:
   - pkg:pypi/packaging?source=hash-mapping
   size: 62477
   timestamp: 1745345660407
+- pypi: https://files.pythonhosted.org/packages/ec/14/1c52a2a3ca612d77550fef0404a496f080bfd600cf4c7c6a2a8ab4be2dc6/pamela-1.2.0-py2.py3-none-any.whl
+  name: pamela
+  version: 1.2.0
+  sha256: 27e543f1059bab1d7bc35b322d97705b4653869d1a06fe867d8c2b5206ed9d28
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pandas-2.3.3-py312hf79963d_1.conda
   sha256: f633d5f9b28e4a8f66a6ec9c89ef1b6743b880b0511330184b4ab9b7e2dda247
   md5: e597b3e812d9613f659b7d87ad252d18
