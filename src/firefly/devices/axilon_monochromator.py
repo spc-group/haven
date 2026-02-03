@@ -1,6 +1,7 @@
 from bluesky_queueserver_api import BPlan
 
 from firefly import display
+from firefly.component_selector import dotted_name
 
 
 class AxilonMonochromatorDisplay(display.FireflyDisplay):
@@ -25,8 +26,11 @@ class AxilonMonochromatorDisplay(display.FireflyDisplay):
     def queue_calibration(self):
         truth = self.ui.truth_spinbox.value()
         dial = self.ui.dial_spinbox.value()
-        print(truth, dial)
         plan = BPlan(
-            "calibrate", self.device.energy.name, truth, dial=dial, relative=True
+            "calibrate",
+            dotted_name(self.device.energy),
+            truth,
+            dial=dial,
+            relative=True,
         )
         self.execute_item_submitted.emit(plan)

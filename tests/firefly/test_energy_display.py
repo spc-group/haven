@@ -89,7 +89,7 @@ async def test_jog_energy_plan(qtbot, display, mono, undulator):
     display.jog_value_spinbox.setValue(10.0)
     # Click the set energy button
     btn = display.ui.jog_reverse_button
-    expected_item = BPlan("mvr", mono.energy.name, -10, undulator.energy.name, -10)
+    expected_item = BPlan("mvr", "mono.energy", -10, "undulator.energy", -10)
 
     def check_item(item):
         from pprint import pprint
@@ -109,7 +109,7 @@ async def test_move_energy_plan(qtbot, display, mono, undulator):
     display.move_energy_devices_spinbox.setValue(8420.0)
     # Click the set energy button
     btn = display.ui.move_energy_devices_button
-    expected_item = BPlan("mv", mono.energy.name, 8420.0, undulator.energy.name, 8420.0)
+    expected_item = BPlan("mv", "mono.energy", 8420.0, "undulator.energy", 8420.0)
 
     def check_item(item):
         from pprint import pprint

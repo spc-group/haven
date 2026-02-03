@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
 from xraydb.xraydb import XrayDB
 
 from firefly import display
+from firefly.component_selector import dotted_name
 from haven import beamline
 
 log = logging.getLogger(__name__)
@@ -92,7 +93,9 @@ class EnergyDisplay(display.FireflyDisplay):
     def jog_energy_devices(self, *args, direction: int | float = 1, **kwargs):
         jog_value = direction * self.ui.jog_value_spinbox.value()
         args = tuple(
-            arg for device in self.energy_devices for arg in (device.name, jog_value)
+            arg
+            for device in self.energy_devices
+            for arg in (dotted_name(device), jog_value)
         )
         item = BPlan("mvr", *args)
         self.execute_item_submitted.emit(item)
@@ -100,7 +103,9 @@ class EnergyDisplay(display.FireflyDisplay):
     def move_energy_devices(self, *args, **kwargs):
         new_energy = self.ui.move_energy_devices_spinbox.value()
         args = [
-            arg for device in self.energy_devices for arg in (device.name, new_energy)
+            arg
+            for device in self.energy_devices
+            for arg in (dotted_name(device), new_energy)
         ]
         item = BPlan("mv", *args)
         self.execute_item_submitted.emit(item)
