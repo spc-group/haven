@@ -5,7 +5,8 @@ from typing import Any
 from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky import preprocessors as bpp
-from bluesky.suspenders import SuspendFloor, SuspendWhenChanged
+from bluesky.suspenders import SuspendFloor as BlueskySuspendFloor
+from bluesky.suspenders import SuspendWhenChanged as BlueskySuspendWhenChanged
 from bluesky.utils import make_decorator
 from ophyd_async.core import Device
 
@@ -13,6 +14,64 @@ from haven.devices import ApsMachine
 from haven.plans._shutters import open_shutters
 
 RESUME_TIME = 120
+
+
+class NewSuspenderShim:
+    # This is a work-around for using ophyd-async (new-style
+    # Subscribable) with Bluesky (old-style Subscribable) until this
+    # is fixed upstream
+    # https://github.com/bluesky/bluesky/pull/1923
+    def install(self, RE, *, event_type=None):
+        """Install callback on signal
+
+        This (re)installs the required callbacks at the pyepics level
+
+        Parameters
+        ----------
+
+        RE : RunEngine
+            The run engine instance this should work on
+
+        event_type : str, optional
+            The event type (subscription type) to watch
+        """
+        with self._lock:
+            self.RE = RE
+        self._sig.subscribe_reading(self)
+
+    def _should_suspend(self, value):
+        # *value* is actually a reading, so convert
+        value = value[self._sig.name]["value"]
+        return super()._should_suspend(value)
+
+    def _should_resume(self, value):
+        # *value* is actually a reading, so convert
+        value = value[self._sig.name]["value"]
+        return super()._should_resume(value)
+
+
+class SuspendWhenChanged(NewSuspenderShim, BlueskySuspendWhenChanged):
+    def _get_justification(self):
+        if not self.tripped:
+            return ""
+
+        just = f'Signal {self._sig.name}, got "<redacted>", expected "{self.expected_value}"'
+        if not self.allow_resume:
+            just += '.  "RE.abort()" and then restart session to use new configuration.'
+        return ": ".join(s for s in (just, self._tripped_message) if s)
+
+
+class SuspendFloor(NewSuspenderShim, BlueskySuspendFloor):
+    def _get_justification(self):
+        if not self.tripped:
+            return ""
+
+        just = (
+            f"Signal {self._sig.name} = <redacted> "
+            + f"fell below {self._suspend_thresh} "
+            + f"and has not yet crossed above {self._resume_thresh}."
+        )
+        return ": ".join(s for s in (just, self._tripped_message) if s)
 
 
 def aps_suspenders_wrapper(
