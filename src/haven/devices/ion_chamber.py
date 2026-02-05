@@ -371,7 +371,7 @@ class IonChamber(StandardReadable, Triggerable):
 
     async def record_dark_current(self):
         signal = self.mcs.scaler.record_dark_current
-        await signal.trigger(wait=False)
+        await signal.trigger()
         # Now wait for the count state to return to done
         integration_time = await self.mcs.scaler.dark_current_time.get_value()
         timeout = integration_time + DEFAULT_TIMEOUT

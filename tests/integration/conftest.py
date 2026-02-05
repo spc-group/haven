@@ -97,7 +97,7 @@ tiled_writable:
 
 
 @pytest.fixture()
-def tiled_server(tmp_path, mocker):
+def tiled_server(tmp_path, mocker, redisdb):
     server_info = TiledServerInfo(tmp_path)
     # Start the tiled server
     # Set up the profiles corresponding to the server

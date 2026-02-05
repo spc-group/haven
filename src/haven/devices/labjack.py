@@ -332,7 +332,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         )
         timeout = dwell_time * num_points + DEFAULT_TIMEOUT
         # Start the triggering
-        await self.run.set(True, wait=False)
+        self.run.set(True)
         # Wait for the read to complete
         async for value in observe_value(self.run, timeout=timeout):
             if not value:

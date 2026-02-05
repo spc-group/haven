@@ -89,6 +89,7 @@ class TiledServerInfo:
         except subprocess.TimeoutExpired:
             # Something went wrong, kill it the hard way
             tiled_process.kill()
+            time.sleep(1)
 
 
 def ensure_server_not_running(uri):
