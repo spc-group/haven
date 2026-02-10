@@ -19,10 +19,9 @@ import logging
 from typing import TypedDict
 
 import numpy as np
-from bluesky.protocols import Movable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
-    AsyncStatus,
+    Array1D,
     DerivedSignalFactory,
     Device,
     LazyMock,
@@ -32,8 +31,8 @@ from ophyd_async.core import (
     Transform,
     derived_signal_r,
     soft_signal_r_and_setter,
-    soft_signal_rw,
 )
+from ophyd_async.epics.core import epics_signal_rw
 from pint import Quantity
 from pydantic import ConfigDict
 
@@ -45,7 +44,7 @@ from haven.units import (
     ureg,
 )
 
-__all__ = ["Analyzer", "HKL"]
+__all__ = ["Analyzer"]
 
 log = logging.getLogger(__name__)
 
@@ -80,51 +79,16 @@ def hkl_to_alpha(base, reflection) -> Quantity:
     return alpha
 
 
-class HKL(StandardReadable, Movable):
-    """A set of (h, k, l) for a lattice plane.
-
-    Settable as ``hkl.set('312')``, which will set ``hkl.h``,
-    ``hkl.k``, and ``hkl.l``.
-
-    """
-
-    def __init__(self, initial_value, name=""):
-        h, k, l = self._to_tuple(initial_value)
-        with self.add_children_as_readables():
-            self.h = soft_signal_rw(int, initial_value=h)
-            self.k = soft_signal_rw(int, initial_value=k)
-            self.l = soft_signal_rw(int, initial_value=l)
-
-        super().__init__(name=name)
-
-    def _to_tuple(self, hkl_str) -> tuple[str, str, str]:
-        h, k, l = hkl_str
-        return (h, k, l)
-
-    @AsyncStatus.wrap
-    async def set(self, value):
-        h, k, l = self._to_tuple(value)
-        await asyncio.gather(
-            self.h.set(h),
-            self.k.set(k),
-            self.l.set(l),
-        )
-
-
 class Analyzer(StandardReadable):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
     **Units** are handled automatically based on units set in EPICS
-    PVs. However, the following values are used as parameters when
-    creating the analyzer, and are assumed to have the following
-    units.
-
-    - rowland_diameter: meters
-    - lattice_constant: nanometers
-    - wedge_angle: degrees
+    PVs.
 
     Parameters
     ==========
+    prefix
+      The IOC prefix for analyzer state PVs. E.g. "25idc:asymm0:"
     chord_motor_prefix
       The PV prefix for the motor moving the crystal inboard/outboard.
     pitch_motor_prefix
@@ -133,15 +97,6 @@ class Analyzer(StandardReadable):
     yaw_motor_prefix
       The PV prefix for the motor rotating the crystal around its
       optical axis.
-    rowland_diameter
-      The diameter of the Rowland circle.
-    lattice_constant
-      The lattice constant of the analyzer (e.g. Si 111) crystal.
-    wedge_angle
-      The angle of the chord motor axis.
-    surface_plane
-      The cut of the analyzer crystal. Either as a tuple (e.g.
-      ``(2, 1, 1)`` or a string (e.g. ``"211"``).
 
     """
 
@@ -151,65 +106,44 @@ class Analyzer(StandardReadable):
     def __init__(
         self,
         *,
+        prefix: str,
         chord_motor_prefix: str,
         pitch_motor_prefix: str,
         yaw_motor_prefix: str,
-        rowland_diameter: float = 0.5,
-        lattice_constant: float = 0.543095,
-        wedge_angle: float = 30.0,
-        surface_plane: tuple[int, int, int] | str = "211",
         name: str = "",
     ):
-        surface_plane_hkl: tuple[int, ...] = tuple(int(i) for i in surface_plane)
         # Create the real motors
         self.chord = Motor(chord_motor_prefix)
         self.crystal_pitch = Motor(pitch_motor_prefix)
         self.crystal_yaw = Motor(yaw_motor_prefix)
         # Reciprocal space geometry
-        self.reflection = HKL(initial_value="111")
-        self.surface_plane = HKL(initial_value=surface_plane_hkl)
+        self.reflection = epics_signal_rw(Array1D[np.uint8], f"{prefix}reflection")
+        self.surface_plane = epics_signal_rw(Array1D[np.uint8], f"{prefix}surfacePlane")
         self.add_readables(
             [
-                self.reflection.h,
-                self.reflection.k,
-                self.reflection.l,
-                self.surface_plane.h,
-                self.surface_plane.k,
-                self.surface_plane.l,
+                self.reflection,
+                self.surface_plane,
             ],
             StandardReadableFormat.CONFIG_SIGNAL,
         )
         # Soft signals for keeping track of the fixed transform properties
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
-            self.rowland_diameter = soft_signal_rw(
-                float, units="meter", initial_value=rowland_diameter
-            )
-            self.wedge_angle = soft_signal_rw(
-                float, units="degrees", initial_value=wedge_angle
-            )
-            self.lattice_constant = soft_signal_rw(
-                float, units="nm", initial_value=lattice_constant
-            )
-            self.bragg_offset = soft_signal_rw(float, units="radians")
+            self.rowland_diameter = epics_signal_rw(float, f"{prefix}diameter")
+            self.lattice_constant = epics_signal_rw(float, f"{prefix}latticeConstant")
+            self.bragg_offset = epics_signal_rw(float, f"{prefix}braggOffset")
             # Soft signals for intermediate, calculated values
             self.d_spacing = derived_signal_r(
                 raw_to_derived=self._calc_d_spacing,
                 derived_units="nm",
                 derived_precision=4,
-                H=self.reflection.h,
-                K=self.reflection.k,
-                L=self.reflection.l,
+                HKL=self.reflection,
                 a=self.lattice_constant,
             )
             self.asymmetry_angle = derived_signal_r(
                 raw_to_derived=self._calc_alpha,
                 derived_units="radians",
-                H=self.reflection.h,
-                K=self.reflection.k,
-                L=self.reflection.l,
-                h=self.surface_plane.h,
-                k=self.surface_plane.k,
-                l=self.surface_plane.l,
+                HKL=self.reflection,
+                hkl=self.surface_plane,
             )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
@@ -251,10 +185,9 @@ class Analyzer(StandardReadable):
             "crystal_yaw",
             "lattice_constant",
             "rowland_diameter",
-            "wedge_angle",
-            "asymmetry_angle",
-            "d_spacing",
-            "energy",
+            # "asymmetry_angle",
+            # "d_spacing",
+            # "energy",
             "bragg_offset",
         ]
         devices = [getattr(self, name) for name in device_names]
@@ -262,7 +195,9 @@ class Analyzer(StandardReadable):
         units = await asyncio.gather(*aws)
         self.units = {name: unit for name, unit in zip(device_names, units)}
 
-    def _calc_alpha(self, H: int, K: int, L: int, h: int, k: int, l: int) -> float:
+    def _calc_alpha(
+        self, HKL: tuple[int, int, int], hkl: tuple[int, int, int]
+    ) -> float:
         """Calculate the asymmetry angle for a given reflection and base plane.
 
         Parameters
@@ -273,14 +208,11 @@ class Analyzer(StandardReadable):
           The base cut of the crystal surface.
 
         """
-        base = (h, k, l)
-        refl = (H, K, L)
-        alpha = hkl_to_alpha(base=base, reflection=refl)
+        alpha = hkl_to_alpha(base=hkl, reflection=HKL)
         return float(alpha / ureg.radians)
 
-    def _calc_d_spacing(self, H: int, K: int, L: int, a: float) -> float:
-        hkl = (H, K, L)
-        return float(a / np.linalg.norm(hkl))
+    def _calc_d_spacing(self, HKL: tuple[int, int, int], a: float) -> float:
+        return float(a / np.linalg.norm(HKL))
 
 
 class EnergyRaw(TypedDict):
@@ -292,6 +224,11 @@ class EnergyDerived(TypedDict):
     energy: float
 
 
+def _derived_units(signal):
+    """Get the Pint units for a derived signal."""
+    return ureg(signal._connector.backend.metadata["units"])
+
+
 class EnergyTransform(Transform):
     # To let us get the parent crystal defined on a dynamic subclass
     model_config = ConfigDict(ignored_types=(Analyzer,))
@@ -299,22 +236,22 @@ class EnergyTransform(Transform):
     rowland_diameter: float
     d_spacing: float
     asymmetry_angle: float
-    wedge_angle: float
 
     def derived_to_raw(self, energy: float) -> EnergyRaw:
         """Run a forward (pseudo -> real) calculation"""
         # Apply units
         units = self.xtal.units
-        energy = energy * units["energy"]
+        energy = energy * ureg(self.xtal.energy_unit)
         D = self.rowland_diameter * units["rowland_diameter"]
-        d = self.d_spacing * units["d_spacing"]
-        beta = self.wedge_angle * units["wedge_angle"]
-        alpha = self.asymmetry_angle * units["asymmetry_angle"]
+        d = self.d_spacing * _derived_units(self.xtal.d_spacing)
+        alpha = self.asymmetry_angle * _derived_units(self.xtal.asymmetry_angle)
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=d)
+        print(f"{bragg=}, {alpha=}")
         # Convert energy params to geometry params
         theta_M = bragg + alpha
         rho = D * np.sin(theta_M)
+        print(theta_M, rho)
         raw = EnergyRaw(
             chord=float(rho.to(units["chord"]).magnitude),
             crystal_pitch=float(theta_M.to(units["crystal_pitch"]).magnitude),
@@ -323,24 +260,22 @@ class EnergyTransform(Transform):
 
     def raw_to_derived(self, chord: float, crystal_pitch: float) -> EnergyDerived:
         """Run an inverse (real -> pseudo) calculation"""
-        rho, theta_M, D, d, beta, alpha = (
+        rho, theta_M, D, d, alpha = (
             chord,
             crystal_pitch,
             self.rowland_diameter,
             self.d_spacing,
-            self.wedge_angle,
             self.asymmetry_angle,
         )
-        log.debug(f"Inverse: θM={theta_M}, ρ={rho}, {D=}, {d=}, {beta=}, {alpha=}")
+        log.debug(f"Inverse: θM={theta_M}, ρ={rho}, {D=}, {d=}, {alpha=}")
         # Resolve signals into their quantities (with units)
         try:
             units = self.xtal.units
             rho = rho * units["chord"]
             theta_M = theta_M * units["crystal_pitch"]
             D = D * units["rowland_diameter"]
-            d = d * units["d_spacing"]
-            beta = beta * units["wedge_angle"]
-            alpha = alpha * units["asymmetry_angle"]
+            d = d * _derived_units(self.xtal.d_spacing)
+            alpha = alpha * _derived_units(self.xtal.asymmetry_angle)
         except (AttributeError, KeyError) as exc:
             log.info(exc)
             return EnergyDerived(energy=float("nan"))
@@ -349,7 +284,7 @@ class EnergyTransform(Transform):
         log.debug(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
         log.debug(f"Inverse: {energy=}")
-        energy_val = float(energy.to(units["energy"]).magnitude)
+        energy_val = float(energy.to(ureg(self.xtal.energy_unit)).magnitude)
         derived = EnergyDerived(energy=energy_val)
         return derived
 
@@ -363,7 +298,6 @@ class EnergyPositioner(Positioner):
         xtal_signals = {
             "rowland_diameter": xtal.rowland_diameter,
             "d_spacing": xtal.d_spacing,
-            "wedge_angle": xtal.wedge_angle,
             "asymmetry_angle": xtal.asymmetry_angle,
         }
         # We need a dynamic class so we can keep access to the xtal units

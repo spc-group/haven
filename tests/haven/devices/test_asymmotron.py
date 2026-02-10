@@ -1,4 +1,3 @@
-import asyncio
 import math
 
 import pytest
@@ -91,58 +90,44 @@ async def xtal(sim_registry):
         chord_motor_prefix="",
         pitch_motor_prefix="",
         yaw_motor_prefix="",
-        surface_plane=(0, 0, 1),
+        prefix="",
     )
     await xtal.connect(mock=True)
+    await xtal.asymmetry_angle.connect(mock=False)
     await xtal.d_spacing.connect(mock=False)
     await xtal.energy.readback.connect(mock=False)
     await xtal.energy.setpoint.connect(mock=False)
     # Set default values for xtal parameters
-    set_mock_value(xtal.reflection.h, 3)
-    set_mock_value(xtal.reflection.k, 1)
-    set_mock_value(xtal.reflection.l, 1)
+    set_mock_value(xtal.surface_plane, (0, 0, 1))
+    set_mock_value(xtal.reflection, (3, 1, 1))
     set_mock_value(xtal.lattice_constant, 0.5431)
     set_mock_value(xtal.rowland_diameter, 500)
     xtal.units["chord"] = ureg.cm
     xtal.units["crystal_pitch"] = ureg.radians
     xtal.units["rowland_diameter"] = ureg.mm
-    xtal.units["d_spacing"] = ureg.nm
-    xtal.units["wedge_angle"] = ureg.degrees
-    xtal.units["asymmetry_angle"] = ureg.degrees
-    xtal.units["energy"] = ureg.electron_volt
+    # xtal.units["d_spacing"] = ureg.nm
+    # xtal.units["asymmetry_angle"] = ureg.degrees
+    # xtal.units["energy"] = ureg.electron_volt
     return xtal
 
 
-async def test_set_hkl(xtal):
-    await xtal.reflection.set("137")
-    hkl = await asyncio.gather(
-        xtal.reflection.h.get_value(),
-        xtal.reflection.k.get_value(),
-        xtal.reflection.l.get_value(),
-    )
-    assert tuple(hkl) == (1, 3, 7)
-
-
 analyzer_values = [
-    # (θB,  α,  β, θM /rad,  ρ /cm)
-    (70, 15, 25, 1.4835, 49.810),
-    (80, 7, 10, 1.5184, 49.931),
-    (60, 20, 30, 1.3963, 49.240),
-    (65, 0, 0, 1.1345, 45.315),
-    (80, 30, 10, 1.92, 46.985),
+    # (θB°,  α/rad, θM /rad,  ρ /cm)
+    (60, 0.4405, 1.4877, 49.8275),
+    (65, 0, 1.1345, 45.315),
+    (80, 0.4405, 1.8368, 48.242),
 ]
 
 
 Si311_d_spacing = 0.1637  # in nm
 
 
-@pytest.mark.parametrize("bragg,alpha,beta,thetaM,rho", analyzer_values)
-async def test_rowland_circle_forward(xtal, bragg, alpha, beta, thetaM, rho):
+@pytest.mark.parametrize("bragg,alpha,thetaM,rho", analyzer_values)
+async def test_rowland_circle_forward(xtal, bragg, alpha, thetaM, rho):
     NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
     transform = NewTransform(
         rowland_diameter=await xtal.rowland_diameter.get_value(),
         d_spacing=Si311_d_spacing,
-        wedge_angle=beta,
         asymmetry_angle=alpha,
     )
     energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
@@ -153,15 +138,14 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, thetaM, rho):
     assert new_position == pytest.approx(expected, abs=0.1)
 
 
-@pytest.mark.parametrize("bragg,alpha,beta,thetaM,rho", analyzer_values)
-async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, thetaM, rho):
+@pytest.mark.parametrize("bragg,alpha,thetaM,rho", analyzer_values)
+async def test_rowland_circle_inverse(xtal, bragg, alpha, thetaM, rho):
     real_thetaM = ((bragg + alpha) * ureg.degree).to(ureg.radians)
     # Calculate the new energy
     NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
     transform = NewTransform(
         rowland_diameter=await xtal.rowland_diameter.get_value(),
         d_spacing=Si311_d_spacing,
-        wedge_angle=beta,
         asymmetry_angle=alpha,
     )
     new_energy = transform.raw_to_derived(chord=rho, crystal_pitch=thetaM)["energy"]
@@ -244,19 +228,14 @@ async def test_readings(xtal):
         "analyzer-chord-offset_dir",
         "analyzer-chord-velocity",
         "analyzer-lattice_constant",
-        "analyzer-reflection-h",
-        "analyzer-reflection-k",
-        "analyzer-reflection-l",
+        "analyzer-reflection",
         "analyzer-rowland_diameter",
-        "analyzer-surface_plane-h",
-        "analyzer-surface_plane-k",
-        "analyzer-surface_plane-l",
+        "analyzer-surface_plane",
         "analyzer-crystal_pitch-description",
         "analyzer-crystal_pitch-motor_egu",
         "analyzer-crystal_pitch-offset",
         "analyzer-crystal_pitch-offset_dir",
         "analyzer-crystal_pitch-velocity",
-        "analyzer-wedge_angle",
     }
     desc = await xtal.describe()
     assert desc.keys() == reading.keys()
