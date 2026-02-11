@@ -185,7 +185,7 @@ class EnergyPositioner(BasePositioner, Preparable):
         # Derived signals so we can apply offsets and convert units
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.offset = epics_signal_rw(float, offset_pv)
-        with self.add_children_as_readables():
+        with self.add_children_as_readables(Format.HINTED_SIGNAL):
             self.readback = derived_signal_r(
                 _keV_to_energy,
                 keV=self.dial_readback,

@@ -16,6 +16,7 @@ from haven.preprocessors import (
 from ._align_monochromators import align_monochromators  # noqa: F401
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
+from ._emission_map_scan import emission_map_scan as emission_map_scan
 from ._energy_scan import energy_scan
 from ._fly import fly_scan, grid_fly_scan  # noqa: F401
 from ._record_dark_current import record_dark_current  # noqa: F401
@@ -49,6 +50,7 @@ all_decorators = chain(
 
 # Apply decorators to Haven plans
 auto_gain = open_shutters_decorator()(auto_gain)
+emission_map_scan = all_decorators(emission_map_scan)
 energy_scan = all_decorators(energy_scan)
 fly_scan = all_decorators(fly_scan)
 grid_fly_scan = all_decorators(grid_fly_scan)

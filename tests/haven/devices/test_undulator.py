@@ -56,8 +56,7 @@ async def test_data_keys(undulator):
         "undulator-version_hpmu",
         "undulator-version_plc",
     }
-    # We probably don't want hints from the undulator, just the mono
-    assert undulator.hints == {}
+    assert undulator.hints == {"fields": ["undulator-energy"]}
 
 
 async def test_stop_energy(undulator):
