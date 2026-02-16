@@ -185,9 +185,6 @@ class Analyzer(StandardReadable):
             "crystal_yaw",
             "lattice_constant",
             "rowland_diameter",
-            # "asymmetry_angle",
-            # "d_spacing",
-            # "energy",
             "bragg_offset",
         ]
         devices = [getattr(self, name) for name in device_names]
@@ -212,7 +209,8 @@ class Analyzer(StandardReadable):
         return float(alpha / ureg.radians)
 
     def _calc_d_spacing(self, HKL: tuple[int, int, int], a: float) -> float:
-        return float(a / np.linalg.norm(HKL))
+        a_ = a * self.units["lattice_constant"]
+        return (a_ / np.linalg.norm(HKL)).to(_derived_units(self.d_spacing)).magnitude
 
 
 class EnergyRaw(TypedDict):
@@ -247,11 +245,9 @@ class EnergyTransform(Transform):
         alpha = self.asymmetry_angle * _derived_units(self.xtal.asymmetry_angle)
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=d)
-        print(f"{bragg=}, {alpha=}")
         # Convert energy params to geometry params
         theta_M = bragg + alpha
         rho = D * np.sin(theta_M)
-        print(theta_M, rho)
         raw = EnergyRaw(
             chord=float(rho.to(units["chord"]).magnitude),
             crystal_pitch=float(theta_M.to(units["crystal_pitch"]).magnitude),

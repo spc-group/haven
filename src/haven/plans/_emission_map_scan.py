@@ -15,7 +15,7 @@ from cycler import cycler
 
 def emission_map_scan(
     detectors: Sequence[Readable],
-    *args: tuple[Movable | Any, list[Any]],
+    *args: Sequence[Movable | Any] | Sequence[float | int],
     per_step: PerStep | None = None,
     md: CustomPlanMetadata | None = None,
 ) -> MsgGenerator[str]:
