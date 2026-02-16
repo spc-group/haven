@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+from mirakuru import HTTPExecutor
 
 CONFIG = """
 uvicorn:
@@ -44,6 +45,7 @@ class TiledServerInfo:
     Popen: subprocess.Popen | None = None
     scheme: str = "http://"
     api_key: str = "secret"
+    executor: HTTPExecutor | None = None
 
     @property
     def uri(self):
@@ -56,6 +58,8 @@ class TiledServerInfo:
           Where to create the sqlite catalog.
 
         """
+        if self.executor is not None:
+            raise RuntimeError("Tiled is already running")
         catalog_path = self.storage_path / "catalog.db"
         # Write the configuration file
         config_str = CONFIG.format(
@@ -73,23 +77,21 @@ class TiledServerInfo:
         tiled_exe = shutil.which("tiled")
         assert tiled_exe is not None
         tiled_cmd = [tiled_exe, "serve", "config"]
-        self.Popen = subprocess.Popen(tiled_cmd, env={"TILED_CONFIG": str(config_file)})
+        cmd = " ".join(tiled_cmd)
+        self.executor = HTTPExecutor(cmd, self.uri, "(405|200)")
+        self.executor.start()
+        # self.Popen = subprocess.Popen(tiled_cmd, env={"TILED_CONFIG": str(config_file)})
         # Wait for the server to spin up
-        wait_for_server(self.uri, timeout=30)
+        # wait_for_server(self.uri, timeout=30)
 
     def stop(self):
         """End a Tiled server started with *start_server()*."""
-        tiled_process = self.Popen
+        tiled_process = self.executor
         if tiled_process is None:
             warnings.warn("Cannot stop server that was not started.")
             return
-        tiled_process.terminate()
-        try:
-            tiled_process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            # Something went wrong, kill it the hard way
-            tiled_process.kill()
-            time.sleep(1)
+        tiled_process.stop()
+        tiled_process = None
 
 
 def ensure_server_not_running(uri):

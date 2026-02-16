@@ -74,6 +74,7 @@ redis-server = "*"
 "pytest-xvfb" = "*"
 "pytest-asyncio" = "*"
 "pytest-redis" = "*"
+mirakuru = ">=3.0.2, <4"
 
 [feature.dev.pypi-dependencies]
 "black" = "*"

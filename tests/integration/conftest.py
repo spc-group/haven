@@ -97,8 +97,9 @@ tiled_writable:
 
 
 @pytest.fixture()
-def tiled_server(tmp_path, mocker, redisdb):
+def tiled_server(tmp_path, mocker, redisdb, monkeypatch):
     server_info = TiledServerInfo(tmp_path)
+    monkeypatch.setenv("TILED_CONFIG", str(tmp_path / "server_config.yml"))
     # Start the tiled server
     # Set up the profiles corresponding to the server
     profile_dir = tmp_path / "tiled" / "profiles"

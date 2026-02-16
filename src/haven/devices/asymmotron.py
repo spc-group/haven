@@ -210,6 +210,7 @@ class Analyzer(StandardReadable):
 
     def _calc_d_spacing(self, HKL: tuple[int, int, int], a: float) -> float:
         a_ = a * self.units["lattice_constant"]
+        print(a_)
         return (a_ / np.linalg.norm(HKL)).to(_derived_units(self.d_spacing)).magnitude
 
 
