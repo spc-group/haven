@@ -57,6 +57,7 @@ ophyd-async = { version = "==0.15.0", extras = ["ca"] }
 scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
+p4p = ">=4.2.2, <5"
 
 [feature.ipython]
 dependencies = { python = "3.12.*" }
