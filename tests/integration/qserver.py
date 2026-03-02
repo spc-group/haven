@@ -9,33 +9,6 @@ from pathlib import Path
 from bluesky_queueserver_api.comm_base import RequestTimeoutError
 from bluesky_queueserver_api.zmq import REManagerAPI
 
-CONFIG = """
-uvicorn:
-  host: {host}
-  port: {port}
-
-authentication:
-  allow_anonymous_access: true
-  single_user_api_key: "{api_key}"
-
-trees:
-  - path: /
-    tree: catalog
-    args:
-      uri: "sqlite:///{catalog_path}"
-      writable_storage: "{storage_path}"
-      # This creates the database if it does not exist. This is convenient, but in
-      # a horizontally-scaled deployment, this can be a race condition and multiple
-      # containers may simultaneously attempt to create the database.
-      # If that is a problem, set this to false, and run:
-      #
-      # tiled catalog init URI
-      #
-      # separately.
-      init_if_not_exists: true
-"""
-
-
 TICK = 0.2  # Seconds between check-ins with the server
 
 
@@ -71,7 +44,7 @@ class QserverInfo:
             "--user-group-permissions",
             str(script_dir / "queueserver_user_group_permissions.yaml"),
             "--redis-addr",
-            "localhost:6379",
+            "localhost:6380",
             "--redis-name-prefix",
             "qserver_tests",
         ]

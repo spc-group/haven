@@ -192,6 +192,7 @@ d_spacing_values = [
 @pytest.mark.parametrize("hkl,d", d_spacing_values)
 async def test_d_spacing(xtal, hkl, d):
     await xtal.d_spacing.connect(mock=False)
+    xtal.units["lattice_constant"] = ureg("nm")
     await xtal.lattice_constant.set(5.4311959)
     hkl = tuple(int(h) for h in hkl)  # str to tuple
     await xtal.reflection.set(hkl)
