@@ -192,7 +192,7 @@ tiled-server = "tiled serve config"
 # pixi-pycharm = "*"  # For Luca to use pycharm easily
 
 # [feature.ai.pypi-dependencies]
-# aps-ai-beamline-controller = ">=0.0.1, <0.0.2"
+# aps-ai-beamline-controller = ">=0.0.5, <0.0.6"
 # # This package will eventually be available on PyPI, but for now it
 # # breaks CI so it being removed
 # # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
