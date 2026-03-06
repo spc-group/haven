@@ -104,7 +104,7 @@ def aps_suspenders_wrapper(
                 [
                     SuspendWhenChanged(
                         signal=aps.shutter_status,
-                        expected_value="PERMIT",
+                        expected_value=True,
                         allow_resume=True,
                         sleep=sleep,
                         tripped_message="Shutter permit revoked.",
