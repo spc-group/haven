@@ -8,9 +8,17 @@ from haven import run_engine, tiled_writer
 from haven.plans import scan
 
 
+@pytest.fixture()
+def writer(tiled_server):
+    writer_ = tiled_writer({"writer_profile": "tiled_writable"})
+    try:
+        yield writer_
+    finally:
+        writer_.client.context.close()
+
+
 @pytest.mark.slow
-def test_streams(tiled_server):
-    writer = tiled_writer({"writer_profile": "tiled_writable"})
+def test_streams(tiled_server, writer):
     RE = run_engine(tiled_writer=writer, call_returns_result=True)
     # Prepare ophyd-async devices
     pattern_generator = sim.PatternGenerator()

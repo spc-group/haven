@@ -10,7 +10,7 @@ from scanspec.specs import Line
 
 from haven import exceptions
 from haven.devices import PlanarUndulator
-from haven.devices.undulator import UndulatorScanMode
+from haven.devices.undulator import DoneStatus, UndulatorScanMode
 
 
 @pytest.fixture()
@@ -175,13 +175,13 @@ async def test_move_next_energy_scan(undulator, mocker):
     set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
     set_mock_value(undulator.scan_current_index, 1)
     set_mock_value(undulator.energy.velocity, 1000)  # Make timeouts reasonable
+    set_mock_value(undulator.busy, DoneStatus.MOVING)
     # Now do the actual move
     set_status = undulator.energy.set(1000)
     await asyncio.sleep(0.05)
     assert await undulator.scan_next_point.get_value() == 1
-    await asyncio.sleep(0.1)  # Wait for the next-point-trigger to reset
-    assert await undulator.scan_next_point.get_value() == 0
     set_mock_value(undulator.energy.dial_readback, 1.0)
+    set_mock_value(undulator.done, DoneStatus.DONE)
     await asyncio.sleep(0.1)
     await set_status
 

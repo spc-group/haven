@@ -30,6 +30,7 @@ from ophyd_async.core import (
     WatcherUpdate,
     derived_signal_r,
     derived_signal_rw,
+    observe_signals_value,
     observe_value,
     soft_signal_rw,
 )
@@ -209,8 +210,6 @@ class EnergyPositioner(BasePositioner, Preparable):
     async def _advance_scan_point(self):
         """Move to the next point in a scan array."""
         await self.parent.scan_next_point.set(True)
-        await asyncio.sleep(0.1)
-        await self.parent.scan_next_point.set(False)
 
     @WatchableAsyncStatus.wrap
     async def set(
@@ -262,22 +261,35 @@ class EnergyPositioner(BasePositioner, Preparable):
         else:
             timeout_ = cast(float, timeout)
         # Monitor the scanning PVs to see when the move is done
-        async for current_position in observe_value(self.readback, timeout=timeout_):
-            yield WatcherUpdate(
-                current=current_position,
-                initial=old_position,
-                target=target,
-                name=self.name,
-                unit=self.units,
-                precision=int(precision),
-            )
-            # Check if the move has finished
-            target_reached = current_position is not None and np.isclose(
-                current_position,
-                target,
-                atol=10 ** (-precision),
-            )
-            if target_reached:
+        is_done = {
+            self.readback: False,
+            self.parent.done: False,
+        }
+        async for signal, value in observe_signals_value(
+            self.readback, self.parent.done, timeout=timeout_
+        ):
+            if signal is self.readback:
+                yield WatcherUpdate(
+                    current=current_position,
+                    initial=old_position,
+                    target=target,
+                    name=self.name,
+                    unit=self.units,
+                    precision=int(precision),
+                )
+                # Check if the move has finished
+                is_done[signal] = bool(
+                    current_position is not None
+                    and np.isclose(
+                        current_position,
+                        target,
+                        atol=10 ** (-precision),
+                    )
+                )
+            elif signal is self.parent.done:
+                is_done[signal] = value == DoneStatus.DONE
+            # Check if we're done with the move now
+            if all(is_done.values()):
                 break
         # Make sure the next_scan_point PV has had time to reset
         await next_scan_task
@@ -313,6 +325,12 @@ class EnergyPositioner(BasePositioner, Preparable):
         if gap_taper.result() != 0:
             warnings.warn("Setting energy array with non-zero taper.")
         self.scan_has_moved = False
+        # Wait for the undulator scan controls to be ready
+        async for value in observe_value(
+            self.parent.scan_current_index, done_timeout=timeout
+        ):
+            if value == 0:
+                break
 
     @AsyncStatus.wrap
     async def unstage(self):
