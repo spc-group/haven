@@ -270,24 +270,24 @@ class EnergyPositioner(BasePositioner, Preparable):
         ):
             if signal is self.readback:
                 yield WatcherUpdate(
-                    current=current_position,
+                    current=value,
                     initial=old_position,
                     target=target,
                     name=self.name,
-                    unit=self.units,
+                    unit=units,
                     precision=int(precision),
                 )
                 # Check if the move has finished
                 is_done[signal] = bool(
-                    current_position is not None
+                    value is not None
                     and np.isclose(
-                        current_position,
+                        value,
                         target,
                         atol=10 ** (-precision),
                     )
                 )
             elif signal is self.parent.done:
-                is_done[signal] = value == DoneStatus.DONE
+                is_done[signal] = bool(value)
             # Check if we're done with the move now
             if all(is_done.values()):
                 break

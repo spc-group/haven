@@ -21,11 +21,13 @@ DetectorList = Union[str, Sequence[Detector]]
 Motor = Union[Device, Component, Signal, str]
 
 
-class EnergyDevice(Readable, HasName):
+@runtime_checkable
+class EnergyDevice(Readable, HasName, Protocol):
     energy: Locatable[float]
 
 
-class Monochromator(EnergyDevice):
+@runtime_checkable
+class Monochromator(EnergyDevice, Protocol):
     d_spacing: Readable
     bragg: Motor
     beam_offset: Readable
@@ -38,7 +40,8 @@ class Calibratable(Protocol):
     def calibrate(self, truth: float, target: float | None = None): ...
 
 
-class FixedOffsetMonochromator(Monochromator):
+@runtime_checkable
+class FixedOffsetMonochromator(Monochromator, Protocol):
     beam_offset: Movable
 
 

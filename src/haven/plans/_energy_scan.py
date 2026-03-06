@@ -19,7 +19,7 @@ from typing_extensions import NotRequired, TypedDict
 from haven.constants import edge_energy
 from haven.devices.undulator import PlanarUndulator
 from haven.instrument import beamline
-from haven.protocols import DetectorList
+from haven.protocols import DetectorList, EnergyDevice
 
 __all__ = ["energy_scan"]
 
@@ -306,7 +306,10 @@ def energy_scan(
     # Todo: sort the energies and exposure times by the energy
     # Prepare the positioners list with associated energies and exposures
     exposure = list(exposure)
-    energy_movers = [device.energy for device in energy_devices]
+    energy_movers = [
+        device.energy if isinstance(device, EnergyDevice) else device
+        for device in energy_devices
+    ]
     _args = [(mover, energies) for mover in energy_movers]
     _args += [(motor, exposure) for motor in time_signals]
     scan_args = [item for items in _args for item in items]

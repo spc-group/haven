@@ -171,7 +171,7 @@ def xafs_scan(
     use_scan_spec = load_config().feature_flag("undulator_fast_step_scanning_mode")
     # Resolve energy devices into the actual positioners
     energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
-    energy_devices = [
+    energy_movers = [
         device.energy if isinstance(device, EnergyDevice) else device
         for device in energy_devices
     ]
@@ -199,8 +199,8 @@ def xafs_scan(
     # Execute the energy scan
     md_.update(md)
     if use_scan_spec:
-        spec = regions_to_scanspec(energy_ranges, E0=E0_val, axes=energy_devices)
-        md_["scanspec"] = spec.serialize()
+        spec = regions_to_scanspec(energy_ranges, E0=E0_val, axes=energy_movers)
+        # md_["scanspec"] = spec.serialize()
         yield from energy_scan_from_scanspec(
             detectors=detectors,
             spec=spec,
