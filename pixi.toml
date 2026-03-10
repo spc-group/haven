@@ -180,7 +180,7 @@ bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = "==2.0.2"
-tiled = { version = "==0.2.3", extras = ["all"] }
+tiled = { version = "==0.2.8", extras = ["all"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
@@ -193,10 +193,10 @@ tiled-server = "tiled serve config"
 # pixi-pycharm = "*"  # For Luca to use pycharm easily
 
 # [feature.ai.pypi-dependencies]
-# aps-ai-beamline-controller = ">=0.0.5, <0.0.6"
+# aps-ai-beamline-controller = ">=0.0.7, <0.0.8"
 # # This package will eventually be available on PyPI, but for now it
 # # breaks CI so it being removed
-# # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
+# aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
 
 # Configuration for quality assurance testing before release
 [feature.qa.activation.env]
