@@ -1,6 +1,8 @@
 import logging
 import re
+from pathlib import Path
 from typing import NotRequired, TypedDict
+from uuid import uuid4
 
 import httpx
 import stamina
@@ -35,9 +37,19 @@ def tiled_writer(config: TiledConfig):
     except httpx.ConnectError as exc:
         raise exceptions.TiledNotAvailable(profile) from exc
     client.include_data_sources()
+    # Make sure the backup directory exists and is writable
+    backup_directory = config.get("writer_backup_directory")
+    if backup_directory is not None:
+        test_file = Path(backup_directory) / f"{uuid4()}.null"
+        try:
+            test_file.touch()
+        finally:
+            if test_file.exists():
+                test_file.unlink()
+    # Create the writer
     writer = TiledWriter(
         client,
-        backup_directory=config.get("writer_backup_directory"),
+        backup_directory=backup_directory,
         batch_size=config.get("writer_batch_size", 100),
     )
     return writer
