@@ -24,7 +24,7 @@ xrayutilities = "*"
 
 [environments]
 default = { solve-group = "default" }
-dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled"] }
+dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
 qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
@@ -192,7 +192,8 @@ tiled-server = "tiled serve config"
 # [feature.ai.dependencies]
 # pixi-pycharm = "*"  # For Luca to use pycharm easily
 
-# [feature.ai.pypi-dependencies]
+[feature.ai.pypi-dependencies]
+# autobl = { git = "https://github.com/mdw771/auto_beamline_ops", extras = ["steering"] }
 # aps-ai-beamline-controller = ">=0.0.7, <0.0.8"
 # # This package will eventually be available on PyPI, but for now it
 # # breaks CI so it being removed
