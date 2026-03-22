@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -9,11 +10,14 @@ from typing import Any
 import xraydb
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
+from qtpy.QtCore import Slot
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
+    QLabel,
     QMessageBox,
     QSizePolicy,
+    QSpinBox,
     QWidget,
 )
 from xraydb.xraydb import XrayDB
@@ -32,6 +36,9 @@ from haven.energy_ranges import (
 log = logging.getLogger(__name__)
 
 
+HALF_SPACE = "\u202f"
+
+
 class Domain(IntEnum):
     ENERGY = 0
     WAVENUMBER = 1
@@ -48,7 +55,8 @@ class XafsRegionsManager(RegionsManager):
         active_checkbox: QCheckBox
         start_spin_box: QDoubleSpinBox
         stop_spin_box: QDoubleSpinBox
-        step_spin_box: QDoubleSpinBox
+        num_points_spin_box: QSpinBox
+        step_label: QLabel
         exposure_time_spin_box: QDoubleSpinBox
         k_space_checkbox: QCheckBox
         weight_spin_box: QDoubleSpinBox
@@ -58,7 +66,7 @@ class XafsRegionsManager(RegionsManager):
         is_active: bool
         start: float
         stop: float
-        step: float
+        num: int
         exposure_time: float
         domain: Domain
         weight: float
@@ -67,10 +75,19 @@ class XafsRegionsManager(RegionsManager):
         def energy_range(self):
             if self.domain == Domain.WAVENUMBER:
                 return KRange(
-                    self.start, self.stop, self.step, self.exposure_time, self.weight
+                    start=self.start,
+                    stop=self.stop,
+                    num=self.num,
+                    exposure=self.exposure_time,
+                    weight=self.weight,
                 )
             else:
-                return ERange(self.start, self.stop, self.step, self.exposure_time)
+                return ERange(
+                    start=self.start,
+                    stop=self.stop,
+                    num=self.num,
+                    exposure=self.exposure_time,
+                )
 
     async def add_row(self):
         row = await super().add_row()
@@ -80,11 +97,14 @@ class XafsRegionsManager(RegionsManager):
         """Create the widgets that are to go in each row, in order."""
         start_spin_box = QDoubleSpinBox()
         stop_spin_box = QDoubleSpinBox()
-        step_spin_box = QDoubleSpinBox()
+        num_points_spin_box = QSpinBox()
+        step_label = QLabel()
+        step_label.setText("NaN")
         # Apply hints to number
         exposure_time_spin_box = QDoubleSpinBox()
         exposure_time_spin_box.setValue(1.0)
         exposure_time_spin_box.setSuffix(" s")
+        # Calculate new step sizes when scan range changes
         # For converting between k and E space
         k_space_checkbox = QCheckBox()
         k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
@@ -95,11 +115,13 @@ class XafsRegionsManager(RegionsManager):
         weight_spin_box.setEnabled(False)
 
         # Apply validation criteria
-        for spinbox in [start_spin_box, stop_spin_box, step_spin_box]:
+        for spinbox in [start_spin_box, stop_spin_box]:
             spinbox.setMinimum(float("-inf"))
             spinbox.setMaximum(float("inf"))
             spinbox.setStepType(spinbox.AdaptiveDecimalStepType)
             spinbox.setDecimals(self.energy_precision)
+        num_points_spin_box.setMinimum(2)
+        num_points_spin_box.setMaximum(999_999_999)
 
         # Connect the k-space enabled checkbox to the relevant signals
         k_space_checkbox.stateChanged.connect(
@@ -108,14 +130,20 @@ class XafsRegionsManager(RegionsManager):
         # Notify clients when the widgets change
         start_spin_box.valueChanged.connect(self.regions_changed)
         stop_spin_box.valueChanged.connect(self.regions_changed)
-        step_spin_box.valueChanged.connect(self.regions_changed)
+        num_points_spin_box.valueChanged.connect(self.regions_changed)
         exposure_time_spin_box.valueChanged.connect(self.regions_changed)
         k_space_checkbox.stateChanged.connect(self.regions_changed)
         weight_spin_box.valueChanged.connect(self.regions_changed)
+        update_step_size = partial(self.update_step_size, row=row)
+        start_spin_box.valueChanged.connect(update_step_size)
+        stop_spin_box.valueChanged.connect(update_step_size)
+        num_points_spin_box.valueChanged.connect(update_step_size)
+        k_space_checkbox.stateChanged.connect(update_step_size)
         return [
             start_spin_box,
             stop_spin_box,
-            step_spin_box,
+            num_points_spin_box,
+            step_label,
             exposure_time_spin_box,
             k_space_checkbox,
             weight_spin_box,
@@ -127,7 +155,7 @@ class XafsRegionsManager(RegionsManager):
             is_active=widgets.active_checkbox.isChecked(),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
-            step=widgets.step_spin_box.value(),
+            num=widgets.num_points_spin_box.value(),
             exposure_time=widgets.exposure_time_spin_box.value(),
             domain=widgets.k_space_checkbox.isChecked(),
             weight=widgets.weight_spin_box.value(),
@@ -152,7 +180,6 @@ class XafsRegionsManager(RegionsManager):
         double_widgets = [
             widgets.start_spin_box,
             widgets.stop_spin_box,
-            widgets.step_spin_box,
         ]
         suffix = (
             self.wavenumber_suffix
@@ -163,6 +190,7 @@ class XafsRegionsManager(RegionsManager):
             widget.setSuffix(f" {suffix}")
         # Disable weight box when k is not selected
         widgets.weight_spin_box.setEnabled(domain == Domain.WAVENUMBER)
+        self.update_step_size(row=row)
 
     def update_wavenumber_energy(self, is_k_checked: bool, row: int):
         domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
@@ -172,9 +200,9 @@ class XafsRegionsManager(RegionsManager):
         spin_boxes = [
             widgets.start_spin_box,
             widgets.stop_spin_box,
-            widgets.step_spin_box,
         ]
-        start, stop, step = [widget.value() for widget in spin_boxes]
+        start, stop = [widget.value() for widget in spin_boxes]
+        num = widgets.num_points_spin_box.value()
         convert: Callable[[float, float], float]
         if is_k_checked:
             convert = energy_to_wavenumber
@@ -182,13 +210,11 @@ class XafsRegionsManager(RegionsManager):
             convert = wavenumber_to_energy
         # Set new values
         new_start, new_stop = convert(start), convert(stop)
-        new_step = convert(start + step, relative_to=start)
         precision = self.wavenumber_precision if is_k_checked else self.energy_precision
         for widget in spin_boxes:
             widget.setDecimals(precision)
         widgets.start_spin_box.setValue(new_start)
         widgets.stop_spin_box.setValue(new_stop)
-        widgets.step_spin_box.setValue(new_step)
 
     def apply_E0(self, E0: float):
         """Apply an energy offset correction, *E0*, to widgets.
@@ -222,6 +248,32 @@ class XafsRegionsManager(RegionsManager):
                 old_value = line_edit.value()
                 new_value = old_value + E0
                 line_edit.setValue(new_value)
+
+    @Slot()
+    def update_step_size(self, row: int):
+        widgets = self.row_widgets(row)
+        start = widgets.start_spin_box.value()
+        stop = widgets.stop_spin_box.value()
+        num_points = widgets.num_points_spin_box.value()
+        is_k_checked = widgets.k_space_checkbox.isChecked()
+        domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
+        suffix = (
+            self.wavenumber_suffix
+            if domain == Domain.WAVENUMBER
+            else self.energy_suffix
+        )
+        # Calculate step size
+        if (num_points < 2) or (start == stop):
+            step_size = 0
+            precision = 0
+            widgets.step_label.setText("0")
+        else:
+            step_size = (stop - start) / (num_points - 1)
+            precision = -math.ceil(math.log10(abs(step_size)))
+            precision += 3  # Keep 3 significant figures
+            precision = max(precision, 0)
+            step_size = round(step_size, precision)
+            widgets.step_label.setText(f"{step_size}{HALF_SPACE}{suffix}")
 
 
 class XafsScanDisplay(display.PlanDisplay):

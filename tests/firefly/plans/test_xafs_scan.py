@@ -1,8 +1,11 @@
 from unittest import mock
 
 import pytest
+import pytest_asyncio
 
 from firefly.plans.xafs_scan import Domain, XafsScanDisplay
+
+HALF_SPACE = "\u202f"
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -11,13 +14,14 @@ exafs_region = [50, 800, 0.5]
 default_values = [pre_edge, xanes_region, exafs_region]
 
 
-@pytest.fixture()
-def display(qtbot):
+@pytest_asyncio.fixture()
+async def display(qtbot):
     display = XafsScanDisplay()
     qtbot.addWidget(display)
     return display
 
 
+@pytest.mark.asyncio
 async def test_region_number(display):
     """Does changing the region number affect the UI?"""
     # Check that the display has the right number of rows to start with
@@ -42,23 +46,31 @@ async def test_time_calculator(display, xspress, ion_chamber):
     widgets = display.regions.row_widgets(1)
     widgets.start_spin_box.setValue(-20)
     widgets.stop_spin_box.setValue(40)
-    widgets.step_spin_box.setValue(10)
+    widgets.num_points_spin_box.setValue(7)
     # Set up the second region
     widgets = display.regions.row_widgets(2)
-    widgets.start_spin_box.setValue(50)
-    widgets.stop_spin_box.setValue(800)
+    widgets.start_spin_box.setValue(50)  # 3.62262628464418 Å⁻
+    widgets.stop_spin_box.setValue(800)  # 14.49050513857672 Å⁻
     # Convert to k space
     widgets.k_space_checkbox.setChecked(True)
-    widgets.step_spin_box.setValue(5)
+    widgets.num_points_spin_box.setValue(3)
     widgets.weight_spin_box.setValue(2)
     # Disable the third region
     display.regions.row_widgets(3).active_checkbox.setChecked(False)
     # Set other widgets
     display.ui.spinBox_repeat_scan_num.setValue(3)
     # Check whether time is calculated correctly
+    print("+++")
     await display.update_total_time()
-    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 27\u202fs"
-    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 23\u202fs"
+    print("---")
+    assert (
+        display.ui.scan_duration_label.text()
+        == f"0{HALF_SPACE}h 0{HALF_SPACE}m 30{HALF_SPACE}s"
+    )
+    assert (
+        display.ui.total_duration_label.text()
+        == f"0{HALF_SPACE}h 1{HALF_SPACE}m 30{HALF_SPACE}s"
+    )
 
 
 async def test_E0_checkbox(display):
@@ -95,19 +107,19 @@ async def test_plan_energies(display):
     widgets = display.regions.row_widgets(1)
     widgets.start_spin_box.setValue(-200)
     widgets.stop_spin_box.setValue(-50)
-    widgets.step_spin_box.setValue(5)
+    widgets.num_points_spin_box.setValue(31)  # 5eV step
     widgets = display.regions.row_widgets(2)
     widgets.start_spin_box.setValue(-50)
     widgets.stop_spin_box.setValue(50)
-    widgets.step_spin_box.setValue(0.5)
+    widgets.num_points_spin_box.setValue(201)  # 0.5 step
     # Disable the last row
     display.regions.row_widgets(3).active_checkbox.setChecked(False)
     # Set up detector list
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
     assert energy_ranges == [
-        ("E", -200.0, -50.0, 5.0, 1.0),
-        ("E", -50.0, 50.0, 0.5, 1.0),
+        ("E", -200.0, -50.0, 31, 1.0),
+        ("E", -50.0, 50.0, 201, 1.0),
     ]
     assert kwargs["E0"] == 58893.0
 
@@ -119,20 +131,20 @@ async def test_plan_energies_k_mixed(display):
     widgets = display.regions.row_widgets(1)
     widgets.start_spin_box.setValue(-20)
     widgets.stop_spin_box.setValue(40)
-    widgets.step_spin_box.setValue(10)
+    widgets.num_points_spin_box.setValue(7)
     # Set up the second region
     widgets = display.regions.row_widgets(2)
-    widgets.start_spin_box.setValue(50)
-    widgets.stop_spin_box.setValue(800)
+    widgets.start_spin_box.setValue(50)  # 3.62262628464418 Å⁻
+    widgets.stop_spin_box.setValue(800)  # 14.49050513857672 Å⁻
     # Convert to k space
     widgets.k_space_checkbox.setChecked(True)
-    widgets.step_spin_box.setValue(5)
+    widgets.num_points_spin_box.setValue(3)
     widgets.weight_spin_box.setValue(2)
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
     assert energy_ranges == [
-        ("E", -20.0, 40.0, 10.0, 1.0),
-        ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
+        ("E", -20.0, 40.0, 7, 1.0),
+        ("K", 3.6226, 14.4905, 3, 1.0, 2),
     ]
 
 
@@ -188,22 +200,49 @@ def test_E0(display):
     assert display.E0 is None
 
 
+@pytest.mark.asyncio
+async def test_step_calculation(display):
+    "Check that the step size label is calculated properly."
+    await display.regions.set_region_count(1)
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(-20)
+    widgets.stop_spin_box.setValue(40)
+    widgets.num_points_spin_box.setValue(61)
+    assert widgets.step_label.text() == f"1.0{HALF_SPACE}eV"
+
+
+@pytest.mark.asyncio
+async def test_step_calculation_rounding(display):
+    "Check that the step size label has a sensible precision."
+    await display.regions.set_region_count(1)
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(-20)
+    widgets.stop_spin_box.setValue(40)
+    widgets.num_points_spin_box.setValue(71)
+    assert widgets.step_label.text() == f"0.857{HALF_SPACE}eV"
+
+
+@pytest.mark.asyncio
 async def test_region_domain(display):
     await display.regions.set_region_count(1)
     widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(10)
     assert widgets.start_spin_box.suffix() == " eV"
     assert widgets.stop_spin_box.suffix() == " eV"
-    assert widgets.step_spin_box.suffix() == " eV"
+    assert widgets.step_label.text()[-3:] == f"{HALF_SPACE}eV"
     assert not widgets.weight_spin_box.isEnabled()
+    widgets.k_space_checkbox.setChecked(True)
     display.regions.set_domain(domain=Domain.WAVENUMBER, row=1)
     assert widgets.start_spin_box.suffix() == " Å⁻"
     assert widgets.stop_spin_box.suffix() == " Å⁻"
-    assert widgets.step_spin_box.suffix() == " Å⁻"
+    assert widgets.step_label.text()[-3:] == f"{HALF_SPACE}Å⁻"
     assert widgets.weight_spin_box.isEnabled()
+    widgets.k_space_checkbox.setChecked(False)
     display.regions.set_domain(domain=Domain.ENERGY, row=1)
     assert widgets.start_spin_box.suffix() == " eV"
     assert widgets.stop_spin_box.suffix() == " eV"
-    assert widgets.step_spin_box.suffix() == " eV"
+    assert widgets.step_label.text()[-3:] == f"{HALF_SPACE}eV"
     assert not widgets.weight_spin_box.isEnabled()
 
 

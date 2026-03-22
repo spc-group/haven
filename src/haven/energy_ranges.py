@@ -1,4 +1,3 @@
-import math
 from dataclasses import astuple, dataclass
 
 import numpy as np
@@ -50,18 +49,13 @@ def wavenumber_to_energy(wavenumber: float, relative_to: float = 0.0):
     return E - E0
 
 
-def round_to_int(num):
-    digits = -int(math.log10(math.ulp(num)))
-    return int(round(num, digits))
-
-
 @dataclass(eq=True, frozen=True)
 class EnergyRange:
     """A range of energies used for scanning."""
 
     start: float
     stop: float
-    step: float = 1.0
+    num: int
     exposure: float = DEFAULT_EXPOSURE
 
     def energies(self):
@@ -80,17 +74,6 @@ def from_tuple(energy_range):
     if energy_range[0] in ["k", "K"]:
         return KRange(*energy_range[1:])
     return ERange(*energy_range)
-
-
-def full_range(start, end, step):
-    """Calculate a range, but inclusive of start and end (if a multiple of
-    the step).
-
-    """
-
-    num_steps = round_to_int((end - start) / step)
-    lin_max = start + num_steps * step
-    return np.linspace(start, lin_max, num=num_steps + 1)
 
 
 @dataclass(eq=True, frozen=True)
@@ -118,7 +101,7 @@ class ERange(EnergyRange):
 
     def energies(self):
         """Convert the range to a sequence of actual energy values, in eV."""
-        return full_range(self.start, self.stop, self.step)
+        return np.linspace(self.start, self.stop, self.num)
 
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
@@ -158,7 +141,7 @@ class KRange(EnergyRange):
 
     def wavenumbers(self):
         """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
-        ks = full_range(self.start, self.stop, self.step)
+        ks = np.linspace(self.start, self.stop, self.num)
         return ks
 
     def exposures(self):

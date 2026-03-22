@@ -104,8 +104,8 @@ def test_single_range(mono, ion_chamber):
     expected_exposures = np.asarray([1.0])
     plan = xafs_scan(
         [],
-        # (start, stop, step, time)
-        (-10, 0, 1, 1),
+        # (start, stop, num_points, time)
+        (-10, 0, 11, 1),
         E0=E0,
         energy_devices=[mono],
         time_signals=[ion_chamber.default_time_signal],
@@ -136,8 +136,8 @@ def test_multi_range(mono, ion_chamber):
     expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
         [],
-        ERange(-10, 0, 2, 0.5),
-        ERange(0, 10, 1, 1.0),
+        ERange(-10, 0, num=6, exposure=0.5),
+        ERange(0, 10, num=11, exposure=1.0),
         E0=E0,
         energy_devices=[mono],
         time_signals=[ion_chamber.default_time_signal],
@@ -165,12 +165,12 @@ def test_exafs_k_range(mono, ion_chamber):
     E0 = 10000
     E_min = 10
     k_min = 1.6200877248145786
-    krange = KRange(k_min, 14, step=0.5, weight=0.5, exposure=0.75)
+    krange = KRange(k_min, 14, num=25, weight=0.5, exposure=0.75)
     expected_energies = krange.energies() + E0
     expected_exposures = krange.exposures()
     scan = xafs_scan(
         [],
-        KRange(k_min, 14, step=0.5, exposure=0.75, weight=0.5),
+        KRange(k_min, 14, num=25, exposure=0.75, weight=0.5),
         E0=E0,
         energy_devices=[mono],
         time_signals=[ion_chamber.default_time_signal],
@@ -200,8 +200,8 @@ def test_named_E0_old(mono, ion_chamber):
     expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
         [],
-        ERange(-10, 0, 2, exposure=0.5),
-        ERange(0, 10, 1, exposure=1.0),
+        ERange(-10, 0, num=6, exposure=0.5),
+        ERange(0, 10, num=11, exposure=1.0),
         E0="Ni_K",
         energy_devices=[mono],
         time_signals=[ion_chamber.default_time_signal],
@@ -491,7 +491,7 @@ async def test_energy_scan_metadata_multiple_monos(mono):
 def test_xafs_scan_metadata_old(mono):
     scan = xafs_scan(
         [],
-        ERange(0, 10),
+        ERange(0, 10, num=11),
         energy_devices=[mono],
         E0="Ni-K",
         md={"sample_name": "unobtanium"},
@@ -507,7 +507,7 @@ def test_xafs_scan_metadata_old(mono):
     assert md["sample_name"] == "unobtanium"
     assert md["plan_args"] == {
         "detectors": [],
-        "energy_ranges": ["ERange(start=0, stop=10, step=1.0, exposure=0.5)"],
+        "energy_ranges": ["ERange(start=0, stop=10, num=11, exposure=0.5)"],
         "energy_devices": [repr(mono)],
         "time_signals": None,
         "E0": "Ni-K",
@@ -568,13 +568,13 @@ async def test_document_plan_args(mono):
 
 
 def test_from_tuple():
-    assert from_tuple(ERange(3, 9, 0.5)) == ERange(start=3, stop=9, step=0.5)
-    assert from_tuple(("E", 10, 15)) == ERange(10, 15)
-    assert from_tuple(("K", 4, 12, 0.1, 1.0, 1)) == KRange(
-        start=4, stop=12, step=0.1, exposure=1.0, weight=1
+    assert from_tuple(ERange(3, 9, 13)) == ERange(start=3, stop=9, num=13)
+    assert from_tuple(("E", 10, 15, 21)) == ERange(10, 15, 21)
+    assert from_tuple(("K", 4, 12, 81, 1.0, 1)) == KRange(
+        start=4, stop=12, num=81, exposure=1.0, weight=1
     )
-    assert from_tuple((10, 15, 0.25, 1.5)) == ERange(
-        start=10, stop=15, step=0.25, exposure=1.5
+    assert from_tuple((10, 15, 21, 1.5)) == ERange(
+        start=10, stop=15, num=21, exposure=1.5
     )
 
 

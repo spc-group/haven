@@ -15,17 +15,17 @@ logging.basicConfig(level=logging.INFO)
 
 energy_range_parameters = [
     # (start, end,  step, expected_energies)
-    (8300, 8400, 0.5, np.linspace(8300, 8400, num=201)),  # Example values
-    (1, 1.3, 0.1, [1, 1.1, 1.2, 1.3]),  # Known float rounding error
-    (0, 70, 50, [0, 50]),  # End-point is not a step multiple
-    (1.3, 1.0, -0.1, [1.3, 1.2, 1.1, 1.0]),  # Reverse direction
+    (8300, 8400, 201, np.linspace(8300, 8400, num=201)),  # Example values
+    (1, 1.3, 4, [1, 1.1, 1.2, 1.3]),  # Known float rounding error
+    (0, 70, 2, [0, 70]),  # End-point is not a step multiple
+    (1.3, 1.0, 4, [1.3, 1.2, 1.1, 1.0]),  # Reverse direction
 ]
 
 
-@pytest.mark.parametrize("start,stop,step,expected_energies", energy_range_parameters)
-def test_e_range(start, stop, step, expected_energies):
+@pytest.mark.parametrize("start,stop,num,expected_energies", energy_range_parameters)
+def test_e_range(start, stop, num, expected_energies):
     """Test the ERange class for calculating energy points."""
-    e_range = ERange(start, stop, step, exposure=0.1)
+    e_range = ERange(start, stop, num, exposure=0.1)
     np.testing.assert_allclose(e_range.energies(), expected_energies)
     np.testing.assert_allclose(e_range.exposures(), [0.1] * len(expected_energies))
 
@@ -47,7 +47,7 @@ def test_wavenumber_to_energy():
 
 def test_k_range():
     E0 = 17038
-    k_range = KRange(2.8, 14, 0.05, weight=1, exposure=1.0)
+    k_range = KRange(2.8, 14, 225, weight=1, exposure=1.0)
 
     np.testing.assert_almost_equal(k_range.wavenumbers()[0], 2.8)
     np.testing.assert_almost_equal(k_range.wavenumbers()[-1], 14)
@@ -64,8 +64,8 @@ def test_k_range():
 
 
 def test_merge_ranges():
-    e_range1 = ERange(1, 5, 1, exposure=0.5)
-    e_range2 = ERange(5, 7, 0.5, exposure=1)
+    e_range1 = ERange(1, 5, 5, exposure=0.5)
+    e_range2 = ERange(5, 7, 5, exposure=1)
     merged, exposures = merge_ranges(e_range2, e_range1)
     # Test validity of the result
     np.testing.assert_equal(merged, [1, 2, 3, 4, 5, 5.5, 6, 6.5, 7])
@@ -73,8 +73,8 @@ def test_merge_ranges():
 
 
 def test_merge_ranges_sorting():
-    e_range1 = ERange(5, 7, 0.5, exposure=1)
-    e_range2 = ERange(1, 5, 1, exposure=0.5)
+    e_range1 = ERange(5, 7, 5, exposure=1)
+    e_range2 = ERange(1, 5, 5, exposure=0.5)
     merged, exposures = merge_ranges(e_range2, e_range1, sort=True)
     # Test validity of the result
     np.testing.assert_equal(merged, [1, 2, 3, 4, 5, 5.5, 6, 6.5, 7])
