@@ -55,6 +55,10 @@ async def test_camera_signals(camera):
     assert hdf_source == "mock+ca://255idgigeA:HDF1:DataType_RBV"
 
 
+def test_image_plugin(camera):
+    assert camera.pva.image.source == "mock+pva://255idgigeA:Pva1:Image"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -3,6 +3,7 @@ from ophyd_async.epics.adaravis import AravisDetector as AravisDetectorBase
 from ophyd_async.epics.core import epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
+from .image_plugin import NDPluginPva
 
 
 class AravisTriggerSource(SubsetEnum):
@@ -18,6 +19,7 @@ class AravisDetector(AravisDetectorBase):
     ):
         if path_provider is None:
             path_provider = default_path_provider()
+        kwargs.setdefault("plugins", {})["pva"] = NDPluginPva(prefix=f"{prefix}Pva1:")
         super().__init__(*args, prefix=prefix, path_provider=path_provider, **kwargs)
         # Replace a signal that has different enum options
         self.driver.trigger_source = epics_signal_rw_rbv(
