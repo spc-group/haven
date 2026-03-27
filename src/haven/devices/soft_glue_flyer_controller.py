@@ -160,11 +160,7 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
                 )
         await asyncio.gather(*aws)
         # Prepare an iterator for use during kickoff()
-        self._number_of_events_iter = iter(
-            trigger_info.number_of_events
-            if isinstance(trigger_info.number_of_events, list)
-            else [trigger_info.number_of_events]
-        )
+        self._number_of_events_iter = iter([trigger_info.number_of_events])
         self._trigger_info = trigger_info
 
     @AsyncStatus.wrap

@@ -296,12 +296,9 @@ async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
 
 
-@pytest.mark.xfail
-# How do we handle multiple numbers of events now, since they are not
-# compatible with ophyd-async 0.17?
 async def test_flyscan_prepare_external_trigger(ion_chamber):
     trigger_info = TriggerInfo(
-        number_of_events=[5, 7],
+        number_of_events=5,
         trigger=DetectorTrigger.EXTERNAL_EDGE,
         deadtime=0,
         livetime=1.3,
@@ -317,7 +314,7 @@ async def test_flyscan_prepare_external_trigger(ion_chamber):
     assert erase_mock_put.called
     await assert_value(ion_chamber.mcs.channel_advance_source, "External")
     assert next(ion_chamber._trigger_channel_nums) == 5
-    assert next(ion_chamber._trigger_channel_nums) == 7
+    assert next(ion_chamber._trigger_channel_nums) == 5
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
 
 

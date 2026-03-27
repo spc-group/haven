@@ -1,8 +1,4 @@
-"""
-test the SRS DG-645 digital delay device support
-
-Hardware is not available so test with best efforts
-"""
+"Test the SRS DG-645 digital delay device support."
 
 import pytest
 from ophyd_async.core import TriggerInfo
@@ -111,24 +107,6 @@ async def test_kickoff_softglue_single_event(soft_glue):
     # Extra kickoffs shouldn't work
     with pytest.raises(RuntimeError):
         await soft_glue.kickoff()
-
-
-@pytest.mark.xfail
-# How do we handle multiple numbers of events now, since they are not
-# compatible with ophyd-async 0.17?
-async def test_kickoff_softglue_multiple_events(soft_glue):
-    num_events = [6, 9]
-    tinfo = TriggerInfo(trigger="INTERNAL", number_of_events=num_events)
-    await soft_glue.prepare(tinfo)
-    assert await soft_glue.pulse_counter.preset_counts.get_value() == 0
-    await soft_glue.kickoff()
-    assert await soft_glue.pulse_counter.preset_counts.get_value() == num_events[0] + 1
-    assert await soft_glue.reset_buffer.input_signal.get_value() == "1!"
-    # Set the reset buffer low to we can check again
-    await soft_glue.reset_buffer.input_signal.set("")
-    await soft_glue.kickoff()
-    assert await soft_glue.pulse_counter.preset_counts.get_value() == num_events[1] + 1
-    assert await soft_glue.reset_buffer.input_signal.get_value() == "1!"
 
 
 # -----------------------------------------------------------------------------

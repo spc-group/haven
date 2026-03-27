@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import time
-from collections.abc import AsyncGenerator, Iterable, Mapping
+from collections.abc import AsyncGenerator, Mapping
 from itertools import repeat
 from typing import Any
 
@@ -402,12 +402,8 @@ class IonChamber(StandardReadable, Triggerable):
             channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL
         else:
             raise ValueError(f"Ion chamber does not support {value.trigger}.")
-        if isinstance(num_channels, Iterable):
-            # We have multiple events with distinct number of channels
-            self._trigger_channel_nums = iter(num_channels)
-        else:
-            # Fixed number of events
-            self._trigger_channel_nums = repeat(num_channels)
+        # Fixed number of events
+        self._trigger_channel_nums = repeat(num_channels)
         await asyncio.gather(
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),
