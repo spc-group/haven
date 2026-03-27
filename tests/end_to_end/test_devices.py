@@ -3,6 +3,8 @@ from bluesky import plan_stubs as bps
 from guarneri.exceptions import ComponentNotFound
 from ophyd_async.core import TriggerInfo
 
+from haven import load_config
+
 
 @pytest.mark.beamline()
 def test_motor(startup):
@@ -14,14 +16,25 @@ def test_motor(startup):
     result = RE(bps.rd(sim_motor_2))
 
 
-detector_names = [
-    "sim_detector",
-    "ge_13element",
-    "fine_focus_camera",
+cfg = load_config()
+detector_tables = [
+    "camera",
     "eiger",
-    "lambda_250k",
-    "lambda_flex",
+    "ion_chamber",
+    "lambda",
+    "sim_detector",
+    "xspress3",
 ]
+tables = [cfg.get(table, []) for table in detector_tables]
+detector_names = [section["name"] for table in tables for section in table]
+# detector_names = [
+#     "sim_detector",
+#     "ge_13element",
+#     "fine_focus_camera",
+#     "eiger",
+#     "lambda_250k",
+#     "lambda_flex",
+# ]
 
 
 @pytest.mark.beamline()
