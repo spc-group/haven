@@ -1,9 +1,11 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 
-from ophyd_async.core import PathProvider, SignalR
+from ophyd_async.core import DetectorTriggerLogic, PathProvider, SignalR
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import ADBaseController, AreaDetector
-from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
+from ophyd_async.epics.adcore import ADBaseIO, ADWriterType, AreaDetector
+
+# from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
@@ -25,26 +27,10 @@ class EigerDriverIO(adcore.ADBaseIO):
         super().__init__(prefix=prefix, name=name)
 
 
-class EigerDatasetDescriber(adcore.ADBaseDatasetDescriber):
-    """The datatype cannot be reliably determined from DataType_RBV.
+@dataclass
+class EigerTriggerLogic(DetectorTriggerLogic):
+    driver: ADBaseIO
 
-    The Eiger always reports the data type as Int8, but this is never
-    going to be correct. Instead, the data type can be inferred from
-    the bit depth reported by the detector.
-
-    """
-
-    async def np_datatype(self) -> str:
-        bit_depth = await self._driver.bit_depth.get_value()
-        types = {
-            8: ADBaseDataType.UINT8,
-            16: ADBaseDataType.UINT16,
-            32: ADBaseDataType.UINT32,
-        }
-        return convert_ad_dtype_to_np(types[bit_depth])
-
-
-class EigerController(ADBaseController):
     def get_deadtime(self, exposure: float | None) -> float:
         # According to the manual, readout time is 3.00µs above 6.4
         # keV threshold energy. Set it to 10× to be safe.
@@ -60,25 +46,17 @@ class EigerDetector(AreaDetector):
         self,
         prefix: str,
         path_provider: PathProvider | None = None,
-        drv_suffix="cam1:",
-        writer_cls: type[adcore.ADWriter] = adcore.ADHDFWriter,
-        fileio_suffix="HDF1:",
-        name: str = "",
-        config_sigs: Sequence[SignalR] = (),
+        driver_suffix="cam1:",
+        writer_type: ADWriterType | None = ADWriterType.HDF,
+        writer_suffix="HDF1:",
         plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
+        config_sigs: Sequence[SignalR] = (),
+        name: str = "",
     ):
         if path_provider is None:
             path_provider = default_path_provider()
         # Area detector IO devices
-        driver = EigerDriverIO(f"{prefix}{drv_suffix}")
-        controller = EigerController(driver)
-        fileio = adcore.NDFileHDFIO(f"{prefix}{fileio_suffix}")
-        writer = writer_cls(
-            fileio,
-            path_provider=path_provider,
-            dataset_describer=EigerDatasetDescriber(driver),
-            plugins=plugins,
-        )
+        driver = EigerDriverIO(f"{prefix}{driver_suffix}")
         config_sigs = (
             driver.pixel_size_x,
             driver.pixel_size_y,
@@ -89,11 +67,16 @@ class EigerDetector(AreaDetector):
             *config_sigs,
         )
         super().__init__(
-            controller=controller,
-            writer=writer,
+            prefix=prefix,
+            driver=driver,
+            arm_logic=adcore.ADArmLogic(driver),
+            trigger_logic=EigerTriggerLogic(driver),
+            path_provider=path_provider,
+            writer_type=writer_type,
+            writer_suffix=writer_suffix,
             plugins=plugins,
-            name=name,
             config_sigs=config_sigs,
+            name=name,
         )
 
     @property

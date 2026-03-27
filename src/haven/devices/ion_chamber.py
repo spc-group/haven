@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import time
-from collections.abc import AsyncGenerator, Iterable, Mapping
+from collections.abc import AsyncGenerator, Mapping
 from itertools import repeat
 from typing import Any
 
@@ -57,7 +57,7 @@ class IonChamber(StandardReadable, Triggerable):
     _fly_start_timestamp_remote: int | float | None = None
     _fly_start_timestamp_local: int | float | None = None
 
-    detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
+    detector_trigger: DetectorTrigger = DetectorTrigger.EXTERNAL_EDGE
 
     def __init__(
         self,
@@ -396,18 +396,14 @@ class IonChamber(StandardReadable, Triggerable):
             count_on_start = 1
             num_channels = max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.INTERNAL
-        elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
+        elif value.trigger == DetectorTrigger.EXTERNAL_EDGE:
             count_on_start = 0
             num_channels = value.number_of_events or max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL
         else:
             raise ValueError(f"Ion chamber does not support {value.trigger}.")
-        if isinstance(num_channels, Iterable):
-            # We have multiple events with distinct number of channels
-            self._trigger_channel_nums = iter(num_channels)
-        else:
-            # Fixed number of events
-            self._trigger_channel_nums = repeat(num_channels)
+        # Fixed number of events
+        self._trigger_channel_nums = repeat(num_channels)
         await asyncio.gather(
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),

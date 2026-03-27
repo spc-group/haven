@@ -406,7 +406,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/a2/d86e01c28300bd41bab8f18afd613676e2bd63515417b77636fc1add426f/opentelemetry_api-1.38.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/46/59/e11136fe6db0b1f3aea14de7bc36122aaa0ca67b715e400d45974b8848be/ophyd-1.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e9/45/863765ab799e3197d1863c2035bf0ce1f7e925d33a5c1d1153cc01c888e3/p4p-4.2.2-cp312-cp312-manylinux2014_x86_64.whl
@@ -457,6 +457,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9d/7a/d968e294073affff457b041c2be9868a40c1c71f4a35fcc1e45e5493067b/pytest_cov-7.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/d0/8339b888ad64a3d4e508fed8245a402b503846e1972c10ad60955883dcbb/pytest_qt-4.5.0-py3-none-any.whl
@@ -903,7 +904,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/a2/d86e01c28300bd41bab8f18afd613676e2bd63515417b77636fc1add426f/opentelemetry_api-1.38.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/46/59/e11136fe6db0b1f3aea14de7bc36122aaa0ca67b715e400d45974b8848be/ophyd-1.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e9/45/863765ab799e3197d1863c2035bf0ce1f7e925d33a5c1d1153cc01c888e3/p4p-4.2.2-cp312-cp312-manylinux2014_x86_64.whl
@@ -938,6 +939,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/d0/8339b888ad64a3d4e508fed8245a402b503846e1972c10ad60955883dcbb/pytest_qt-4.5.0-py3-none-any.whl
@@ -1356,7 +1358,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/a2/d86e01c28300bd41bab8f18afd613676e2bd63515417b77636fc1add426f/opentelemetry_api-1.38.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/46/59/e11136fe6db0b1f3aea14de7bc36122aaa0ca67b715e400d45974b8848be/ophyd-1.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e9/45/863765ab799e3197d1863c2035bf0ce1f7e925d33a5c1d1153cc01c888e3/p4p-4.2.2-cp312-cp312-manylinux2014_x86_64.whl
@@ -1391,6 +1393,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/d0/8339b888ad64a3d4e508fed8245a402b503846e1972c10ad60955883dcbb/pytest_qt-4.5.0-py3-none-any.whl
@@ -1884,7 +1887,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/a2/d86e01c28300bd41bab8f18afd613676e2bd63515417b77636fc1add426f/opentelemetry_api-1.38.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/46/59/e11136fe6db0b1f3aea14de7bc36122aaa0ca67b715e400d45974b8848be/ophyd-1.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/84/a6/11b0eb65eeafa87260d36858b69ec4e0072d09e37ea6714280960030bc93/optype-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -1924,6 +1927,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/d0/8339b888ad64a3d4e508fed8245a402b503846e1972c10ad60955883dcbb/pytest_qt-4.5.0-py3-none-any.whl
@@ -2352,7 +2356,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/a2/d86e01c28300bd41bab8f18afd613676e2bd63515417b77636fc1add426f/opentelemetry_api-1.38.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/46/59/e11136fe6db0b1f3aea14de7bc36122aaa0ca67b715e400d45974b8848be/ophyd-1.11.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/75/7f/f2dc377aff9e87071c311dae55702696fbeb960c82da9e473ce72cd52d7a/ophyd_registry-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/26/5f028c7d81ad2ebbf84414ba6d6c9cac03f22f5cd0d01eb40fb2d6a06b07/orjson-3.11.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e9/45/863765ab799e3197d1863c2035bf0ce1f7e925d33a5c1d1153cc01c888e3/p4p-4.2.2-cp312-cp312-manylinux2014_x86_64.whl
@@ -2387,6 +2391,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cc/d0/8339b888ad64a3d4e508fed8245a402b503846e1972c10ad60955883dcbb/pytest_qt-4.5.0-py3-none-any.whl
@@ -7885,10 +7890,10 @@ packages:
   - sphinx-design ; extra == 'dev'
   - tox-direct ; extra == 'dev'
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/83/07/f92719d58628c41a234a2c4b9974ada666786cf113715fb78fd6df6e32d6/ophyd_async-0.15-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/34/6a/68cf0ccf958ddae11d6da56905cd71c5c8101a581abb67f8c7574b95823f/ophyd_async-0.17a2-py3-none-any.whl
   name: ophyd-async
-  version: '0.15'
-  sha256: aa0b8f386341dcd537c53c06245896949797b7387bcdba6fc553bcea9fc26e45
+  version: 0.17a2
+  sha256: 9e7e05d8fbd34ddc9fb907cbcab1b9fbd54fa9aa2d4a26615302d3841200ffeb
   requires_dist:
   - numpy
   - bluesky>=1.13.1rc2
@@ -7903,7 +7908,7 @@ packages:
   - h5py ; extra == 'sim'
   - aioca>=2.0a4 ; extra == 'ca'
   - p4p>=4.2.0 ; extra == 'pva'
-  - pytango>=10.0.2 ; extra == 'tango'
+  - pytango>=10.1.3 ; extra == 'tango'
   - ipython ; extra == 'demo'
   - matplotlib ; extra == 'demo'
   - pyqt6 ; extra == 'demo'
@@ -8932,6 +8937,14 @@ packages:
   - pytest-xdist ; extra == 'testing'
   - virtualenv ; extra == 'testing'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/c2/ea/84509533e0f6477960b8a9179d240d93c909c6543e4dd8209932026d7815/pytest_dependency-0.6.1.tar.gz
+  name: pytest-dependency
+  version: 0.6.1
+  sha256: 246c24d2a5fc743a942cec4408853640e56a05ba58d46e5b213a1d4b738a2464
+  requires_dist:
+  - setuptools
+  - pytest>=3.7.0
+  requires_python: '>=3.4'
 - pypi: https://files.pythonhosted.org/packages/b0/ed/026d467c1853dd83102411a78126b4842618e86c895f93528b0528c7a620/pytest_httpx-0.35.0-py3-none-any.whl
   name: pytest-httpx
   version: 0.35.0

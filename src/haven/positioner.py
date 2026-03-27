@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import warnings
 from functools import partial, wraps
 from typing import cast
 
@@ -192,4 +191,4 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         if hasattr(self, "stop_signal"):
             await self.stop_signal.trigger()
         else:
-            warnings.warn(f"Positioner {self.name} has no stop signal.")
+            log.warning(f"Positioner {self.name} has no stop signal.")

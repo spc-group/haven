@@ -1,19 +1,24 @@
 import asyncio
-from collections.abc import Iterable, Sequence
-from itertools import repeat
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
-    DetectorTrigger,
+    DetectorTriggerLogic,
     PathProvider,
     SignalR,
     StrictEnum,
     SubsetEnum,
-    TriggerInfo,
     observe_value,
 )
-from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import ADBaseController, AreaDetector
+from ophyd_async.epics.adcore import (
+    ADArmLogic,
+    ADBaseIO,
+    ADImageMode,
+    ADWriterType,
+    AreaDetector,
+    NDPluginBaseIO,
+)
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
@@ -37,7 +42,7 @@ class LambdaTriggerMode(StrictEnum):
     EXTERNAL_IMAGE = "External_ImagePer"
 
 
-class LambdaDriverIO(adcore.ADBaseIO):
+class LambdaDriverIO(ADBaseIO):
 
     def __init__(self, prefix, name=""):
         self.operating_mode = epics_signal_rw_rbv(
@@ -55,56 +60,52 @@ class LambdaDriverIO(adcore.ADBaseIO):
         self.set_name(self.name)
 
 
-class LambdaController(ADBaseController):
+@dataclass
+class LambdaTriggerLogic(DetectorTriggerLogic):
+    driver: ADBaseIO
+
     def get_deadtime(self, exposure: float | None) -> float:
         # From manual: No readout time in 12-bit, 6-bit and1-bit mode,
         # 1 ms in 24-bit mode
         return 1e-3
 
-    async def prepare(self, trigger_info: TriggerInfo) -> None:
-        external_triggers = [
-            DetectorTrigger.CONSTANT_GATE,
-            DetectorTrigger.VARIABLE_GATE,
-            DetectorTrigger.EDGE_TRIGGER,
-        ]
-        if trigger_info.trigger == DetectorTrigger.INTERNAL:
-            trigger_mode = LambdaTriggerMode.INTERNAL
-        elif trigger_info.trigger in external_triggers:
-            trigger_mode = LambdaTriggerMode.EXTERNAL_SEQUENCE
-        else:
-            raise ValueError(
-                f"{self.name} does not recognize trigger mode '{trigger_info.trigger}'"
+    async def prepare_common(self, num: int) -> None:
+        await asyncio.gather(
+            self.driver.num_images.set(num),
+            self.driver.image_mode.set(ADImageMode.MULTIPLE),
+        )
+
+    async def prepare_level(self, num: int) -> None:
+        task = asyncio.ensure_future(
+            asyncio.gather(
+                self.prepare_common(num=num),
+                self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_SEQUENCE),
             )
-        max_frames = 2000
-        num_frames = trigger_info.number_of_events or max_frames
-        if isinstance(num_frames, Iterable):
-            # We have multiple events with distinct number of channels
-            self._trigger_frame_nums = iter(num_frames)
-        else:
-            # Fixed number of events
-            self._trigger_frame_nums = repeat(num_frames)
-        aws = [
-            self.driver.num_images.set(trigger_info.total_number_of_exposures),
-            self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
-            self.driver.trigger_mode.set(trigger_mode),
-        ]
-        if trigger_info.livetime is not None:
-            aws.extend(
-                [
-                    self.driver.acquire_time.set(trigger_info.livetime),
-                    self.driver.acquire_period.set(
-                        trigger_info.livetime + trigger_info.deadtime
-                    ),
-                ]
+        )
+        await self._wait_for_num_images(num)
+        await task
+
+    async def prepare_internal(
+        self, num: int, livetime: float, deadtime: float
+    ) -> None:
+        task = asyncio.ensure_future(
+            asyncio.gather(
+                self.prepare_common(num=num),
+                self.driver.trigger_mode.set(LambdaTriggerMode.INTERNAL),
+                self.driver.acquire_time.set(livetime),
+                self.driver.acquire_period.set(livetime + deadtime),
             )
-        task = asyncio.ensure_future(asyncio.gather(*aws))
-        # Make sure the number of frames is set properly (not too high)
+        )
+        await self._wait_for_num_images(num)
+        await task
+
+    async def _wait_for_num_images(self, num: int):
+        """Make sure the number of frames is set properly (not too high)"""
         async for num_images in observe_value(
             self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
         ):
-            if num_images == trigger_info.total_number_of_exposures:
+            if num_images == num:
                 break
-        await task
 
 
 class LambdaDetector(AreaDetector):
@@ -117,24 +118,16 @@ class LambdaDetector(AreaDetector):
         prefix: str,
         path_provider: PathProvider | None = None,
         drv_suffix="cam1:",
-        writer_cls: type[adcore.ADWriter] = adcore.ADHDFWriter,
-        fileio_suffix="HDF1:",
+        writer_type: ADWriterType = ADWriterType.HDF,
+        writer_suffix="HDF1:",
         name: str = "",
         config_sigs: Sequence[SignalR] = (),
-        plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
+        plugins: dict[str, NDPluginBaseIO] | None = None,
     ):
         if path_provider is None:
             path_provider = default_path_provider()
         # Area detector IO devices
         driver = LambdaDriverIO(f"{prefix}{drv_suffix}")
-        controller = LambdaController(driver)
-        writer = writer_cls.with_io(
-            prefix,
-            path_provider,
-            dataset_source=driver,
-            fileio_suffix=fileio_suffix,
-            plugins=plugins,
-        )
         config_sigs = (
             driver.operating_mode,
             driver.dual_mode,
@@ -145,11 +138,16 @@ class LambdaDetector(AreaDetector):
             *config_sigs,
         )
         super().__init__(
-            controller=controller,
-            writer=writer,
+            prefix=prefix,
+            driver=driver,
+            arm_logic=ADArmLogic(driver),
+            trigger_logic=LambdaTriggerLogic(driver),
+            path_provider=path_provider,
+            writer_type=writer_type,
+            writer_suffix=writer_suffix,
             plugins=plugins,
-            name=name,
             config_sigs=config_sigs,
+            name=name,
         )
 
     @property
