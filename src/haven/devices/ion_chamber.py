@@ -57,7 +57,7 @@ class IonChamber(StandardReadable, Triggerable):
     _fly_start_timestamp_remote: int | float | None = None
     _fly_start_timestamp_local: int | float | None = None
 
-    detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
+    detector_trigger: DetectorTrigger = DetectorTrigger.EXTERNAL_EDGE
 
     def __init__(
         self,
@@ -396,7 +396,7 @@ class IonChamber(StandardReadable, Triggerable):
             count_on_start = 1
             num_channels = max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.INTERNAL
-        elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
+        elif value.trigger == DetectorTrigger.EXTERNAL_EDGE:
             count_on_start = 0
             num_channels = value.number_of_events or max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL

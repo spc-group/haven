@@ -38,7 +38,9 @@ def xspress():
 
 def test_fly_segment(flyer, xspress):
     spec = Line(flyer, -10, 10, 6)
-    trigger_info = TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER, number_of_events=6)
+    trigger_info = TriggerInfo(
+        trigger=DetectorTrigger.EXTERNAL_EDGE, number_of_events=6
+    )
     plan = fly_segment([xspress], motors=[flyer], spec=spec, trigger_info=trigger_info)
     msgs = list(plan)
     assert len(msgs) > 2

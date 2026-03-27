@@ -142,7 +142,7 @@ class AerotechMotor(Motor):
     """
 
     axis: int
-    detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
+    detector_trigger: DetectorTrigger = DetectorTrigger.EXTERNAL_EDGE
     _fly_points = None
 
     def __init__(self, *args, axis: int, **kwargs):

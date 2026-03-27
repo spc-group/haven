@@ -15,7 +15,7 @@ this_dir = Path(__file__).parent
 async def detector():
     det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
     await det.connect(mock=True)
-    set_mock_value(det.fileio.file_path_exists, True)
+    set_mock_value(det.writer.file_path_exists, True)
     return det
 
 
@@ -48,7 +48,7 @@ async def test_description(detector):
 async def test_trigger(detector):
     status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
-    set_mock_value(detector.fileio.num_captured, 1)
+    set_mock_value(detector.writer.num_captured, 1)
     await status
     # Check that signals were set
     get_mock_put(detector.driver.num_images).assert_called_once_with(1)
@@ -59,22 +59,6 @@ async def test_stage(detector):
     await detector.stage()
     get_mock_put(detector.driver.erase_on_start).assert_called_once_with(False)
     assert get_mock_put(detector.driver.erase).called
-
-
-async def test_descriptor(detector):
-    """There is a bug in the xspress3 EPICS driver that means it does not
-    report the datatype correctly. This tests a workaround to decide
-    based on the value of the dead_time_correction.
-
-    https://github.com/epics-modules/xspress3/issues/57
-
-    """
-    # With deadtime correction off, we should get unsigned longs
-    await detector.driver.deadtime_correction.set(False)
-    assert await detector._writer._dataset_describer.np_datatype() == "<u4"
-    # With deadtime correction on, we should get double-precision floats
-    await detector.driver.deadtime_correction.set(True)
-    assert await detector._writer._dataset_describer.np_datatype() == "<f8"
 
 
 async def test_deadtime_correction_disabled(detector):
@@ -90,9 +74,9 @@ async def test_deadtime_correction_disabled(detector):
     assert not await detector.driver.deadtime_correction.get_value()
 
 
-def test_default_time_signal_xspress(xspress):
+def test_default_time_signal_xspress(detector):
     # assert xspress.default_time_signal is xspress.acquire_time
-    assert xspress.default_time_signal is xspress.driver.acquire_time
+    assert detector.default_time_signal is detector.driver.acquire_time
 
 
 async def test_ndattribute_params():
@@ -121,7 +105,11 @@ async def test_stage_ndattributes(detector):
 
 async def test_ndattribute_set(detector):
     await detector.stage()
-    desc = await detector._writer.open(detector.name)
+    try:
+        await detector.prepare(TriggerInfo())
+        desc = await detector.describe()
+    finally:
+        await detector.unstage()
     assert "vortex_me4-element0-deadtime_factor" in desc.keys()
     assert "vortex_me4-element1-deadtime_factor" in desc.keys()
     assert "vortex_me4-element2-deadtime_factor" in desc.keys()
@@ -131,7 +119,7 @@ async def test_ndattribute_set(detector):
 async def test_prepare_internal_trigger(detector):
     tinfo = TriggerInfo(
         number_of_events=10,
-        exposures_per_event=2,
+        collections_per_event=2,
         trigger=DetectorTrigger.INTERNAL,
     )
     await detector.prepare(tinfo)
@@ -143,8 +131,8 @@ async def test_prepare_internal_trigger(detector):
 async def test_prepare_external_gate(detector):
     tinfo = TriggerInfo(
         number_of_events=10,
-        exposures_per_event=2,
-        trigger=DetectorTrigger.CONSTANT_GATE,
+        collections_per_event=2,
+        trigger=DetectorTrigger.EXTERNAL_LEVEL,
         deadtime=0.1,
     )
     await detector.prepare(tinfo)
@@ -157,12 +145,12 @@ async def test_validate_trigger_info(detector):
     # An edge trigger cannot be used, turn it into a gate.
     tinfo_in = TriggerInfo(
         number_of_events=10,
-        trigger=DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
         deadtime=0.1,
     )
     tinfo_target = TriggerInfo(
         number_of_events=10,
-        trigger=DetectorTrigger.CONSTANT_GATE,
+        trigger=DetectorTrigger.EXTERNAL_LEVEL,
         deadtime=0.1,
     )
     assert detector.validate_trigger_info(tinfo_in) == tinfo_target

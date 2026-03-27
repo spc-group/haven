@@ -8,7 +8,6 @@ from .image_plugin import NDPluginPva
 
 class AravisTriggerSource(SubsetEnum):
     SOFTWARE = "Software"
-    LINE1 = "Line1"
 
 
 class AravisDetector(AravisDetectorBase):

@@ -147,7 +147,7 @@ async def test_prepare_delay_internal(dg645):
 
 async def test_prepare_delay_edge_trigger(dg645):
     tinfo = TriggerInfo(
-        trigger=DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
     )
     await dg645.prepare(tinfo)
     await assert_value(dg645.trigger_source, "Ext rising edge")
@@ -155,7 +155,7 @@ async def test_prepare_delay_edge_trigger(dg645):
 
 async def test_prepare_output_edge(dg645):
     tinfo = TriggerInfo(
-        trigger=DetectorTrigger.CONSTANT_GATE, livetime=1.3, deadtime=0.1
+        trigger=DetectorTrigger.EXTERNAL_LEVEL, livetime=1.3, deadtime=0.1
     )
     output = dg645.output_AB
     await output.prepare(tinfo)

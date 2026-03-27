@@ -42,14 +42,14 @@ class SoftGlueTriggerOutput(StandardReadable, Preparable):
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
         match trigger_info.trigger:
-            case DetectorTrigger.EDGE_TRIGGER:
+            case DetectorTrigger.EXTERNAL_EDGE:
                 # External input provides the input uplses
                 aws = (
                     self.and_gate.inputB_signal.set(INPUT),
                     self.and_gate.output_signal.set(TRIGGER_OUTPUT),
                     self.output.signal.set(TRIGGER_OUTPUT),
                 )
-            case DetectorTrigger.CONSTANT_GATE | DetectorTrigger.VARIABLE_GATE:
+            case DetectorTrigger.EXTERNAL_LEVEL:
                 aws = (
                     self.and_gate.inputB_signal.set(GATE_LATCH),
                     self.and_gate.output_signal.set(GATE_OUTPUT),
@@ -103,10 +103,10 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
         aws: Sequence[Awaitable] = (
             # Configure the specific output channels
             self.trigger_output.prepare(
-                TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER)
+                TriggerInfo(trigger=DetectorTrigger.EXTERNAL_EDGE)
             ),
             self.gate_output.prepare(
-                TriggerInfo(trigger=DetectorTrigger.CONSTANT_GATE)
+                TriggerInfo(trigger=DetectorTrigger.EXTERNAL_LEVEL)
             ),
             # Input/output channels
             self.reset_buffer.description.set("Reset"),
@@ -147,7 +147,7 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
                     self.clock_divider.output_signal.set(INPUT),
                     *aws,
                 )
-            case DetectorTrigger.EDGE_TRIGGER:
+            case DetectorTrigger.EXTERNAL_EDGE:
                 # External input provides the input uplses
                 aws = (
                     self.pulse_input.signal.set(INPUT),
@@ -176,7 +176,7 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
         except StopIteration as err:
             raise RuntimeError(
                 f"Kickoff called more than the configured number of "
-                f"{self._trigger_info.total_number_of_exposures} iteration(s)!"
+                f"{self._trigger_info.number_of_exposures} iteration(s)!"
             ) from err
         num_pulses = events_to_complete + 1
         await self.pulse_counter.preset_counts.set(num_pulses)

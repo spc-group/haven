@@ -112,12 +112,9 @@ class DG645DelayOutput(DG645Output):
             self.channels[0].delay.set(0),
             self.channels[1].reference.set(self.channels[0].Reference.T0),
         ]
-        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
+        if value.trigger == DetectorTrigger.EXTERNAL_EDGE:
             aws.append(self.channels[1].delay.set(1e-5))
-        elif value.trigger in [
-            DetectorTrigger.CONSTANT_GATE,
-            DetectorTrigger.VARIABLE_GATE,
-        ]:
+        elif value.trigger == DetectorTrigger.EXTERNAL_LEVEL:
             aws.append(self.channels[1].delay.set(value.livetime - value.deadtime))
         await asyncio.gather(*aws)
 
@@ -238,7 +235,7 @@ class DG645Delay(StandardReadable):
     async def prepare(self, value: TriggerInfo):
         if value.trigger == DetectorTrigger.INTERNAL:
             trigger_source = self.TriggerSource.INTERNAL
-        elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
+        elif value.trigger == DetectorTrigger.EXTERNAL_EDGE:
             trigger_source = self.TriggerSource.EXTERNAL_RISING_EDGE
         await self.trigger_source.set(trigger_source)
 

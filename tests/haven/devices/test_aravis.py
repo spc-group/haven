@@ -26,11 +26,13 @@ async def test_camera_trigger_source_choices(camera):
     > hdf: NotConnected:
     >     data_type: NotConnected: ca://25idcARV4:HDF1:NDDataType_RBV
 
+    Originally we had "Line1" as an option, but this caused problems
+    on a given camera that only had "Software", "Line0", "Line2", ...
+
     """
     desc = await camera.driver.trigger_source.describe()
     choices = desc["s255id-gige-A-driver-trigger_source"]["choices"]
     assert "Software" in choices
-    assert "Line1" in choices
 
 
 @pytest.mark.asyncio
@@ -50,8 +52,8 @@ async def test_camera_signals(camera):
     cam_source = desc["s255id-gige-A-driver-data_type"]["source"]
     assert cam_source == "mock+ca://255idgigeA:cam1:DataType_RBV"
     # Check HDF signal source
-    desc = await camera.fileio.data_type.describe()
-    hdf_source = desc["s255id-gige-A-fileio-data_type"]["source"]
+    desc = await camera.writer.data_type.describe()
+    hdf_source = desc["s255id-gige-A-writer-data_type"]["source"]
     assert hdf_source == "mock+ca://255idgigeA:HDF1:DataType_RBV"
 
 

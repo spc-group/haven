@@ -1,16 +1,32 @@
 import pytest
+import pytest_asyncio
+from ophyd_async.core import (
+    DetectorTrigger,
+    StaticPathProvider,
+    TriggerInfo,
+    UUIDFilenameProvider,
+    set_mock_value,
+)
+from ophyd_async.testing import assert_value
 
 from haven.devices import LambdaDetector
 
 
-@pytest.fixture()
-async def detector():
-    detector = LambdaDetector(prefix="255idLambda:", name="lambda_flex")
+@pytest_asyncio.fixture()
+async def detector(tmp_path):
+    path_provider = StaticPathProvider(
+        filename_provider=UUIDFilenameProvider(),
+        directory_path=tmp_path,
+    )
+    detector = LambdaDetector(
+        prefix="255idLambda:", name="lambda_flex", path_provider=path_provider
+    )
     await detector.connect(mock=True)
     # Registry with the simulated registry
     return detector
 
 
+@pytest.mark.asyncio
 async def test_signals(detector):
     """Confirm the device has the right signals."""
     assert (
@@ -36,6 +52,7 @@ async def test_signals(detector):
     )
 
 
+@pytest.mark.asyncio
 async def test_configuration(detector):
     """Confirm the device has the right signals."""
     config = await detector.read_configuration()
@@ -45,6 +62,31 @@ async def test_configuration(detector):
     assert "lambda_flex-driver-charge_summing" in config.keys()
     assert "lambda_flex-driver-energy_threshold" in config.keys()
     assert "lambda_flex-driver-dual_threshold" in config.keys()
+
+
+@pytest.mark.asyncio
+async def test_prepare_internal(detector):
+    set_mock_value(detector.writer.file_path_exists, True)
+    tinfo = TriggerInfo(collections_per_event=5, livetime=2.3, deadtime=0.2)
+    await detector.prepare(tinfo)
+    await assert_value(detector.driver.trigger_mode, "Internal")
+    await assert_value(detector.driver.num_images, 5)
+    await assert_value(detector.driver.image_mode, "Multiple")
+    await assert_value(detector.driver.acquire_time, 2.3)
+    await assert_value(detector.driver.acquire_period, 2.5)
+
+
+@pytest.mark.asyncio
+async def test_prepare_external(detector):
+    set_mock_value(detector.writer.file_path_exists, True)
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.EXTERNAL_LEVEL,
+        collections_per_event=5,
+    )
+    await detector.prepare(tinfo)
+    await assert_value(detector.driver.trigger_mode, "External_SequencePer")
+    await assert_value(detector.driver.num_images, 5)
+    await assert_value(detector.driver.image_mode, "Multiple")
 
 
 # -----------------------------------------------------------------------------

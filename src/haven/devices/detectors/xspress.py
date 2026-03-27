@@ -1,7 +1,24 @@
+"""An Xspress3 pulse processor, built on top of an EPICS area detector.
+
+This device disables dead-time correction during staging since it is
+not always reliable:
+https://github.com/epics-modules/xspress3/issues/57
+
+"""
+
+# The datatype cannot be reliably determined from DataType_RBV if
+# deadtime correction is enabled. Since dead-time correction is
+# disabled it doesn't matter for now but if that changes, read out
+# whether deadtime correction is enabled and determine the datatype
+# that way.
+#
+# https://github.com/epics-modules/xspress3/issues/57
+
+
 import asyncio
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable, Sequence
-from itertools import repeat
+from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import SupportsIndex
 
 import numpy as np
@@ -9,8 +26,8 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
-    DetectorController,
     DetectorTrigger,
+    DetectorTriggerLogic,
     Device,
     DeviceVector,
     PathProvider,
@@ -21,12 +38,14 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import ADBaseController, AreaDetector
-from ophyd_async.epics.adcore._utils import (
-    ADBaseDataType,
+from ophyd_async.epics.adcore import (
+    ADBaseIO,
+    ADWriterType,
+    AreaDetector,
     NDAttributeDataType,
     NDAttributeParam,
-    convert_ad_dtype_to_np,
+    NDPluginBaseIO,
+    ndattributes_to_xml,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -54,87 +73,55 @@ class XspressDriverIO(adcore.ADBaseIO):
         super().__init__(prefix=prefix, name=name)
 
 
-class XspressController(ADBaseController):
-    def __init__(self, driver: adcore.ADBaseIO) -> None:
-        super().__init__(driver)
-        self.driver = driver
+@dataclass
+class XspressTriggerLogic(DetectorTriggerLogic):
+    driver: ADBaseIO
 
     def get_deadtime(self, exposure: float) -> float:
         # Arbitrary value. To-do: fill this in when we know what to
         # include
         return 1e-6
 
-    async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
-        params = ndattribute_params(device_name=device_name, elements=elements)
-        xml = ndattribute_xml(params)
-        await self.driver.nd_attributes_file.set(xml)
-
-    @AsyncStatus.wrap
-    async def prepare(self, trigger_info: TriggerInfo):
-        external_triggers = [
-            DetectorTrigger.CONSTANT_GATE,
-            DetectorTrigger.VARIABLE_GATE,
-            DetectorTrigger.EDGE_TRIGGER,
-        ]
-        if trigger_info.trigger == DetectorTrigger.INTERNAL:
-            trigger_mode = XspressTriggerMode.INTERNAL
-        elif trigger_info.trigger in external_triggers:
-            trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
-        else:
-            raise ValueError(
-                f"Xspress does not recognize trigger mode '{trigger_info.trigger}'"
-            )
-        max_frames = 2000
-        num_frames = trigger_info.number_of_events or max_frames
-        if isinstance(num_frames, Iterable):
-            # We have multiple events with distinct number of channels
-            self._trigger_frame_nums = iter(num_frames)
-        else:
-            # Fixed number of events
-            self._trigger_frame_nums = repeat(num_frames)
-        aws = [
-            self.driver.num_images.set(trigger_info.total_number_of_exposures),
+    async def prepare_common(self, num: int):
+        await asyncio.gather(
+            self.driver.num_images.set(num),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
-            self.driver.trigger_mode.set(trigger_mode),
             # Hardware deadtime correction is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
-        ]
-        if trigger_info.livetime is not None:
-            aws.extend(
-                [
-                    self.driver.acquire_time.set(trigger_info.livetime),
-                    self.driver.acquire_period.set(
-                        trigger_info.livetime + trigger_info.deadtime
-                    ),
-                ]
+        )
+
+    async def prepare_internal(self, num: int, livetime: float, deadtime: float):
+        task = asyncio.ensure_future(
+            asyncio.gather(
+                self.prepare_common(num),
+                self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
+                self.driver.acquire_time.set(livetime),
+                self.driver.acquire_period.set(livetime + deadtime),
             )
-        task = asyncio.ensure_future(asyncio.gather(*aws))
+        )
         # Make sure the number of frames is set properly (not too high)
         async for num_images in observe_value(
             self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
         ):
-            if num_images == trigger_info.total_number_of_exposures:
+            if num_images == num:
                 break
         await task
 
-
-class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
-    """The datatype cannot be reliably determined from DataType_RBV.
-
-    Instead, read out whether deadtime correction is enabled and
-    determine the datatype this way.
-
-    https://github.com/epics-modules/xspress3/issues/57
-
-    """
-
-    async def np_datatype(self) -> str:
-        dt_correction = await self._driver.deadtime_correction.get_value()
-        if dt_correction:
-            return convert_ad_dtype_to_np(ADBaseDataType.FLOAT64)
-        else:
-            return convert_ad_dtype_to_np(ADBaseDataType.UINT32)
+    async def prepare_level(self, num: int):
+        task = asyncio.ensure_future(
+            asyncio.gather(
+                self.prepare_common(num),
+                self.driver.trigger_mode.set(XspressTriggerMode.TTL_VETO_ONLY),
+            )
+        )
+        # Make sure the number of frames is set properly (not too high)
+        async for num_images in observe_value(
+            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
+        ):
+            if num_images == num:
+                break
+        await task
 
 
 class XspressElement(Device):
@@ -191,23 +178,22 @@ class Xspress3Detector(AreaDetector):
     """
 
     _ophyd_labels_ = {"detectors", "xrf_detectors"}
-    _controller: DetectorController
-    _writer: adcore.ADHDFWriter
     _old_xml_file: str | None = None
 
-    detector_trigger: DetectorTrigger = DetectorTrigger.CONSTANT_GATE
+    detector_trigger: DetectorTrigger = DetectorTrigger.EXTERNAL_LEVEL
 
     def __init__(
         self,
         prefix: str,
         path_provider: PathProvider | None = None,
-        elements: int | Sequence[int] = 1,
-        ev_per_bin: float = 10.0,
-        drv_suffix="det1:",
-        fileio_suffix="HDF1:",
-        name: str = "",
+        driver_suffix="det1:",
+        writer_type: ADWriterType | None = ADWriterType.HDF,
+        writer_suffix: str | None = None,
+        plugins: dict[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
-        plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
+        name: str = "",
+        ev_per_bin: float = 10.0,
+        elements: int | Sequence[int] = 1,
     ):
         # Per-element MCA devices
         if isinstance(elements, SupportsIndex):
@@ -218,40 +204,43 @@ class Xspress3Detector(AreaDetector):
         # Extra configuration signals
         self.ev_per_bin, _ = soft_signal_r_and_setter(float, initial_value=ev_per_bin)
         # Area detector IO and control
-        driver = XspressDriverIO(f"{prefix}{drv_suffix}")
-        controller = XspressController(driver)
-        fileio = adcore.NDFileHDFIO(f"{prefix}{fileio_suffix}")
+        driver = XspressDriverIO(f"{prefix}{driver_suffix}")
         if path_provider is None:
             path_provider = default_path_provider()
-        writer = adcore.ADHDFWriter(
-            fileio=fileio,
-            path_provider=path_provider,
-            dataset_describer=XspressDatasetDescriber(driver),
-            plugins=plugins,
+        config_sigs = (
+            driver.acquire_period,
+            driver.acquire_time,
+            self.ev_per_bin,
+            *config_sigs,
         )
         # We need the driver to be a plugin so that NDAttributes get saved
         # Can be removed once this bug is fixed upstream:
         # https://github.com/bluesky/ophyd-async/issues/821
-        writer._plugins["camera"] = driver
+        # writer._plugins["camera"] = driver
         super().__init__(
-            controller=controller,
-            writer=writer,
+            prefix=prefix,
+            driver=driver,
+            arm_logic=adcore.ADArmLogic(driver),
+            trigger_logic=XspressTriggerLogic(driver),
+            path_provider=path_provider,
+            writer_type=writer_type,
+            writer_suffix=writer_suffix,
             plugins=plugins,
-            config_sigs=(
-                driver.acquire_period,
-                driver.acquire_time,
-                self.ev_per_bin,
-                *config_sigs,
-            ),
+            config_sigs=config_sigs,
             name=name,
         )
+
+    async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
+        params = ndattribute_params(device_name=device_name, elements=elements)
+        xml = ndattributes_to_xml(params)
+        await self.driver.nd_attributes_file.set(xml)
 
     @AsyncStatus.wrap
     async def stage(self) -> None:
         await super().stage()
         self._old_xml_file = await self.driver.nd_attributes_file.get_value()
         await asyncio.gather(
-            self._controller.setup_ndattributes(
+            self.setup_ndattributes(
                 device_name=self.name, elements=self.elements.keys()
             ),
             self.driver.erase_on_start.set(False),
@@ -272,8 +261,8 @@ class Xspress3Detector(AreaDetector):
 
     def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
         """Xspress3 supports internal and gate triggering."""
-        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
-            value = value.model_copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+        if value.trigger == DetectorTrigger.EXTERNAL_EDGE:
+            value = value.model_copy(update={"trigger": DetectorTrigger.EXTERNAL_LEVEL})
         if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
             value = value.model_copy(update={"deadtime": 1e-5})
         return value
