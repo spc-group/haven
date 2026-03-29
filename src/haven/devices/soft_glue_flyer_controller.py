@@ -183,6 +183,18 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
     async def complete(self):
         pass
 
+    def extra_trigger_infos(self, tinfo: TriggerInfo) -> Sequence[TriggerInfo]:
+        """Produce TriggerInfo objects for attached detectors.
+
+        This controller can provide level and edge triggers.
+
+        """
+        level_dump = tinfo.model_dump(round_trip=True)
+        level_dump["trigger"] = DetectorTrigger.EXTERNAL_LEVEL
+        edge_dump = tinfo.model_dump(round_trip=True)
+        edge_dump["trigger"] = DetectorTrigger.EXTERNAL_EDGE
+        return [TriggerInfo(**level_dump), TriggerInfo(**edge_dump)]
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

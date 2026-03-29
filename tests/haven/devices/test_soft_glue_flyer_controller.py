@@ -1,7 +1,7 @@
 "Test the SRS DG-645 digital delay device support."
 
 import pytest
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 
 from haven.devices import SoftGlueFlyerController
 
@@ -107,6 +107,20 @@ async def test_kickoff_softglue_single_event(soft_glue):
     # Extra kickoffs shouldn't work
     with pytest.raises(RuntimeError):
         await soft_glue.kickoff()
+
+
+def test_extra_trigger_infos(soft_glue):
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.INTERNAL,
+        livetime=0.5,
+        deadtime=0.1,
+        exposures_per_collection=3,
+        collections_per_event=5,
+        number_of_events=7,
+    )
+    level_info, edge_info = soft_glue.extra_trigger_infos(tinfo)
+    assert level_info.trigger == DetectorTrigger.EXTERNAL_LEVEL
+    # assert tinfo == TriggerInfo(**tinfo.model_dump(round_trip=True))
 
 
 # -----------------------------------------------------------------------------

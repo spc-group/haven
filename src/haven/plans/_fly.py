@@ -69,15 +69,29 @@ def fly_segment(
     # Prepare the detectors, just for this line segment
     prepare_group = uuid.uuid4()
     frames = spec.calculate()
+    detector_triggers = []
     for motor in motors:
         path = Path(frames, start=start, num=num)
         yield from bps.prepare(motor, path, group=prepare_group, wait=False)
     for controller in flyer_controllers:
+        # Prepare the controllers and track new trigger types
         yield from bps.prepare(
             controller, trigger_info, group=prepare_group, wait=False
         )
+        if hasattr(controller, "extra_trigger_infos"):
+            detector_triggers.extend(controller.extra_trigger_infos(trigger_info))
+    # Prepare the detectors with updated trigger types from the controllers
     for detector in detectors:
-        yield from bps.prepare(detector, trigger_info, group=prepare_group, wait=False)
+        for tinfo in detector_triggers:
+            if tinfo.trigger in getattr(detector, "_supported_triggers", {}):
+                detector_trigger = tinfo
+                break
+        else:
+            # None of the controller triggers are valid, so use the global one
+            detector_trigger = trigger_info
+        yield from bps.prepare(
+            detector, detector_trigger, group=prepare_group, wait=False
+        )
     yield from bps.wait(group=prepare_group)
     yield from declare_streams(secondary_detectors=detectors)
     # Start the detectors before the motors so we know they'll be ready

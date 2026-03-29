@@ -394,6 +394,13 @@ def test_default_time_signal(ion_chamber):
     assert ion_chamber.default_time_signal.source == "ca://255idcVME:3820:scaler1.TP"
 
 
+def test_supported_triggers(ion_chamber):
+    assert ion_chamber._supported_triggers == {
+        DetectorTrigger.INTERNAL,
+        DetectorTrigger.EXTERNAL_EDGE,
+    }
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

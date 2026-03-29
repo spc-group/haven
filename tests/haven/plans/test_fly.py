@@ -46,12 +46,10 @@ def test_fly_segment(flyer, xspress):
     assert len(msgs) > 2
     # Prepare the scan
     assert msgs[0].command == "prepare"
+    assert msgs[0].obj is flyer
     assert msgs[1].command == "prepare"
-    prepared_objs = {
-        msgs[0].obj,
-        msgs[1].obj,
-    }
-    assert prepared_objs == {xspress, flyer}
+    assert msgs[1].obj is xspress
+    assert msgs[1].args[0].trigger == DetectorTrigger.EXTERNAL_EDGE
     assert msgs[2].command == "wait"
     assert msgs[3].command == "declare_stream"
     assert msgs[3].args[0] is xspress
@@ -76,6 +74,39 @@ def test_fly_segment(flyer, xspress):
     assert msgs[14].command == "unmonitor"
     assert msgs[14].obj is flyer
     assert msgs[15].command == "checkpoint"
+
+
+def test_fly_segment_controller_triggers(flyer, xspress, controller, monkeypatch):
+    """Flyer controllers can provide additional trigger info for detectors."""
+    spec = Line(flyer, -10, 10, 6)
+    trigger_info = TriggerInfo(
+        trigger=DetectorTrigger.EXTERNAL_EDGE, number_of_events=6
+    )
+    plan = fly_segment(
+        [xspress],
+        motors=[flyer],
+        spec=spec,
+        trigger_info=trigger_info,
+        flyer_controllers=[controller],
+    )
+    monkeypatch.setattr(
+        controller,
+        "extra_trigger_infos",
+        lambda t: [TriggerInfo(trigger=DetectorTrigger.EXTERNAL_LEVEL)],
+        raising=False,
+    )
+    # Prepare the scan
+    msg = next(plan)
+    assert msg.command == "prepare"
+    assert msg.obj is flyer
+    msg = next(plan)
+    assert msg.command == "prepare"
+    assert msg.obj is controller
+    # Make sure we accomodate detectors that don't support edge triggers
+    msg = next(plan)
+    assert msg.command == "prepare"
+    assert msg.obj is xspress
+    assert msg.args[0].trigger == DetectorTrigger.EXTERNAL_LEVEL
 
 
 def test_line_prepares_flyer_path(flyer):

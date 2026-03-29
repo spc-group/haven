@@ -57,7 +57,7 @@ class IonChamber(StandardReadable, Triggerable):
     _fly_start_timestamp_remote: int | float | None = None
     _fly_start_timestamp_local: int | float | None = None
 
-    detector_trigger: DetectorTrigger = DetectorTrigger.EXTERNAL_EDGE
+    _supported_triggers = {DetectorTrigger.INTERNAL, DetectorTrigger.EXTERNAL_EDGE}
 
     def __init__(
         self,

@@ -115,8 +115,6 @@ class XspressTriggerLogic(DetectorTriggerLogic):
             asyncio.gather(
                 self.prepare_common(num),
                 self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
-                self.driver.acquire_time.set(livetime),
-                self.driver.acquire_period.set(livetime + deadtime),
             )
         )
         # Make sure the number of frames is set properly (not too high)
