@@ -68,7 +68,7 @@ except AssertionError:
 
 # Prepare the haven instrument
 t0 = time.monotonic()
-beamline_name = config.get("beamline", {}).get("name", "UNKNOWN BEAMLINE")
+beamline_name = config.get("RUN_ENGINE", {}).get("DEFAULT_METADATA", {}).get("beamline_id", "UNKNOWN BEAMLINE")
 rich.print(f"Initializing [bold cyan]{beamline_name}[/]…", flush=True)
 loader_exception = None
 haven.beamline.load()
