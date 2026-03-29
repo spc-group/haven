@@ -27,8 +27,9 @@ default = { solve-group = "default" }
 dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
 qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "xrftools"], solve-group = "beamlines" }
+25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+xrftools = { features = ["xrftools"] }
 # designer = { features = ["designer"] }
 
 [tasks]
@@ -60,8 +61,8 @@ bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 p4p = ">=4.2.2, <5"
 
 [feature.ipython]
-dependencies = { python = "3.12.*" }
-pypi-dependencies = { ipython = "*" }
+dependencies = { python = "3.12.*", ipython = "*" }
+pypi-dependencies = { rich = "*" }
 tasks = {haven = "ipython -i ./src/haven/startup.py"}
 
 [feature.pytest.dependencies]
@@ -204,6 +205,8 @@ tiled-server = "tiled serve config"
 # # breaks CI so it being removed
 # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
 
+# (Installing these xrf tools breaks haven with an error about missing
+# xcb plugin)
 [feature.xrftools.dependencies]
 wxPython = ">=4.2"
 spglib = ">=2.7.0,<3"
