@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from ophyd_async.core import DetectorTrigger, TriggerInfo, get_mock_put, set_mock_value
+from ophyd_async.epics.adcore import ADBaseDataType
 from ophyd_async.testing import assert_value
 
 from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
@@ -47,7 +48,7 @@ async def test_description(detector):
 @pytest.mark.asyncio
 async def test_trigger(detector):
     status = detector.trigger()
-    await asyncio.sleep(0.1)  # Let the event loop turn
+    await asyncio.sleep(0.2)  # Let the event loop turn
     set_mock_value(detector.writer.num_captured, 1)
     await status
     # Check that signals were set
@@ -59,6 +60,23 @@ async def test_stage(detector):
     await detector.stage()
     get_mock_put(detector.driver.erase_on_start).assert_called_once_with(False)
     assert get_mock_put(detector.driver.erase).called
+
+
+async def test_data_type(detector):
+    """There is a bug in the xspress3 EPICS driver that means it does not
+    report the datatype correctly. This tests a workaround to decide
+    based on the value of the dead_time_correction.
+
+    https://github.com/epics-modules/xspress3/issues/57
+
+    """
+    await detector.driver.data_type.connect(mock=False)
+    # With deadtime correction off, we should get unsigned longs
+    set_mock_value(detector.driver.deadtime_correction, False)
+    await assert_value(detector.driver.data_type, ADBaseDataType.UINT32)
+    # With deadtime correction on, we should get double-precision floats
+    set_mock_value(detector.driver.deadtime_correction, True)
+    await assert_value(detector.driver.data_type, ADBaseDataType.FLOAT32)
 
 
 async def test_deadtime_correction_disabled(detector):

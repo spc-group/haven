@@ -34,12 +34,15 @@ from ophyd_async.core import (
     SignalR,
     StrictEnum,
     TriggerInfo,
+    derived_signal_r,
     observe_value,
     soft_signal_r_and_setter,
 )
-from ophyd_async.epics import adcore
 from ophyd_async.epics.adcore import (
+    ADArmLogic,
+    ADBaseDataType,
     ADBaseIO,
+    ADImageMode,
     ADWriterType,
     AreaDetector,
     NDAttributeDataType,
@@ -63,14 +66,30 @@ class XspressTriggerMode(StrictEnum):
     SOFTWARE_INTERNAL = "Software + Internal"
 
 
-class XspressDriverIO(adcore.ADBaseIO):
+class XspressDriverIO(ADBaseIO):
+    data_type: ADBaseDataType
+
     def __init__(self, prefix, name=""):
         self.trigger_mode = epics_signal_rw(XspressTriggerMode, f"{prefix}TriggerMode")
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
         self.erase = epics_signal_x(f"{prefix}ERASE")
         self.deadtime_correction = epics_signal_rw(bool, f"{prefix}CTRL_DTC")
         self.number_of_elements = epics_signal_r(int, f"{prefix}MaxSizeY_RBV")
+        self.data_type = derived_signal_r(
+            self._data_type, deadtime_corrected=self.deadtime_correction
+        )
         super().__init__(prefix=prefix, name=name)
+
+    def _data_type(self, deadtime_corrected: bool) -> ADBaseDataType:
+        """Determine the correct data type the detector will produce.
+
+        There is a bug in the xspress3 EPICS driver that means it does
+        not report the datatype correctly, so we'll handle it in the
+        ophyd-async device
+        instead. https://github.com/epics-modules/xspress3/issues/57
+
+        """
+        return ADBaseDataType.FLOAT32 if deadtime_corrected else ADBaseDataType.UINT32
 
 
 @dataclass
@@ -85,7 +104,7 @@ class XspressTriggerLogic(DetectorTriggerLogic):
     async def prepare_common(self, num: int):
         await asyncio.gather(
             self.driver.num_images.set(num),
-            self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
+            self.driver.image_mode.set(ADImageMode.MULTIPLE),
             # Hardware deadtime correction is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
@@ -220,7 +239,7 @@ class Xspress3Detector(AreaDetector):
         super().__init__(
             prefix=prefix,
             driver=driver,
-            arm_logic=adcore.ADArmLogic(driver),
+            arm_logic=ADArmLogic(driver),
             trigger_logic=XspressTriggerLogic(driver),
             path_provider=path_provider,
             writer_type=writer_type,
