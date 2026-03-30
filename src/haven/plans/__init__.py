@@ -1,4 +1,99 @@
-"""Bluesky plans specific to spectroscopy."""
+"""Bluesky plans specific to spectroscopy.
+
+Includes some standard bluesky plans with decorators.
+
+"""
+
+import bluesky.plans as bp
+
+from haven.instrument import beamline
+from haven.preprocessors import (
+    baseline_decorator,
+    inject_metadata_decorator,
+    open_shutters_decorator,
+)
+
+from ._align_monochromators import align_monochromators  # noqa: F401
+from ._auto_gain import auto_gain
+from ._calibrate import calibrate  # noqa: F401
+from ._emission_map_scan import emission_map_scan as emission_map_scan
+from ._energy_scan import energy_scan
+from ._fly import fly_scan, grid_fly_scan  # noqa: F401
+from ._record_dark_current import record_dark_current  # noqa: F401
+from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
+from ._set_energy import set_energy  # noqa: F401
+from ._shutters import close_shutters, open_shutters  # noqa: F401
+from ._xafs_scan import xafs_scan
+
+
+def chain(*decorators):
+    """Chain several decorators together into one decorator.
+
+    Will be applied in reverse order, so the first item in *decorators* will
+    be the outermost decorator.
+
+    """
+
+    def decorator(f):
+        for d in reversed(decorators):
+            f = d(f)
+        return f
+
+    return decorator
+
+
+all_decorators = chain(
+    open_shutters_decorator(),
+    baseline_decorator(),
+    inject_metadata_decorator(),
+)
+
+# Apply decorators to Haven plans
+auto_gain = open_shutters_decorator()(auto_gain)
+emission_map_scan = all_decorators(emission_map_scan)
+energy_scan = all_decorators(energy_scan)
+fly_scan = all_decorators(fly_scan)
+grid_fly_scan = all_decorators(grid_fly_scan)
+xafs_scan = all_decorators(xafs_scan)
+
+# Apply all_decorators to standard Bluesky plans
+count = all_decorators(bp.count)
+grid_scan = all_decorators(bp.grid_scan)
+list_scan = all_decorators(bp.list_scan)
+rel_grid_scan = all_decorators(bp.rel_grid_scan)
+rel_list_scan = all_decorators(bp.rel_list_scan)
+rel_scan = all_decorators(bp.rel_scan)
+scan = all_decorators(bp.scan)
+scan_nd = all_decorators(bp.scan_nd)
+
+# Remove foreign imports
+del beamline
+del open_shutters_decorator
+del baseline_decorator
+del bp
+
+__all__ = [
+    "align_monochromators",
+    "auto_gain",
+    "calibrate",
+    "energy_scan",
+    "grid_fly_scan",
+    "focus_kb_mirrors",
+    "record_dark_current",
+    "robot_transfer_sample",
+    "set_energy",
+    "close_shutters",
+    "open_shutters",
+    "xafs_scan",
+    "count",
+    "grid_scan",
+    "list_scan",
+    "rel_grid_scan",
+    "rel_list_scan",
+    "rel_scan",
+    "scan",
+    "scan_nd",
+]
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

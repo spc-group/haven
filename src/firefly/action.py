@@ -1,9 +1,10 @@
 import logging
+from collections import ChainMap
 from typing import Mapping
 
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QAction, QMainWindow
+from qtpy.QtWidgets import QAction, QMainWindow, QWidget
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ class Action(QAction):
     def display(self):
         if self.window is not None:
             return self.window.display_widget()
+
+    def __repr__(self) -> str:
+        return f"<WindowAction: {self.objectName()}>"
 
 
 class WindowAction(Action):
@@ -76,7 +80,7 @@ class WindowAction(Action):
     def forget_window(self):
         self.window = None
 
-    def create_window(self):
+    def create_window(self) -> QWidget:
         # Create the window
         window = self.WindowClass()
         self.window = window
@@ -89,6 +93,7 @@ class WindowAction(Action):
         self.window_created.emit(self)
         # Properly remove the window if it's closed
         window.destroyed.connect(self.forget_window)
+        return window
 
 
 class ActionsRegistry:
@@ -96,14 +101,11 @@ class ActionsRegistry:
 
     # Actions for showing specific windows
     bss: WindowAction = None
-    camera_overview: WindowAction = None
     energy: WindowAction = None
-    iocs: WindowAction = None
     log: WindowAction = None
     status: WindowAction = None
-    run_browser: WindowAction = None
     voltmeter: WindowAction = None
-    xray_filter: WindowAction = None
+    attenuators: WindowAction = None
 
     # Show windows for launching plans
     plans: Mapping[str, WindowAction]
@@ -114,6 +116,7 @@ class ActionsRegistry:
     queue_controls: Mapping[str, QAction]
 
     # Show windows for controlling devices
+    devices: Mapping[str, WindowAction]
     area_detectors: Mapping[str, WindowAction]
     cameras: Mapping[str, WindowAction]
     ion_chambers: Mapping[str, WindowAction]
@@ -129,29 +132,46 @@ class ActionsRegistry:
         self.plans = {}
         self.queue_settings = {}
         self.queue_controls = {}
-        self.motors = {}
-        self.cameras = {}
+        # Devices
         self.area_detectors = {}
-        self.slits = {}
-        self.mirrors = {}
+        self.cameras = {}
         self.ion_chambers = {}
         self.kb_mirrors = {}
+        self.mirrors = {}
+        self.monochromators = {}
+        self.motors = {}
         self.robots = {}
+        self.slits = {}
         self.tables = {}
+        self.undulators = {}
         self.xrf_detectors = {}
+
+    @property
+    def devices(self):
+        return ChainMap(
+            self.area_detectors,
+            self.cameras,
+            self.ion_chambers,
+            self.kb_mirrors,
+            self.monochromators,
+            self.mirrors,
+            self.motors,
+            self.robots,
+            self.slits,
+            self.tables,
+            self.undulators,
+            self.xrf_detectors,
+        )
 
     @property
     def all_actions(self):
         return [
             self.bss,
-            self.camera_overview,
             self.energy,
-            self.iocs,
             self.log,
             self.status,
-            self.run_browser,
             self.voltmeter,
-            self.xray_filter,
+            self.attenuators,
             *self.plans.values(),
             self.queue_monitor,
             *self.queue_settings.values(),
@@ -161,9 +181,11 @@ class ActionsRegistry:
             *self.ion_chambers.values(),
             *self.kb_mirrors.values(),
             *self.mirrors.values(),
+            *self.monochromators.values(),
             *self.motors.values(),
             *self.robots.values(),
             *self.slits.values(),
             *self.tables.values(),
+            *self.undulators.values(),
             *self.xrf_detectors.values(),
         ]

@@ -1,0 +1,11 @@
+[beamline]
+pv_prefix = "spam"
+
+# This one is similar to the camera in the default prefix, except it's
+# missing a field. This is to test if importer merges mutliple files
+# correctly.
+
+[camera.camA]
+
+name = "s25id-gige-A"
+ioc = "camA_ioc"

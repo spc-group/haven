@@ -1,518 +1,407 @@
 import logging
+import math
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import IntEnum
+from functools import partial
+from typing import Any
 
-import numpy as np
+import xraydb
 from bluesky_queueserver_api import BPlan
-from qtpy import QtWidgets
-from qtpy.QtCore import QObject, Signal
-from qtpy.QtGui import QDoubleValidator
+from qasync import asyncSlot
+from qtpy.QtCore import Slot
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QLabel,
+    QMessageBox,
+    QSizePolicy,
+    QSpinBox,
+    QWidget,
+)
 from xraydb.xraydb import XrayDB
 
-from firefly import display
-from firefly.plans.util import is_valid_value, time_converter
+from firefly.exceptions import UnknownAbsorptionEdge
+from firefly.plans import display
+from firefly.plans.regions import RegionsManager
 from haven.energy_ranges import (
-    E_step_to_k_step,
     ERange,
     KRange,
     energy_to_wavenumber,
-    k_step_to_E_step,
     merge_ranges,
     wavenumber_to_energy,
 )
 
 log = logging.getLogger(__name__)
 
-# How much rounding to do when convert energy to k-space
-float_accuracy = 4
+
+HALF_SPACE = "\u202f"
 
 
-# The energy resolution will not be better than 0.01 eV at S25
-# e.g. 0.01 eV / 4000 eV -> 10^-6 level, Si(311) is 10-5 level
-def wavenumber_to_energy_round(wavenumber):
-    return round(wavenumber_to_energy(wavenumber), 2)
+class Domain(IntEnum):
+    ENERGY = 0
+    WAVENUMBER = 1
 
 
-def k_step_to_E_step_round(k_start, k_step):
-    return round(k_step_to_E_step(k_start, k_step), 2)
+class XafsRegionsManager(RegionsManager):
+    energy_suffix = "eV"
+    wavenumber_suffix = "Å⁻"
+    energy_precision = 1
+    wavenumber_precision = 4
 
+    @dataclass(frozen=True)
+    class WidgetSet:
+        active_checkbox: QCheckBox
+        start_spin_box: QDoubleSpinBox
+        stop_spin_box: QDoubleSpinBox
+        num_points_spin_box: QSpinBox
+        step_label: QLabel
+        exposure_time_spin_box: QDoubleSpinBox
+        k_space_checkbox: QCheckBox
+        weight_spin_box: QDoubleSpinBox
 
-class TitleRegion:
-    def __init__(self):
-        self.setup_ui()
+    @dataclass(frozen=True, eq=True)
+    class Region:
+        is_active: bool
+        start: float
+        stop: float
+        num: int
+        exposure_time: float
+        domain: Domain
+        weight: float
 
-    def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
+        @property
+        def energy_range(self):
+            if self.domain == Domain.WAVENUMBER:
+                return KRange(
+                    start=self.start,
+                    stop=self.stop,
+                    num=self.num,
+                    exposure=self.exposure_time,
+                    weight=self.weight,
+                )
+            else:
+                return ERange(
+                    start=self.start,
+                    stop=self.stop,
+                    num=self.num,
+                    exposure=self.exposure_time,
+                )
 
-        # Enable checkbox
-        self.regions_all_checkbox = QtWidgets.QCheckBox()
-        self.regions_all_checkbox.setChecked(True)
-        self.regions_all_checkbox.setFixedWidth(15)
+    async def add_row(self):
+        row = await super().add_row()
+        self.set_domain(Domain.ENERGY, row=row)
 
-        self.layout.addWidget(self.regions_all_checkbox)
-
-        labels = ["Start", "Stop", "Step", "Weight", "", "Exposure [s]"]
-        Qlabels_all = {}
-        for label_i in labels:
-            Qlabel_i = QtWidgets.QLabel(label_i)
-            self.layout.addWidget(Qlabel_i)
-            Qlabels_all[label_i] = Qlabel_i
-
-        # fix widths so the labels are aligned with XafsRegions
-        Qlabels_all["Weight"].setFixedWidth(57)
-        Qlabels_all[""].setFixedWidth(57)
-        Qlabels_all["Exposure [s]"].setFixedWidth(68)
-
-
-class XafsScanRegion(QObject):
-    time_calculation_signal = Signal()
-
-    def __init__(self):
-        super().__init__()
-        self.setup_ui()
-        self.kErange = None
-        self.xafs_region_time = (
-            0  # flag for whether time is calculated correctly, if not, will set to -1
-        )
-
-        # List of widgets and their signals to connect to update_total_time
-        widgets_signals = [
-            (self.start_line_edit, "textChanged"),
-            (self.stop_line_edit, "textChanged"),
-            (self.step_line_edit, "textChanged"),
-            (self.weight_spinbox, "valueChanged"),
-            (self.exposure_time_spinbox, "valueChanged"),
-            (self.k_space_checkbox, "stateChanged"),
-        ]
-
-        # Connect all signals to the update_total_time method
-        for widget, signal_name in widgets_signals:
-            getattr(widget, signal_name).connect(self.update_total_time)
-
-    def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
-        # Enable checkbox
-        self.region_checkbox = QtWidgets.QCheckBox()
-        self.region_checkbox.setChecked(True)
-        self.layout.addWidget(self.region_checkbox)
-
-        # First energy box
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
-
-        # Last energy box
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
-
-        # Energy step box
-        self.step_line_edit = QtWidgets.QLineEdit()
-        self.step_line_edit.setValidator(
-            QDoubleValidator(0.0, float("inf"), 2)  # the step is always bigger than 0
-        )
-        # only takes positive floats
-        self.step_line_edit.setPlaceholderText("Step…")
-        self.layout.addWidget(self.step_line_edit)
-
+    async def create_row_widgets(self, row: int) -> list[QWidget]:
+        """Create the widgets that are to go in each row, in order."""
+        start_spin_box = QDoubleSpinBox()
+        stop_spin_box = QDoubleSpinBox()
+        num_points_spin_box = QSpinBox()
+        step_label = QLabel()
+        step_label.setText("NaN")
+        # Apply hints to number
+        exposure_time_spin_box = QDoubleSpinBox()
+        exposure_time_spin_box.setValue(1.0)
+        exposure_time_spin_box.setSuffix(" s")
+        # Calculate new step sizes when scan range changes
+        # For converting between k and E space
+        k_space_checkbox = QCheckBox()
+        k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        k_space_checkbox.setEnabled(True)
         # Weight factor box
-        self.weight_spinbox = QtWidgets.QDoubleSpinBox()
-        self.layout.addWidget(self.weight_spinbox)
-        self.weight_spinbox.setDecimals(1)
-        self.weight_spinbox.setEnabled(False)
+        weight_spin_box = QDoubleSpinBox()
+        weight_spin_box.setDecimals(1)
+        weight_spin_box.setEnabled(False)
 
-        # K-space checkbox
-        self.k_space_checkbox = QtWidgets.QCheckBox()
-        self.k_space_checkbox.setText("k-space")
-        self.k_space_checkbox.setEnabled(True)
-        self.layout.addWidget(self.k_space_checkbox)
-
-        # Exposure time double spin box
-        self.exposure_time_spinbox = QtWidgets.QDoubleSpinBox()
-        self.exposure_time_spinbox.setValue(1)
-        self.layout.addWidget(self.exposure_time_spinbox)
+        # Apply validation criteria
+        for spinbox in [start_spin_box, stop_spin_box]:
+            spinbox.setMinimum(float("-inf"))
+            spinbox.setMaximum(float("inf"))
+            spinbox.setStepType(spinbox.AdaptiveDecimalStepType)
+            spinbox.setDecimals(self.energy_precision)
+        num_points_spin_box.setMinimum(2)
+        num_points_spin_box.setMaximum(999_999_999)
 
         # Connect the k-space enabled checkbox to the relevant signals
-        self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
+        k_space_checkbox.stateChanged.connect(
+            partial(self.update_wavenumber_energy, row=row)
+        )
+        # Notify clients when the widgets change
+        start_spin_box.valueChanged.connect(self.regions_changed)
+        stop_spin_box.valueChanged.connect(self.regions_changed)
+        num_points_spin_box.valueChanged.connect(self.regions_changed)
+        exposure_time_spin_box.valueChanged.connect(self.regions_changed)
+        k_space_checkbox.stateChanged.connect(self.regions_changed)
+        weight_spin_box.valueChanged.connect(self.regions_changed)
+        update_step_size = partial(self.update_step_size, row=row)
+        start_spin_box.valueChanged.connect(update_step_size)
+        stop_spin_box.valueChanged.connect(update_step_size)
+        num_points_spin_box.valueChanged.connect(update_step_size)
+        k_space_checkbox.stateChanged.connect(update_step_size)
+        return [
+            start_spin_box,
+            stop_spin_box,
+            num_points_spin_box,
+            step_label,
+            exposure_time_spin_box,
+            k_space_checkbox,
+            weight_spin_box,
+        ]
 
-    def update_line_edit_value(self, line_edit, conversion_func):
-        text = line_edit.text()
-        if text:
-            converted_value = conversion_func(round(float(text), float_accuracy))
-            line_edit.setText(f"{converted_value:.6g}")
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object."""
+        return self.Region(
+            is_active=widgets.active_checkbox.isChecked(),
+            start=widgets.start_spin_box.value(),
+            stop=widgets.stop_spin_box.value(),
+            num=widgets.num_points_spin_box.value(),
+            exposure_time=widgets.exposure_time_spin_box.value(),
+            domain=widgets.k_space_checkbox.isChecked(),
+            weight=widgets.weight_spin_box.value(),
+        )
 
-    def update_wavenumber_energy(self, is_k_checked):
-        # disable weight box when k is not selected
-        self.weight_spinbox.setEnabled(is_k_checked)
+    def enable_row_widgets(self, enabled: bool, *, row: int):
+        """Enable/disable the widgets in a row of the layout.
 
+        Excludes the checkbox used to enable/disable the rest of the
+        row.
+
+        """
+        super().enable_row_widgets(enabled=enabled, row=row)
+        # Weight spin box should respect the previous k-space decision
+        widgets = self.row_widgets(row=row)
+        if enabled:
+            widgets.weight_spin_box.setEnabled(widgets.k_space_checkbox.isChecked())
+
+    def set_domain(self, domain: Domain, *, row: int):
+        """Set up the UI to be in either energy (eV) or wavenumber (Å⁻) units."""
+        widgets = self.row_widgets(row)
+        double_widgets = [
+            widgets.start_spin_box,
+            widgets.stop_spin_box,
+        ]
+        suffix = (
+            self.wavenumber_suffix
+            if domain == Domain.WAVENUMBER
+            else self.energy_suffix
+        )
+        for widget in double_widgets:
+            widget.setSuffix(f" {suffix}")
+        # Disable weight box when k is not selected
+        widgets.weight_spin_box.setEnabled(domain == Domain.WAVENUMBER)
+        self.update_step_size(row=row)
+
+    def update_wavenumber_energy(self, is_k_checked: bool, row: int):
+        domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
+        self.set_domain(domain, row=row)
         # Define conversion functions
-        conversion_funcs = {
-            self.step_line_edit: (
-                E_step_to_k_step
-                if is_k_checked
-                else lambda x, y: k_step_to_E_step_round(x, y)
-            ),
-            self.start_line_edit: (
-                energy_to_wavenumber if is_k_checked else wavenumber_to_energy_round
-            ),
-            self.stop_line_edit: (
-                energy_to_wavenumber if is_k_checked else wavenumber_to_energy_round
-            ),
-        }
-
-        # Iterate over line edits and apply corresponding conversion
-        for line_edit, func in conversion_funcs.items():
-            # Special handling for step_line_edit due to different parameters needed
-            if line_edit == self.step_line_edit:
-                start_text = self.start_line_edit.text()
-                if start_text and line_edit.text():
-                    start = float(start_text)
-                    step = float(line_edit.text())
-                    new_values = (
-                        func(start, step) if is_k_checked else func(start, step)
-                    )
-                    line_edit.setText(f"{new_values:.4g}")
-            else:
-                self.update_line_edit_value(line_edit, func)
-
-    def update_total_time(self):
-        weight = self.weight_spinbox.value()
-        exposure_time = self.exposure_time_spinbox.value()
-
-        # prevent invalid inputs such as nan
-        try:
-            start = round(float(self.start_line_edit.text()), float_accuracy)
-            stop = round(float(self.stop_line_edit.text()), float_accuracy)
-            step = round(float(self.step_line_edit.text()), float_accuracy)
-
-        # when the round doesn't work for nan values
-        except ValueError:
-            self.kErange = []
-            start, stop, step = float("nan"), float("nan"), float("nan")
-
-        if self.k_space_checkbox.isChecked():
-            self.kErange = KRange(
-                k_min=start,
-                k_max=stop,
-                k_step=step,
-                k_weight=weight,
-                exposure=exposure_time,
-            )
-
+        widgets = self.row_widgets(row=row)
+        spin_boxes = [
+            widgets.start_spin_box,
+            widgets.stop_spin_box,
+        ]
+        start, stop = [widget.value() for widget in spin_boxes]
+        num = widgets.num_points_spin_box.value()
+        convert: Callable[[float, float], float]
+        if is_k_checked:
+            convert = energy_to_wavenumber
         else:
-            self.kErange = ERange(
-                E_min=start,
-                E_max=stop,
-                E_step=step,
-                weight=weight,
-                exposure=exposure_time,
-            )
+            convert = wavenumber_to_energy
+        # Set new values
+        new_start, new_stop = convert(start), convert(stop)
+        precision = self.wavenumber_precision if is_k_checked else self.energy_precision
+        for widget in spin_boxes:
+            widget.setDecimals(precision)
+        widgets.start_spin_box.setValue(new_start)
+        widgets.stop_spin_box.setValue(new_stop)
 
-        # Emit the signal regardless of success or failure
-        self.time_calculation_signal.emit()
+    def apply_E0(self, E0: float):
+        """Apply an energy offset correction, *E0*, to widgets.
+
+        Effectively, converts from absolute to relative regions.
+
+        """
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row=row)
+            widgets.k_space_checkbox.setEnabled(True)
+            # Un-check k-space to convert back to energy from wavenumber
+            widgets.k_space_checkbox.setChecked(False)
+            # Convert between absolute energies and relative energies
+            for line_edit in [widgets.start_spin_box, widgets.stop_spin_box]:
+                old_value = line_edit.value()
+                new_value = old_value - E0
+                line_edit.setValue(new_value)
+
+    def unapply_E0(self, E0: float):
+        """Remove an E0 correction.
+
+        Effectively, converts from relative to absolute regions.
+
+        """
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row=row)
+            # Un-check k-space to convert back to energy from wavenumber
+            widgets.k_space_checkbox.setEnabled(False)
+            # Convert between absolute energies and relative energies
+            for line_edit in [widgets.start_spin_box, widgets.stop_spin_box]:
+                old_value = line_edit.value()
+                new_value = old_value + E0
+                line_edit.setValue(new_value)
+
+    @Slot()
+    def update_step_size(self, row: int):
+        widgets = self.row_widgets(row)
+        start = widgets.start_spin_box.value()
+        stop = widgets.stop_spin_box.value()
+        num_points = widgets.num_points_spin_box.value()
+        is_k_checked = widgets.k_space_checkbox.isChecked()
+        domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
+        suffix = (
+            self.wavenumber_suffix
+            if domain == Domain.WAVENUMBER
+            else self.energy_suffix
+        )
+        # Calculate step size
+        if (num_points < 2) or (start == stop):
+            step_size = 0
+            precision = 0
+            widgets.step_label.setText("0")
+        else:
+            step_size = (stop - start) / (num_points - 1)
+            precision = -math.ceil(math.log10(abs(step_size)))
+            precision += 3  # Keep 3 significant figures
+            precision = max(precision, 0)
+            step_size = round(step_size, precision)
+            widgets.step_label.setText(f"{step_size}{HALF_SPACE}{suffix}")
 
 
-class XafsScanDisplay(display.FireflyDisplay):
+class XafsScanDisplay(display.PlanDisplay):
+    plan_type = "xafs_scan"
     min_energy = 4000
     max_energy = 33000
+    _default_region_count = 3
 
     def customize_ui(self):
-        # Remove the defaut XAFS layout from .ui file
-        self.ui.clearLayout(self.ui.region_layout)
-
-        # add title layout
-        self.title_region = TitleRegion()
-        self.ui.title_layout.addLayout(self.title_region.layout)
-
-        self.reset_default_regions()
-        # add absorption edges from XrayDB
+        super().customize_ui()
+        self.regions = XafsRegionsManager(layout=self.regions_layout)
+        self.regions.regions_changed.connect(self.update_total_time)
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        # Disable the line edits in spin box (use up/down buttons instead)
+        self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
+        # Add absorption edges from XrayDB
         self.xraydb = XrayDB()
-
         combo_box = self.ui.edge_combo_box
+        combo_box.lineEdit().setPlaceholderText("Select edge…")
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
         edges = edges.filter(
             ltab.c.absorption_edge < self.max_energy,
             ltab.c.absorption_edge > self.min_energy,
         )
-        items = [
-            f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
-            for r in edges.all()
-        ]
-        combo_box.addItems(["Select edge…", *items])
-
-        # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
-
-        # disable the line edits in spin box
-        self.ui.regions_spin_box.lineEdit().setReadOnly(True)
-
-        # when regions number changed
-        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
-        self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
-
-        # reset button
-        self.ui.reset_button.clicked.connect(self.reset_default_regions)
-
-        # Run scan button
-        self.ui.run_button.clicked.connect(self.queue_plan)
-
-        # connect checkboxes with all regions' check box
-        self.title_region.regions_all_checkbox.stateChanged.connect(
-            self.on_regions_all_checkbox
-        )
-        # connect is_standard with a warning box
-        self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
-
-        # connect num. of scans with total_time
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        for edge in edges:
+            text = (
+                f"{edge.element} {edge.iupac_symbol} ({int(edge.absorption_edge)} eV)"
+            )
+            combo_box.addItem(text, userData=edge)
+        combo_box.setCurrentText("")
+        # Connect signals for updates
+        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
+        self.total_time_changed.connect(self.total_duration_label.set_seconds)
+        self.use_edge_checkbox.stateChanged.connect(self.use_edge)
+        self.num_regions_spin_box.lineEdit().setReadOnly(True)
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
         await super().update_devices(registry)
-        await self.ui.detectors_list.update_devices(registry)
+        await self.detectors_list.update_devices(registry)
 
-    def on_region_checkbox(self):
-        for region_i in self.regions:
-            is_region_i_checked = region_i.region_checkbox.isChecked()
-            region_i.start_line_edit.setEnabled(is_region_i_checked)
-            region_i.stop_line_edit.setEnabled(is_region_i_checked)
-            region_i.step_line_edit.setEnabled(is_region_i_checked)
-            region_i.exposure_time_spinbox.setEnabled(is_region_i_checked)
-            region_i.weight_spinbox.setEnabled(is_region_i_checked)
-            if not self.use_edge_checkbox.isChecked():
-                region_i.k_space_checkbox.setEnabled(False)
-            else:
-                region_i.k_space_checkbox.setEnabled(is_region_i_checked)
-
-    def on_regions_all_checkbox(self, is_checked):
-        for region_i in self.regions:
-            region_i.region_checkbox.setChecked(is_checked)
-
-    def use_edge(self, is_checked):
+    def use_edge(self, is_checked: bool):
         self.edge_combo_box.setEnabled(is_checked)
-
-        # extract edge values
-        match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-        self.edge_value = round(float(match[-1]), float_accuracy) if match else 0
-
-        # iterate through selected regions
-        checked_regions = [
-            region_i
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
-        ]
-        for region_i in checked_regions:
-            # Adjust checkbox based on use_edge_checkbox state
-            region_i.k_space_checkbox.setEnabled(is_checked)
-            # uncheck k space to convert back to energy values from k values
-            region_i.k_space_checkbox.setChecked(False)
-
-            # Convert between absolute energies and relative energies
-            for line_edit in [region_i.start_line_edit, region_i.stop_line_edit]:
-                text = line_edit.text()
-                if text:
-                    value = (
-                        round(float(text), float_accuracy) - self.edge_value
-                        if is_checked
-                        else round(float(text), float_accuracy) + self.edge_value
-                    )
-                    line_edit.setText(f"{value:.6g}")
-
-    def clearLayout(self, layout):
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
-    def reset_default_regions(self):
-        default_num_regions = 3
-
-        if hasattr(self, "regions"):
-            self.remove_regions(len(self.regions))
-        self.regions = []
-        self.add_regions(default_num_regions)
-        self.ui.regions_spin_box.setValue(default_num_regions)
-
-        # set default values for EXAFS scans
-        pre_edge = [-200, -50, 5]
-        xanes_region = [-50, 50, 0.5]
-        exafs_region = [50, 800, 0.5]
-
-        default_regions = [pre_edge, xanes_region, exafs_region]
-        for i, region_i in enumerate(self.regions):
-            region_i.start_line_edit.setText(str(default_regions[i][0]))
-            region_i.stop_line_edit.setText(str(default_regions[i][1]))
-            region_i.step_line_edit.setText(str(default_regions[i][2]))
-
-        # reset scan repeat num to 1
-        self.ui.spinBox_repeat_scan_num.setValue(1)
-
-    def add_regions(self, num=1):
-        for i in range(num):
-            region = XafsScanRegion()
-            self.ui.regions_layout.addLayout(region.layout)
-            self.regions.append(region)
-            # disable/enabale regions when selected
-            region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
-            region.region_checkbox.stateChanged.connect(self.update_total_time)
-            # receive time signals from XafsRegion
-            region.time_calculation_signal.connect(self.update_total_time)
-
-    def remove_regions(self, num=1):
-        for i in range(num):
-            layout = self.regions[-1].layout
-            # iterate/wait, and delete all widgets in the layout in the end
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-            self.regions.pop()
-
-    def update_regions(self):
-        new_region_num = self.ui.regions_spin_box.value()
-        old_region_num = len(self.regions)
-        diff_region_num = new_region_num - old_region_num
-
-        if diff_region_num < 0:
-            self.remove_regions(abs(diff_region_num))
-        elif diff_region_num > 0:
-            self.add_regions(diff_region_num)
-
-    def update_total_time(self):
-        # Summing total_time for all checked regions directly within the sum function using a generator expression
-        kEranges_all = [
-            region_i.kErange
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
-        ]
-
-        # prevent end points are smaller than start points
-        try:
-            _, exposures = merge_ranges(*kEranges_all, sort=True)
-            total_time_per_scan = exposures.sum()
-        except ValueError:
-            total_time_per_scan = float("nan")
-
-        # calculate time for each scan
-        hr, min, sec = time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hr))
-        self.ui.label_min_scan.setText(str(min))
-        self.ui.label_sec_scan.setText(str(sec))
-
-        # calculate time for entire planf
-        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
-        total_time = num_scan_repeat * total_time_per_scan
-        hr_total, min_total, sec_total = time_converter(total_time)
-
-        self.ui.label_hour_total.setText(str(hr_total))
-        self.ui.label_min_total.setText(str(min_total))
-        self.ui.label_sec_total.setText(str(sec_total))
-
-    def on_is_standard(self, is_checked):
-        # if is_standard checked, warn that the data will be used for public
-        if is_checked:
-            response = QtWidgets.QMessageBox.warning(
-                self,
-                "Notice",
-                "When checking this option, this data will be used by public.",
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                QtWidgets.QMessageBox.No,
-            )
-            if response != QtWidgets.QMessageBox.Yes:
-                self.ui.checkBox_is_standard.setChecked(False)
-
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        # Get parameters from each rows of line regions:
-        energy_ranges_all = []
-
-        # iterate through only selected regions
-        checked_regions = [
-            region_i
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
-        ]
-        for region_i in checked_regions:
-            try:
-                start = round(float(region_i.start_line_edit.text()), float_accuracy)
-                stop = round(float(region_i.stop_line_edit.text()), float_accuracy)
-                step = round(float(region_i.step_line_edit.text()), float_accuracy)
-                weight = region_i.weight_spinbox.value()
-                exposure_time = region_i.exposure_time_spinbox.value()
-            except ValueError:
-                QtWidgets.QMessageBox.warning(
-                    self, "Value Error", "Invalid value detected!"
-                )
-                return None
-            if region_i.k_space_checkbox.isChecked():
-                energy_ranges_all.append(
-                    KRange(
-                        k_min=start,
-                        k_max=stop,
-                        k_step=step,
-                        k_weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-
-            else:
-                energy_ranges_all.append(
-                    ERange(
-                        E_min=start,
-                        E_max=stop,
-                        E_step=step,
-                        weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-
-        # Turn ndarrays into lists so they can be JSON serialized
-        energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
-        energies = list(np.round(energies, float_accuracy))
-        exposures = list(np.round(exposures, float_accuracy))
-        detectors = self.ui.detectors_list.selected_detectors()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-        md = {
-            "sample_name": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-            "is_standard": self.ui.checkBox_is_standard.isChecked(),
-            "notes": self.ui.textEdit_notes.toPlainText(),
-        }
-        # Only include metadata that isn't an empty string
-        md = {key: val for key, val in md.items() if is_valid_value(val)}
-
-        # Check that an absorption edge was selected
-        if self.use_edge_checkbox.isChecked():
-            try:
-                match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-                self.edge_value = round(float(match[-1]), float_accuracy)
-
-            except IndexError:
-                QtWidgets.QMessageBox.warning(
-                    self, "Error", "Please select an absorption edge."
-                )
-                return None
+        # Update regions
+        if self.E0 is None:
+            return
+        elif is_checked:
+            self.regions.apply_E0(self.E0)
         else:
-            self.edge_value = 0
+            self.regions.unapply_E0(self.E0)
 
-        # Build the queue item
-        item = BPlan(
-            "energy_scan",
-            energies=energies,
-            exposure=exposures,
-            E0=self.edge_value,
-            detectors=detectors,
-            md=md,
-        )
-        # Submit the item to the queueserver
-        log.info(f"Adding XAFS scan to queue.")
-        # repeat scans
-        for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+    def scan_durations(self, detector_time: float = 0) -> tuple[float, float]:
+        energy_ranges = [
+            region.energy_range for region in self.regions if region.is_active
+        ]
+        _, exposures = merge_ranges(*energy_ranges, sort=True)
+        time_per_scan = sum(exposures)
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * time_per_scan
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Summing total_time for all checked regions."""
+        try:
+            time_per_scan, total_time = self.scan_durations()
+        except ZeroDivisionError:
+            time_per_scan, total_time = float("nan"), float("nan")
+        self.scan_time_changed.emit(time_per_scan)
+        self.total_time_changed.emit(total_time)
+
+    @property
+    def edge_name(self) -> str:
+        edge_regex = r"([A-Z][a-z]?)[-_ ]([K-Z][0-9]*)"
+        edge_text = self.ui.edge_combo_box.currentText()
+        if re_match := re.search(edge_regex, edge_text):
+            return "-".join(re_match.groups())
+        else:
+            return ""
+
+    @property
+    def E0(self) -> float | None:
+        try:
+            element, edge = self.edge_name.split("-")
+        except (UnknownAbsorptionEdge, ValueError):
+            pass
+        else:
+            return xraydb.xray_edge(element, edge).energy
+        # Try and parse as a number
+        edge_text = self.ui.edge_combo_box.currentText()
+        try:
+            return float(edge_text)
+        except ValueError:
+            return None
+
+    def plan_args(self) -> tuple[tuple, dict]:
+        """Build the arguments that will be used when building a plan object."""
+        detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
+        regions = [region for region in self.regions if region.is_active]
+        energy_ranges = [region.energy_range.astuple() for region in regions]
+        E0 = self.edge_name if self.edge_name != "" else self.E0
+        # Additional metadata
+        md = {**self.plan_metadata()}
+        args = (detector_names, *energy_ranges)
+        kwargs: dict[str, Any] = {
+            "md": md,
+        }
+        if self.use_edge_checkbox.isChecked():
+            kwargs["E0"] = E0
+        return args, kwargs
+
+    def queue_plan(self, *args, **kwargs) -> BPlan:
+        # Fail if no energy is selected
+        use_edge = self.use_edge_checkbox.isChecked()
+        if use_edge and self.E0 is None:
+            # Check that an absorption edge was selected
+            if self.E0 is None:
+                QMessageBox.warning(self, "Error", "Please select an absorption edge.")
+                raise ValueError(
+                    "Absorption edge is selected, but no valid value was provided."
+                )
+        super().queue_plan(*args, **kwargs)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"

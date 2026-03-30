@@ -1,31 +1,25 @@
 [project]
 name = "haven-spc"
-version = "2024.10.7"
+version = "2025.02.1"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.10"
+# requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: BSD License",
     "Topic :: Scientific/Engineering",
     "Topic :: System :: Hardware",
 ]
+license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "bluesky", "ophyd", "ophyd-async>=0.7.0", "databroker", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
-		"strenum", "bluesky-adaptive", "tiled[client]"]
-
-[project.optional-dependencies]
-
-dev = ["black", "pytest", "pytest-mongodb", "asynctest", "build", "twine",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
-gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
+dependencies = [
+    # Managed by pixi
+    # To-do: what dependencies do we actually need for e.g. pip install.
+]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -36,8 +30,6 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
-mongo_consumer = "queueserver.mongo_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
@@ -50,11 +42,20 @@ steering = ["generic_trainer@git+https://github.com/mdw771/auto_beamline_ops[ste
 firefly = ["firefly.qss"]
 
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
 
 [tool.versioneer]
 VCS = "git"
@@ -63,3 +64,34 @@ versionfile_source = "src/haven/_version.py"
 versionfile_build = "haven/_version.py"
 tag_prefix = "haven-"
 parentdir_prefix = "haven-"
+
+[tool.mypy]
+files = [
+    'src/haven/',
+    'tests/haven',
+    'tests/integration/',
+    'tests/end_to_end/',
+    'src/firefly/bss.py', 'tests/firefly/test_bss_display.py',
+    'src/firefly/energy.py', 'tests/firefly/test_energy_display.py',
+    'src/firefly/devices/axilon_monochromator.py', 'tests/firefly/devices/test_monochromator.py',
+    'src/firefly/devices/undulator.py', 'tests/firefly/devices/test_undulator.py',
+    'src/firefly/plans/count.py', 'tests/firefly/plans/test_count.py',
+    'src/firefly/plans/duration_label.py', 'tests/firefly/plans/test_duration_label.py',
+    'src/firefly/plans/metadata.py', 'tests/firefly/plans/test_metadata_widget.py',
+    'src/firefly/plans/move.py', 'tests/firefly/plans/test_move.py',
+    'src/firefly/plans/regions.py', 'tests/firefly/plans/test_regions.py',
+    'src/firefly/plans/display.py', 'tests/firefly/plans/test_display.py',
+    'src/firefly/plans/line_scan.py', 'tests/firefly/plans/test_line_scan.py',
+    'src/firefly/plans/grid_scan.py', 'tests/firefly/plans/test_grid_scan.py',
+    'src/firefly/plans/relative_checkbox.py', 'tests/firefly/test_relative_checkbox.py',
+    'src/firefly/plans/util.py',
+    'src/firefly/plans/xafs_scan.py', 'tests/firefly/plans/test_xafs_scan.py',
+]
+follow_imports = "skip"
+follow_untyped_imports = true
+exclude = [
+    # To-do: Get these files to pass the type-checker
+    "src/haven/devices/srs570.py",
+    "src/haven/_iconfig.py",
+    "src/haven/instrument.py",
+]

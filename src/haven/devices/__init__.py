@@ -1,10 +1,37 @@
+from .aerotech import AerotechStage as AerotechStage
+from .aperture_slits import ApertureSlits  # noqa: F401
+from .aps import ApsMachine as ApsMachine
+from .asymmotron import Analyzer  # noqa: F401
+from .axilon_monochromator import AxilonMonochromator  # noqa: F401
+from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
+from .capillary_heater import CapillaryHeater as CapillaryHeater
+from .channel_cut_monochromator import ChannelCutMonochromator  # noqa: F401
+from .cl3000 import CL3000 as CL3000
+from .delay import DG645Delay  # noqa: F401
+from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
+from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
+from .detectors.xspress import Xspress3Detector  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
-from .monochromator import Monochromator  # noqa: F401
-from .motor import HavenMotor, Motor  # noqa: F401
+from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
+from .motor import Motor, load_motors  # noqa: F401
+from .ptc10 import PTC10Controller as PTC10Controller
+from .ptc10 import PTC10OutputChannel as PTC10OutputChannel
+from .ptc10 import PTC10RTDChannel as PTC10RTDChannel
+from .ptc10 import PTC10ThermocoupleChannel as PTC10ThermocoupleChannel
 from .robot import Robot  # noqa: F401
+from .scaler import MultiChannelScaler  # noqa: F401
+from .shutter import PssShutter as PssShutter
+from .shutter import ShutterState as ShutterState
+from .soft_glue import SoftGlueZynq  # noqa: F401
+from .soft_glue_flyer_controller import SoftGlueFlyerController  # noqa: F401
+from .stage import XYStage as XYStage
 from .table import Table  # noqa: F401
+from .undulator import PlanarUndulator  # noqa: F401
+from .vacuum import PumpController, TelevacIonGauge  # noqa: F401
+from .xia_pfcu import PFCUFilter as PFCUFilter
+from .xia_pfcu import PFCUFilterBank as PFCUFilterBank
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

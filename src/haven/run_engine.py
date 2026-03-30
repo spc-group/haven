@@ -1,64 +1,61 @@
 import logging
 
-import databroker
 import IPython
+from apsbits.core.run_engine_init import init_RE
+from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
-from bluesky.callbacks.best_effort import BestEffortCallback
-from bluesky.utils import ProgressBarManager, register_transform
+from bluesky.bundlers import maybe_await
+from bluesky.callbacks.tiled_writer import TiledWriter
+from bluesky.utils import register_transform
 
-from .exceptions import ComponentNotFound
-from .instrument import beamline
-from .preprocessors import inject_haven_md_wrapper
+from haven import load_config
 
 log = logging.getLogger(__name__)
 
 
-catalog = None
+__all__ = ["run_engine"]
 
 
-def save_data(name, doc):
-    # This is a hack around a problem with garbage collection
-    # Has been fixed in main, maybe released in databroker v2?
-    # Create the databroker callback if necessary
-    global catalog
-    if catalog is None:
-        catalog = databroker.catalog["bluesky"]
-    # Save the document
-    catalog.v1.insert(name, doc)
+async def _calibrate(msg: Msg):
+    """
+    Calibrate an objects requested value to its true value.
+
+    Expected message object is:
+
+        Msg('calibrate', obj, truth, target, relative)
+
+    """
+    # actually _calibrate_ the object
+    await maybe_await(msg.obj.calibrate(*msg.args, **msg.kwargs))
 
 
-def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEngine:
-    RE = BlueskyRunEngine(**kwargs)
-    # Add the best-effort callback
-    if use_bec:
-        RE.subscribe(BestEffortCallback())
-    # Install suspenders
-    try:
-        aps = beamline.registry.find("APS")
-    except ComponentNotFound:
-        log.warning("APS device not found, suspenders not installed.")
-    else:
-        # Suspend when shutter permit is disabled
-        # Re-enable when the APS shutter permit signal is better understood
-        pass
-        # RE.install_suspender(
-        #     suspenders.SuspendWhenChanged(
-        #         signal=aps.shutter_permit,
-        #         expected_value="PERMIT",
-        #         allow_resume=True,
-        #         sleep=3,
-        #         tripped_message="Shutter permit revoked.",
-        #     )
-        # )
+def run_engine(
+    *,
+    tiled_writer: TiledWriter | None = None,
+    **kwargs,
+) -> BlueskyRunEngine:
+    """Build a bluesky RunEngine() for Haven.
+
+    Parameters
+    ==========
+    connect_tiled
+      The run engine will have a callback for writing to the default
+      tiled client.
+
+    """
+    config = load_config()
+    # Create the run engine
+    RE, *_ = init_RE(config, **kwargs)
+    # Add custom verbs
+    RE.register_command("calibrate", _calibrate)
     # Add a shortcut for using the run engine more efficiently
-    RE.waiting_hook = ProgressBarManager()
     if (ip := IPython.get_ipython()) is not None:
         register_transform("RE", prefix="<", ip=ip)
-    # Install databroker connection
-    if connect_databroker:
-        RE.subscribe(save_data)
-    # Add preprocessors
-    RE.preprocessors.append(inject_haven_md_wrapper)
+    # Install database connections
+    if tiled_writer is not None:
+        RE.subscribe(tiled_writer)
+    else:
+        log.info("Tiled Writer not installed in run engine.")
     return RE
 
 

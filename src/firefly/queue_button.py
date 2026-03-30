@@ -1,10 +1,10 @@
 """A QPushButton that responds to the state of the queue server."""
 
 import logging
+from enum import StrEnum
 
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
-from strenum import StrEnum
 
 log = logging.getLogger(__name__)
 
@@ -14,18 +14,23 @@ class Colors(StrEnum):
     RUN_QUEUE = "rgb(25, 135, 84)"
 
 
-class QueueButton(QtWidgets.QPushButton):
+class QueueserverButton(QtWidgets.QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Initially disable the button until the status of the queue can be determined
         self.setDisabled(True)
 
     def update_queue_style(self, status: dict):
-        if status["worker_environment_exists"]:
+        if status.get("worker_environment_exists", False):
             self.setEnabled(True)
         else:
             # Should be disabled because the queue is closed
             self.setDisabled(True)
+
+
+class QueueButton(QueueserverButton):
+    def update_queue_style(self, status: dict):
+        super().update_queue_style(status)
         # Coloration for the whether the item would get run immediately
         if status["re_state"] == "idle" and status["queue_autostart_enabled"]:
             # Will play immediately
@@ -33,7 +38,7 @@ class QueueButton(QtWidgets.QPushButton):
                 f"background-color: {Colors.RUN_QUEUE};\n"
                 f"border-color: {Colors.RUN_QUEUE};"
             )
-            self.setIcon(qta.icon("fa5s.play"))
+            self.setIcon(qta.icon("fa6s.play"))
             if self.text() in ["Run", "Add to Queue", ""]:
                 self.setText("Run")
             self.setToolTip("Add this plan to the queue and start it immediately.")
@@ -43,7 +48,7 @@ class QueueButton(QtWidgets.QPushButton):
                 f"background-color: {Colors.ADD_TO_QUEUE};\n"
                 f"border-color: {Colors.ADD_TO_QUEUE};\n"
             )
-            self.setIcon(qta.icon("fa5s.list"))
+            self.setIcon(qta.icon("fa6s.list"))
             if self.text() in ["Run", "Add to Queue", ""]:
                 self.setText("Add to Queue")
             self.setToolTip("Add this plan to the queue to run later.")

@@ -12,6 +12,7 @@ from ophyd_async.core import DeviceVector
 from ophyd_async.core import Signal as AsyncSignal
 from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
+from qtpy.QtCore import Signal
 from qtpy.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,
@@ -167,13 +168,7 @@ def dotted_name(obj: HasName) -> str:
             attr_name = attr
             break
     else:
-        print(obj.parent.__class__)
         raise RuntimeError(f"Could not find attribute name for {obj.name}.")
-    # siblings = list(attrs.values())
-    # attr_names = list(attrs.keys())
-    # idx = siblings.index(obj)
-    # attr_name = attr_names[siblings.index(obj)]
-    # attr_name = list(attrs.keys())[list(attrs.values()).index(obj)]
     # Attach our attr_name to the dotted name of the parent
     parent_name = dotted_name(obj.parent)
     return f"{parent_name}.{attr_name}"
@@ -298,9 +293,6 @@ class DeviceComboBoxModel(DeviceContainer, QStandardItemModel):
             children = self._asynchronous_children(device)
         else:
             children = []
-        # Build the tree from the child components of the device
-        # components = getattr(device, "walk_components", lambda: [])()
-        # for ancestors, dotted_name, cpt in components:
         # Build nodes for the children
         for dotted_name, child_cls, text in children:
             # Only add a device if it's high-level (e.g. motor)
@@ -318,12 +310,16 @@ class DeviceComboBoxModel(DeviceContainer, QStandardItemModel):
 
 class ComponentSelector(QWidget):
     registry = None
+    device_selected = Signal(object)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.create_models()
         self.add_widgets()
         self.connect_signals()
+
+    def selected_device_path(self):
+        return self.combo_box.currentText()
 
     def current_component(self):
         cpt_name = self.combo_box.currentText()
@@ -333,6 +329,13 @@ class ComponentSelector(QWidget):
         else:
             # A device was selected
             return self.registry.find(name=cpt_name)
+
+    def current_device_name(self):
+        """Return the dotted name of the current device, suitable for passing
+        to the queueserver.
+
+        """
+        return self.combo_box.currentText()
 
     def create_models(self):
         self.tree_model = DeviceTreeModel(0, 2)
@@ -359,6 +362,10 @@ class ComponentSelector(QWidget):
         selection.setCurrentIndex(
             component.name_item.index(), selection.ClearAndSelect | selection.Rows
         )
+        # Notify interested parties if a device was selected
+        device = self.current_component()
+        if device is not None:
+            self.device_selected.emit(device)
 
     def update_combo_box_model(self, index, previous):
         cpt = self.tree_model.component_from_index(index)

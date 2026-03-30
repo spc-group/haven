@@ -1,0 +1,265 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[activation.env]
+PYDM_DEFAULT_PROTOCOL = "ca"
+
+[dependencies]
+python = "3.12.*"
+
+[pypi-dependencies]
+haven-spc = { path = ".", editable = true }
+httpx = { version="*", extras = ['socks'] }
+lmfit = "*"
+mergedeep = "*"
+pint = "*"
+# pcdsdevices = "*"
+rich = "*"
+scipy = "*"
+stamina = "*"
+tomlkit = "*"
+xraydb = ">=4.5.0"
+xrayutilities = "*"
+
+[environments]
+default = { solve-group = "default" }
+dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
+qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+xrftools = { features = ["xrftools"] }
+# designer = { features = ["designer"] }
+
+[tasks]
+test-all = [
+    {task = "lint" },
+    {task = "format", args = ["--check"] },
+    {task = "sort-imports", args = ["--check"] },
+    {task = "check-types" },
+    {task = "tests", args = ["--runslow"] },
+]
+lint-all = [
+    {task = "lint", args = ["--fix"]},
+    {task = "format"},
+    {task = "sort-imports"},
+]
+
+
+[feature.bluesky.pypi-dependencies]
+aioca = ">=2.0"
+bluesky = "==1.14.6"
+apsbits = ">=2.0.0"
+apstools = ">=1.7.8"
+guarneri = ">=0.5.0"
+ophyd = ">=1.11.0"
+ophyd-async = { version = "==0.17a2", extras = ["ca"] }
+scanspec = "==1.0a2"
+bluesky-adaptive = ">=0.3.2"
+bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
+p4p = ">=4.2.2, <5"
+
+[feature.ipython]
+dependencies = { python = "3.12.*", ipython = "*" }
+pypi-dependencies = { rich = "*" }
+tasks = {haven = "ipython -i ./src/haven/startup.py"}
+
+[feature.pytest.dependencies]
+redis-server = "*"
+
+[feature.pytest.pypi-dependencies]
+"pytest" = "*"
+"pytest-httpx" = "*"
+"pytest-mock" = "*"
+"pytest-qt" = "*"
+"pytest-xvfb" = "*"
+"pytest-asyncio" = "*"
+"pytest-redis" = "*"
+mirakuru = ">=3.0.2, <4"
+pytest-dependency = ">=0.6.1, <0.7"
+
+[feature.dev.pypi-dependencies]
+"black" = "*"
+"twine" = "*"
+"ruff" = "*"
+"isort" = "*"
+"sphinx" = "*"
+"nbsphinx" = "*"
+"graphviz" = "*"
+"sphinxcontrib-napoleon" = "*"
+"scipy-stubs" = "*"
+"mypy" = "*"
+pytest-timeout = ">=2.4.0,<3"
+autoapi = "*"
+build = "*"
+
+[feature.dev.tasks]
+check-types = "mypy"
+make-docs = "make html --directory=docs/"
+
+[feature.dev.activation.env]
+QSERVER_HTTP_SERVER_CONFIG = "${PWD}qserver_http_config.yml"
+
+[feature.dev.tasks.tests]
+args = [
+     { arg = "runslow", default = "" },
+]
+cmd = "pytest -Werror {{ runslow }}"
+
+[feature.dev.tasks.lint]
+args = [
+     { arg = "fix", default = "" },
+]
+cmd = "ruff check {{ fix }}"
+
+[feature.dev.tasks.sort-imports]
+args = [
+     { arg = "check_flag", default = "" },
+]
+cmd = "isort src/ tests/ {{ check_flag }}"
+
+[feature.dev.tasks.format]
+args = [
+     { arg = "check_flag", default = "" },
+]
+cmd = "black src/ tests/ {{ check_flag }}"
+
+[feature.gui.dependencies]
+# Old dependencies until pydm is stable with pyside6
+qt = ">=5.15"
+pyqt = ">=5.15"
+qtawesome = ">=1.4.0"
+pyqtgraph = "*"
+pydm = ">=1.28.1"
+qasync = "*"
+bluesky-widgets = "*"
+
+
+[feature.gui.pypi-dependencies]
+apsbss = "*"
+# PyQT5 = ">=5.15"
+
+[feature.gui.tasks]
+firefly = "firefly"
+
+# [feature.gui_pyside6.dependencies]
+# qtawesome = ">=1.4.0"
+# pyqtgraph = "*"
+# qasync = "*"
+# bluesky-widgets = "*"
+# qt6-main = "*"
+# pyside6 = "*"
+
+# [feature.gui_pyside6.pypi-dependencies]
+# apsbss = "*"
+# pydm = ">=1.28.0"
+
+# [feature.gui_pyside6.tasks]
+# firefly = "firefly"
+
+# [feature.gui_pyside6.activation.env]
+# QT_API = "pyside6"
+
+# [feature.designer.dependencies]
+# python = "3.10.*"
+# pyqt = "==5.12.3"
+# pyqtgraph = "<0.13.0"  # Last version to support pyqt 5.12
+# qt = "~=5.12"
+# pydm = "==1.25.2"
+
+# [feature.designer.tasks]
+# designer = "designer"
+
+[feature.qserver.tasks]
+qserver = "python -m haven_qserver.launch_queueserver"
+# httpserver = "pixi run -e 25idc uvicorn bluesky_httpserver.server:app"
+httpserver = "start-bluesky-httpserver"
+
+[feature.qserver.pypi-dependencies]
+bluesky-queueserver = ">=0.0.24"
+bluesky-httpserver = ">=0.0.14, <0.0.15"
+
+[feature.tiled.pypi-dependencies]
+bluesky-tiled-plugins = "==2.0.2"
+tiled = { version = "==0.2.8", extras = ["all"] }
+
+[feature.tiled.tasks]
+tiled-server = "tiled serve config"
+# tiled-server = "env"
+
+# 'ai' feature pulls in dependencies for the following capabilities:
+# - ML alignment of KB mirrors (OPT group)
+# - Bayesian optimization of XAFS scan points (CAI group)
+# [feature.ai.dependencies]
+# pixi-pycharm = "*"  # For Luca to use pycharm easily
+
+[feature.ai.pypi-dependencies]
+# autobl = { git = "https://github.com/mdw771/auto_beamline_ops", extras = ["steering"] }
+# aps-ai-beamline-controller = ">=0.0.12"
+# # Work-around to get CUDA drivers to agree
+# torch = "==2.7.0"
+# torchvision = "==0.22.0"
+# torchaudio = "==2.7.0"
+# # This package will eventually be available on PyPI, but for now it
+# # breaks CI so it being removed
+# aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
+
+# (Installing these xrf tools breaks haven with an error about missing
+# xcb plugin)
+[feature.xrftools.dependencies]
+wxPython = ">=4.2"
+spglib = ">=2.7.0,<3"
+
+[feature.xrftools.pypi-dependencies]
+xraylarch = { version = ">=2026.1.2, <2027", extras = ["all"] }
+# xraylarch = { git = "https://github.com/xraypy/xraylarch.git", extras = ["all"] }
+
+# Configuration for quality assurance testing before release
+[feature.qa.activation.env]
+BLUESKY_DIR = "/net/s25data/xorApps/bluesky/qa/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}/tiled_server_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://localhost:60617"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60617"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://localhost:60627"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60627"
+
+# Per beamline configuration
+[feature.25idc.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+
+[feature.25idc.activation.env]
+BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_HTTP_SERVER_CONFIG = "${BLUESKY_DIR}qserver_http_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60625"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"
+
+[feature.25idd.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+
+[feature.25idd.activation.env]
+BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60616"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60626"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60626"
+
+# Per beamline configuration
+[feature.9bm.tasks]
+test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+
+[feature.9bm.activation.env]
+BLUESKY_DIR = "/net/s9data/xorApps/bluesky/9bm/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60615"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60625"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"

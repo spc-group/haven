@@ -1,9 +1,9 @@
-##############
-How-To Guides
-##############
+############
+Topic Guides
+############
 
-These guides cover a particular topic in depth, coving material useful
-to users and beamline staff.
+These guides cover **a particular topic in depth**, coving material
+useful to users and beamline staff.
 
 These guides do not cover the individual beamlines thoroughly.
 
@@ -11,7 +11,8 @@ These guides do not cover the individual beamlines thoroughly.
    :maxdepth: 2
    :caption: Contents:
 
-   area_detectors.rst	     
+   area_detectors.rst
+   asymmetric_analyzer.rst
    changing_haven.rst
    beamline_configuration.rst
    define_new_motor.rst
@@ -19,7 +20,6 @@ These guides do not cover the individual beamlines thoroughly.
    exporting.rst
    fluorescence_detectors.rst
    fly_scanning.rst
-   hardware_triggering.rst
    instrument_registry.rst
+   shutters_and_filters.rst
    motor_positions.rst
-   xdi_writer.rst

@@ -63,7 +63,7 @@ class MotorFlyer(FlyerInterface, Device):
 
         def kickoff_thread():
             try:
-                self.move(self.flyer_taxi_start.get(), wait=True)
+                self.move(self.flyer_taxi_start.get())
                 self.velocity.put(self.flyer_slew_speed.get())
             except Exception as exc:
                 st.set_exception(exc)
@@ -106,7 +106,7 @@ class MotorFlyer(FlyerInterface, Device):
                 self._fly_data = []
                 self._fly_model = None
                 cid = self.user_readback.subscribe(self.record_datum, run=False)
-                self.move(self.flyer_taxi_end.get(), wait=True)
+                self.move(self.flyer_taxi_end.get())
                 self.user_readback.unsubscribe(cid)
             except Exception as exc:
                 st.set_exception(exc)

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type xmlns="http://www.freedesktop.org/standards/shared-mime-info" type="text/x-xdi">
+    <comment>XDI document</comment>
+    <comment xml:lang="zh_TW">XDI 文件</comment>
+    <comment xml:lang="zh_CN">XDI 文档</comment>
+    <comment xml:lang="vi">Tài liệu XDI</comment>
+    <comment xml:lang="uk">документ XDI</comment>
+    <comment xml:lang="tr">XDI belgesi</comment>
+    <comment xml:lang="sv">XDI-dokument</comment>
+    <comment xml:lang="sr">ХДФ документ</comment>
+    <comment xml:lang="sq">Dokument XDI</comment>
+    <comment xml:lang="sl">Dokument XDI</comment>
+    <comment xml:lang="sk">Dokument XDI</comment>
+    <comment xml:lang="ru">Документ XDI</comment>
+    <comment xml:lang="ro">Document XDI</comment>
+    <comment xml:lang="pt_BR">Documento XDI</comment>
+    <comment xml:lang="pt">documento XDI</comment>
+    <comment xml:lang="pl">Dokument XDI</comment>
+    <comment xml:lang="oc">document XDI</comment>
+    <comment xml:lang="nn">XDI-dokument</comment>
+    <comment xml:lang="nl">XDI-document</comment>
+    <comment xml:lang="nb">XDI-dokument</comment>
+    <comment xml:lang="ms">Dokumen XDI</comment>
+    <comment xml:lang="lv">XDI dokuments</comment>
+    <comment xml:lang="lt">XDI dokumentas</comment>
+    <comment xml:lang="ko">XDI 문서</comment>
+    <comment xml:lang="kk">XDI құжаты</comment>
+    <comment xml:lang="ja">XDI ドキュメント</comment>
+    <comment xml:lang="it">Documento XDI</comment>
+    <comment xml:lang="id">Dokumen XDI</comment>
+    <comment xml:lang="ia">Documento XDI</comment>
+    <comment xml:lang="hu">XDI-dokumentum</comment>
+    <comment xml:lang="hr">XDI dokument</comment>
+    <comment xml:lang="he">מסמך XDI</comment>
+    <comment xml:lang="gl">documento XDI</comment>
+    <comment xml:lang="ga">cáipéis XDI</comment>
+    <comment xml:lang="fur">document XDI</comment>
+    <comment xml:lang="fr">document XDI</comment>
+    <comment xml:lang="fo">XDI skjal</comment>
+    <comment xml:lang="fi">XDI-asiakirja</comment>
+    <comment xml:lang="eu">XDI dokumentua</comment>
+    <comment xml:lang="es">documento XDI</comment>
+    <comment xml:lang="eo">XDI-dokumento</comment>
+    <comment xml:lang="en_GB">XDI document</comment>
+    <comment xml:lang="el">Έγγραφο XDI</comment>
+    <comment xml:lang="de">XDI-Dokument</comment>
+    <comment xml:lang="da">XDI-dokument</comment>
+    <comment xml:lang="cy">Dogfen XDI</comment>
+    <comment xml:lang="cs">dokument XDI</comment>
+    <comment xml:lang="ca">document XDI</comment>
+    <comment xml:lang="bg">Документ — XDI</comment>
+    <comment xml:lang="be@latin">Dakument XDI</comment>
+    <comment xml:lang="az">XDI sənədi</comment>
+    <comment xml:lang="ast">Documentu XDI</comment>
+    <comment xml:lang="ar">مستند XDI</comment>
+    <comment xml:lang="af">XDI-dokument</comment>
+    <acronym>XDI</acronym>
+    <expanded-acronym>XAS Data Interchange</expanded-acronym>
+    <sub-class-of type="text/csv"/>
+    <glob pattern="*.xdi"/>
+  </mime-type>
+</mime-info>

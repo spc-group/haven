@@ -22,26 +22,26 @@ reused.
 1. Install a git client on your local computer (e.g. `git`_ or  `Github Desktop`_)
 2. Create a fork of the `main Haven repository`_
 3. Clone the forked repository to your local computer (e.g. ``git clone git@github.com:canismarko/haven.git``)
-4. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
-5. Create a new conda environment from *environment.yml* (e.g. ``mamba env create -n haven -f haven/environment.yml``)
-6. Activate the newly created conda environment (e.g. ``mamba activate haven``)
-7. Install haven in the environment (``pip install -e "haven[dev]"``)
-8. Verify that the :ref:`test-suite passes<Running Tests>`
+4. `_Install Pixi`_ for environment management
+5. Verify that the :ref:`test-suite passes<Running Tests>`
 
-The following steps should then be performed every time a new feature
+The following steps should then be performed each time a new feature
 is being added or bug is being fixed.
 
-9. Sync your github fork with the main github repository
-10. Pull changes to your local repository (``git pull``)
-11. Create a new git branch for the task you are doing (e.g. ``git checkout -b area_detector_support``)
-12. Make changes to the Haven source code as needed
-13. Ensure all tests pass (``pytest``)
-14. Commit changes to your local branch (``git add file1.py file2.py ...`` and ``git commit``)
-15. Push changes back to github (``git push``)
-16. Create a pull request on github to send changes back to the main repository.
+6. Sync your github fork with the main github repository
+7. Pull changes to your local repository (``git pull``)
+8. Create a new git branch for the task you are doing (e.g. ``git checkout -b area_detector_support``)
+9. Write tests for the new feature or fix.
+10. Verify that the tests fail (``pixi run test-haven`` or ``pixi run test-firefly``)
+11. Implement the feature/fix until tests pass.
+12. Ensure all tests and linters pass (``pixi run test-all``)
+13. Commit changes to your local branch (``git add file1.py file2.py ...`` and ``git commit``)
+14. Push changes back to github (``git push``)
+15. Create a pull request on github to send changes back to the main repository.
 
 .. _mamba-forge: https://mamba.readthedocs.io/en/latest/installation.html
 .. _main Haven repository: https://github.com/spc-group/haven
+.. _Install Pixi: curl -fsSL https://pixi.sh/install.sh | sh
 .. _git: https://git-scm.com/download/
 .. _Github Desktop: https://desktop.github.com/
 
@@ -50,19 +50,26 @@ is being added or bug is being fixed.
 Running Tests
 -------------
 
-*Pytest* is the recommended runner for Haven. Once the environment is
-properly setup, the tests can be run using:
+*Pytest* is the recommended runner for Haven. Pixi has tasks defined
+for running tests:
 
 .. code-block:: console
 
-   $ pytest
+    $ pixi run test-haven
+    $ pixi run test-firefly
 
 ``pytest`` should not report any errors or failures, though skipped,
 xfailed, and warnings are expected.
 
+To **run all tests** and also check **formatting**, **imports**, **type-hints**, and more, use
+
+.. code-block:: console
+
+    $ pixi run test-all
+
 While running the tests, devices created using
-:py:func:`~haven.devices.device.make_device()` will be replaced
-with simulated devices using Ophyd's *sim* module. This means that
+:py:func:`~haven.devices.device.make_device()` will be replaced with
+mocked devices using ophyd-async's. This means that
 :py:func:`~haven.devices.load_instrument()` can be called without
 hardware being present, and the corresponding fake devices can be
 found in the :py:obj:`haven.registry`.
@@ -71,7 +78,7 @@ Additionally, some pytest fixtures are provided that create simulated
 devices, (e.g. ion chambers) and can be used directly in your tests.
 
 More details can be found in the file *haven/tests/conftest.py*.
-       
+
 From the Beamline
 =================
 
@@ -84,7 +91,7 @@ From the Beamline
    If at all possible, changes should be made through a development
    environment as described above.
 
-User support often requires changes to be made quickly from the
+User support sometimes requires changes to be made quickly from the
 beamline computers.
 
 *Git* is our version control software. It interacts with github, and
@@ -108,20 +115,13 @@ git that they should be included, for examples:
 
 .. code-block:: console
 
-   $ git add haven/shutter_workaround.py
+   $ git add src/haven/shutter_workaround.py
 
 Then **commit the changes**:
 
 .. code-block:: console
 
     $ git commit -a -m "Workaround for the shutter not also closing when requested."
-
-If you see ``black...Failed``, then you need to run the command
-again. Black is an add-on that enforces its own code format so that we
-can focus on the important stuff, and it runs every time changes are
-committed. If code needs to be reformatted, it stops the commit and
-fixes the formatting. Attempting the commit again with the reformatted
-code usually works.
 
 The ``-a`` option tells git to automatically include all files that
 have been changed. The ``-m`` option lets us include a short message

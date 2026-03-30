@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>276</width>
+    <height>357</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Motor</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="PyDMLabel" name="description_label">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>######</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${MOTOR}.description</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMLabel" name="readback_label">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>######</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="showUnits" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${MOTOR}.user_readback</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <property name="bottomMargin">
+        <number>5</number>
+       </property>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="PyDMByteIndicator" name="limit_hard_low_indicator">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="alarmSensitiveContent" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="alarmSensitiveBorder" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="channel" stdset="0">
+            <string>haven://${MOTOR}.low_limit_switch</string>
+           </property>
+           <property name="onColor" stdset="0">
+            <color>
+             <red>220</red>
+             <green>53</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="offColor" stdset="0">
+            <color>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="showLabels" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="bigEndian" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="circles" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="numBits" stdset="0">
+            <number>1</number>
+           </property>
+           <property name="shift" stdset="0">
+            <number>0</number>
+           </property>
+           <property name="labels" stdset="0">
+            <stringlist>
+             <string></string>
+            </stringlist>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMByteIndicator" name="limit_soft_low_indicator">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>haven://${MOTOR}.soft_limit_violation</string>
+           </property>
+           <property name="onColor" stdset="0">
+            <color>
+             <red>255</red>
+             <green>193</green>
+             <blue>7</blue>
+            </color>
+           </property>
+           <property name="offColor" stdset="0">
+            <color>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="showLabels" stdset="0">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="PyDMLineEdit" name="setpoint_lineedit">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>######</string>
+         </property>
+         <property name="showUnits" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://${MOTOR}.user_setpoint</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="PyDMByteIndicator" name="limit_hard_high_indicator">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="alarmSensitiveContent" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="alarmSensitiveBorder" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string/>
+           </property>
+           <property name="channel" stdset="0">
+            <string>haven://${MOTOR}.high_limit_switch</string>
+           </property>
+           <property name="onColor" stdset="0">
+            <color>
+             <red>220</red>
+             <green>53</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="offColor" stdset="0">
+            <color>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="showLabels" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="bigEndian" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="circles" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="numBits" stdset="0">
+            <number>1</number>
+           </property>
+           <property name="shift" stdset="0">
+            <number>0</number>
+           </property>
+           <property name="labels" stdset="0">
+            <stringlist>
+             <string></string>
+            </stringlist>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMByteIndicator" name="limit_soft_high_indicator">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="alarmSensitiveContent" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="alarmSensitiveBorder" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string/>
+           </property>
+           <property name="channel" stdset="0">
+            <string>haven://${MOTOR}.soft_limit_violation</string>
+           </property>
+           <property name="onColor" stdset="0">
+            <color>
+             <red>255</red>
+             <green>193</green>
+             <blue>7</blue>
+            </color>
+           </property>
+           <property name="offColor" stdset="0">
+            <color>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
+            </color>
+           </property>
+           <property name="showLabels" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="bigEndian" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="circles" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="numBits" stdset="0">
+            <number>1</number>
+           </property>
+           <property name="shift" stdset="0">
+            <number>0</number>
+           </property>
+           <property name="labels" stdset="0">
+            <stringlist>
+             <string>Bit 0</string>
+            </stringlist>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="stop_button">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>Stop</string>
+       </property>
+       <property name="rules" stdset="0">
+        <string>[{&quot;name&quot;: &quot;Enable stop button&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.motor_is_moving&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;We only need the stop button to be usable if the motor is moving. Otherwise, just disable it.&quot;}]</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${MOTOR}.motor_stop</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="tweak_display">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>SIG=${MOTOR}.user_setpoint</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>tweak.py</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="save_restore_button">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Save/Restore</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PyDMLabel</class>
+   <extends>QLabel</extends>
+   <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMByteIndicator</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.byte</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PyDMLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>pydm.widgets.line_edit</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMPushButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.pushbutton</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

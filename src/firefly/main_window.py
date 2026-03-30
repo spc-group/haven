@@ -1,5 +1,5 @@
 import logging
-import warnings
+from itertools import chain
 from pathlib import Path
 from typing import Sequence
 
@@ -8,6 +8,7 @@ from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 from qtpy import QtGui, QtWidgets
 
+from firefly.queue_client import is_in_use
 from haven import load_config
 
 log = logging.getLogger(__name__)
@@ -111,10 +112,11 @@ class FireflyMainWindow(PyDMMainWindow):
 
     def update_queue_status(self, status):
         """Update the queue status labels."""
-        self.ui.environment_label.setText(status["worker_environment_state"])
-        new_length = status["items_in_queue"]
+        worker_state = status.get("worker_environment_state", "—")
+        self.ui.environment_label.setText(worker_state)
+        new_length = status.get("items_in_queue", "—")
         self.ui.queue_length_label.setText(f"({new_length})")
-        self.ui.re_label.setText(status["re_state"])
+        self.ui.re_label.setText(status.get("re_state", "—"))
         # Notify the display of the new status
         display = self.display_widget()
         display.update_queue_status(status)
@@ -131,14 +133,13 @@ class FireflyMainWindow(PyDMMainWindow):
                 "or FireflyDisplay?"
             )
             log.warning(msg)
-            warnings.warn(msg)
         # Add the caQtDM action to the menubar
         caqtdm_menu = self.ui.setup_menu
         caqtdm_actions = getattr(widget, "caqtdm_actions", [])
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
         for action in caqtdm_actions:
-            action.setIcon(qta.icon("fa5s.wrench"))
+            action.setIcon(qta.icon("fa6s.wrench"))
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
@@ -183,22 +184,22 @@ class FireflyMainWindow(PyDMMainWindow):
             queue_control_actions=actions.queue_controls,
             queue_settings_actions=actions.queue_settings,
             energy_window_action=actions.energy,
-            filters_action=actions.xray_filter,
+            attenuators_action=actions.attenuators,
             slits_actions=actions.slits,
             mirror_actions=actions.mirrors,
+            monochromator_actions=actions.monochromators,
             table_actions=actions.tables,
             robot_actions=actions.robots,
             plan_actions=actions.plans,
-            run_browser_action=actions.run_browser,
             voltmeters_action=actions.voltmeter,
             motor_actions=actions.motors,
             ion_chamber_actions=actions.ion_chambers,
             camera_actions=actions.cameras,
             area_detector_actions=actions.area_detectors,
+            undulator_actions=actions.undulators,
             xrf_detector_actions=actions.xrf_detectors,
             status_window_action=actions.status,
             bss_window_action=actions.bss,
-            iocs_window_action=actions.iocs,
         )
 
     def _setup_menu_actions(
@@ -208,22 +209,22 @@ class FireflyMainWindow(PyDMMainWindow):
         queue_control_actions,
         queue_settings_actions,
         energy_window_action,
-        filters_action,
+        attenuators_action,
         slits_actions,
+        monochromator_actions,
         mirror_actions,
         table_actions,
         robot_actions,
         plan_actions,
-        run_browser_action,
         voltmeters_action,
         motor_actions,
         ion_chamber_actions,
         camera_actions,
         area_detector_actions,
+        undulator_actions,
         xrf_detector_actions,
         status_window_action,
         bss_window_action,
-        iocs_window_action,
     ):
         # Log viewer window
         if logs_window_action is not None:
@@ -253,10 +254,21 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in motor_actions.values():
             self.ui.motors_menu.addAction(action)
         # Menu to launch the Window to change energy
+        self.ui.positioners_menu.addSection("Energy")
         self.ui.positioners_menu.addAction(energy_window_action)
+        energy_actions = chain(
+            [energy_window_action],
+            monochromator_actions.values(),
+            undulator_actions.values(),
+        )
+        for action in energy_actions:
+            self.ui.positioners_menu.addAction(action)
         # Add optical components
-        if filters_action is not None:
-            self.ui.positioners_menu.addAction(filters_action)
+        for action in mirror_actions.values():
+            self.ui.positioners_menu.addAction(action)
+
+        if attenuators_action is not None:
+            self.ui.positioners_menu.addAction(attenuators_action)
         if len(slits_actions) > 0:
             self.ui.positioners_menu.addSection("Slits")
         for action in slits_actions.values():
@@ -276,10 +288,6 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add actions to the individual plans
         for action in plan_actions.values():
             self.ui.plans_menu.addAction(action)
-        # Add entries for general scan management
-        self.ui.plans_menu.addSeparator()
-        if run_browser_action is not None:
-            self.ui.plans_menu.addAction(run_browser_action)
         # Voltmeters window
         if voltmeters_action is not None:
             self.ui.detectors_menu.addAction(voltmeters_action)
@@ -315,8 +323,6 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuView.addAction(status_window_action)
         if bss_window_action is not None:
             self.ui.setup_menu.addAction(bss_window_action)
-        if iocs_window_action is not None:
-            self.ui.setup_menu.addAction(iocs_window_action)
         # Make tooltips show up for menu actions
         for menu in [self.ui.setup_menu, self.ui.detectors_menu, self.ui.queue_menu]:
             menu.setToolTipsVisible(True)
@@ -333,7 +339,12 @@ class FireflyMainWindow(PyDMMainWindow):
             title = self.display_widget().windowTitle()
         # Add the beamline name
         config = load_config()
-        beamline_name = config["beamline"]["name"]
+        beamline_name = (
+            load_config()
+            .get("RUN_ENGINE", {})
+            .get("DEFAULT_METADATA", {})
+            .get("beamline", "Unknown")
+        )
         title += f" - {beamline_name} - Firefly"
         if data_plugins.is_read_only():
             title += " [Read Only Mode]"
@@ -385,7 +396,7 @@ class PlanMainWindow(FireflyMainWindow):
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
         super().update_queue_controls(new_status)
-        self.ui.navbar.setVisible(bool(new_status["in_use"]))
+        self.ui.navbar.setVisible(is_in_use(new_status))
 
 
 # -----------------------------------------------------------------------------

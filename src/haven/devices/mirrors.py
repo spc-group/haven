@@ -1,4 +1,3 @@
-from apstools.synApps import TransformRecord
 from ophyd_async.core import Device
 
 from .motor import Motor
@@ -59,6 +58,7 @@ class KBMirror(Device):
         transform_prefix = "".join(prefix.rsplit(":", 2))
         self.drive_transform = TransformRecord(f"{transform_prefix}:Drive")
         self.readback_transform = TransformRecord(f"{transform_prefix}:Readback")
+        super().__init__(name=name)
 
 
 class KBMirrors(Device):
