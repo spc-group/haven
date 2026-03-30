@@ -1,8 +1,6 @@
 import pytest
 pytest.importorskip("autobl")
 
-import matplotlib.pyplot as plt
-import torch
 import numpy as np
 
 from autobl.steering.measurement import SimulatedMeasurement

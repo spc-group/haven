@@ -1,16 +1,13 @@
-from queue import Queue
-from typing import Optional, Tuple, List, Literal
+from typing import Optional, Tuple, Literal
 import logging
 import random
 
 import numpy as np
 from numpy import ndarray
-import pandas as pd
 from scipy.interpolate import griddata
 from bluesky import plans as bp
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
-import autobl.steering
 from autobl.steering.configs import XANESExperimentGuideConfig, StoppingCriterionConfig
 from autobl.steering.guide import XANESExperimentGuide
 from autobl.steering.acquisition import ComprehensiveAugmentedAcquisitionFunction
@@ -226,7 +223,7 @@ class XANESSamplingRecommender:
             raise ValueError('{} is not a valid method to generate initial locations.'.format(method))
         return x_init
 
-    def tell(self, energy: list[float], values: float) -> None:
+    def tell(self, energy: list[float], value: float) -> None:
         """Update model with a single data points.
 
         Parameters
