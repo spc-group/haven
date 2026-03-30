@@ -1,9 +1,15 @@
+import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ophyd_async.core import DetectorTriggerLogic, PathProvider, SignalR
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import ADBaseIO, ADWriterType, AreaDetector
+from ophyd_async.epics.adcore import (
+    ADBaseIO,
+    ADWriterType,
+    AreaDetector,
+    prepare_exposures,
+)
 
 # from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw_rbv
@@ -35,6 +41,13 @@ class EigerTriggerLogic(DetectorTriggerLogic):
         # According to the manual, readout time is 3.00µs above 6.4
         # keV threshold energy. Set it to 10× to be safe.
         return 3e-5
+
+    async def prepare_internal(
+        self, num: int, livetime: float, deadtime: float
+    ) -> None:
+        await asyncio.gather(
+            prepare_exposures(self.driver, num, livetime, deadtime),
+        )
 
 
 class EigerDetector(AreaDetector):

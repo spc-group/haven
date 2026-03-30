@@ -14,10 +14,10 @@ from ophyd_async.core import (
 from ophyd_async.epics.adcore import (
     ADArmLogic,
     ADBaseIO,
-    ADImageMode,
     ADWriterType,
     AreaDetector,
     NDPluginBaseIO,
+    prepare_exposures,
 )
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_rw_rbv
 
@@ -65,20 +65,14 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
     driver: ADBaseIO
 
     def get_deadtime(self, exposure: float | None) -> float:
-        # From manual: No readout time in 12-bit, 6-bit and1-bit mode,
+        # From manual: No readout time in 12-bit, 6-bit and 1-bit mode,
         # 1 ms in 24-bit mode
         return 1e-3
-
-    async def prepare_common(self, num: int) -> None:
-        await asyncio.gather(
-            self.driver.num_images.set(num),
-            self.driver.image_mode.set(ADImageMode.MULTIPLE),
-        )
 
     async def prepare_level(self, num: int) -> None:
         task = asyncio.ensure_future(
             asyncio.gather(
-                self.prepare_common(num=num),
+                prepare_exposures(self.driver, num),
                 self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_SEQUENCE),
             )
         )
@@ -88,16 +82,10 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
     async def prepare_internal(
         self, num: int, livetime: float, deadtime: float
     ) -> None:
-        task = asyncio.ensure_future(
-            asyncio.gather(
-                self.prepare_common(num=num),
-                self.driver.trigger_mode.set(LambdaTriggerMode.INTERNAL),
-                self.driver.acquire_time.set(livetime),
-                self.driver.acquire_period.set(livetime + deadtime),
-            )
+        await asyncio.gather(
+            self.driver.trigger_mode.set(LambdaTriggerMode.INTERNAL),
+            prepare_exposures(self.driver, num, livetime, deadtime),
         )
-        await self._wait_for_num_images(num)
-        await task
 
     async def _wait_for_num_images(self, num: int):
         """Make sure the number of frames is set properly (not too high)"""

@@ -23,7 +23,6 @@ from typing import SupportsIndex
 
 import numpy as np
 from ophyd_async.core import (
-    DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
     DetectorTrigger,
@@ -35,20 +34,19 @@ from ophyd_async.core import (
     StrictEnum,
     TriggerInfo,
     derived_signal_r,
-    observe_value,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics.adcore import (
     ADArmLogic,
     ADBaseDataType,
     ADBaseIO,
-    ADImageMode,
     ADWriterType,
     AreaDetector,
     NDAttributeDataType,
     NDAttributeParam,
     NDPluginBaseIO,
     ndattributes_to_xml,
+    prepare_exposures,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -102,43 +100,23 @@ class XspressTriggerLogic(DetectorTriggerLogic):
         return 1e-6
 
     async def prepare_common(self, num: int):
-        await asyncio.gather(
-            self.driver.num_images.set(num),
-            self.driver.image_mode.set(ADImageMode.MULTIPLE),
-            # Hardware deadtime correction is not reliable
-            # https://github.com/epics-modules/xspress3/issues/57
-            self.driver.deadtime_correction.set(False),
-        )
+        # Hardware deadtime correction is not reliable
+        # https://github.com/epics-modules/xspress3/issues/57
+        await self.driver.deadtime_correction.set(False)
 
     async def prepare_internal(self, num: int, livetime: float, deadtime: float):
-        task = asyncio.ensure_future(
-            asyncio.gather(
-                self.prepare_common(num),
-                self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
-            )
+        await asyncio.gather(
+            self.prepare_common(num),
+            prepare_exposures(self.driver, num, livetime, deadtime),
+            self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
         )
-        # Make sure the number of frames is set properly (not too high)
-        async for num_images in observe_value(
-            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
-        ):
-            if num_images == num:
-                break
-        await task
 
     async def prepare_level(self, num: int):
-        task = asyncio.ensure_future(
-            asyncio.gather(
-                self.prepare_common(num),
-                self.driver.trigger_mode.set(XspressTriggerMode.TTL_VETO_ONLY),
-            )
+        await asyncio.gather(
+            self.prepare_common(num),
+            prepare_exposures(self.driver, num),
+            self.driver.trigger_mode.set(XspressTriggerMode.TTL_VETO_ONLY),
         )
-        # Make sure the number of frames is set properly (not too high)
-        async for num_images in observe_value(
-            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
-        ):
-            if num_images == num:
-                break
-        await task
 
 
 class XspressElement(Device):
