@@ -36,7 +36,10 @@ firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
 [project.optional-dependencies]
-steering = ["autobl@git+https://github.com/mdw771/auto_beamline_ops[steering]"]
+adaptive-xanes = [
+    "eaa-core[bo] @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core",
+    "eaa-spectroscopy @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-spectroscopy",
+]
 
 [tool.setuptools.package-data]
 firefly = ["firefly.qss"]

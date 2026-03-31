@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Literal
+from typing import Literal, Optional, Tuple
 import logging
 import random
 
@@ -8,19 +8,27 @@ from scipy.interpolate import griddata
 from bluesky import plans as bp
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
-from autobl.steering.configs import XANESExperimentGuideConfig, StoppingCriterionConfig
-from autobl.steering.guide import XANESExperimentGuide
-from autobl.steering.acquisition import ComprehensiveAugmentedAcquisitionFunction
-from autobl.steering.optimization import DiscreteOptimizer
-from autobl.util import to_numpy, to_tensor
-import torch
-import botorch
-import gpytorch
 from ophyd_async.core import Device
 
-from ..catalog import tiled_client
-
 __all__ = ["XANESSamplingRecommender", "adaptive_xanes"]
+
+try:
+    import botorch
+    import gpytorch
+    import torch
+    from eaa_core.util import to_numpy, to_tensor
+    from eaa_spectroscopy import (
+        AdaptiveXANESBayesianOptimization,
+        ComprehensiveAugmentedAcquisitionFunction,
+    )
+except ImportError:
+    botorch = None
+    gpytorch = None
+    torch = None
+    AdaptiveXANESBayesianOptimization = None
+    ComprehensiveAugmentedAcquisitionFunction = None
+    to_numpy = None
+    to_tensor = None
 
 
 def resample(xdata: np.ndarray, ydata: np.ndarray, new_xdata: np.ndarray) -> np.ndarray:
@@ -31,11 +39,11 @@ def resample(xdata: np.ndarray, ydata: np.ndarray, new_xdata: np.ndarray) -> np.
 
 class XANESSamplingRecommender:
     """A recommendation engine for XANES adaptive sampling.
-    
-    This agent is based on XANESExperimentGuide in autobl 
-    (https://github.com/mdw771/auto_beamline_ops). Starting with
+
+    This agent uses EAA's ``AdaptiveXANESBayesianOptimization`` tool as the
+    underlying recommendation engine. Starting with
     n0 randomly positioned measurements of X-ray absorption coefficients
-    for each spectrum, the guide builds a Gaussian process (GP) model, and
+    for each spectrum, the optimizer builds a Gaussian process (GP) model, and
     suggests the next energy to measure based on the posterior uncertainty
     that the GP gives and features extracted from the current estimate
     of the spectrum.
@@ -107,120 +115,140 @@ class XANESSamplingRecommender:
     ):
         # Collect all input arguments through locals(). A better way
         # is to create a dataclass with all the arguments if the interface
-        # allows. 
+        # allows.
         self.input_args = locals()
         self.energy_range = energy_range
-        
-        self.configs = None
+
         self.guide = None
         self.cpu_only = cpu_only
-        
+
         self.build()
 
     def build(self):
-        self.build_configs()
+        self._ensure_eaa()
         self.build_device()
-        
-    def build_configs(self):
-        ref_spectra_x = None
-        if self.input_args['reference_spectra_x'] is not None:
-            ref_spectra_x = to_tensor(self.input_args['reference_spectra_x'])
-        ref_spectra_y = None
-        if self.input_args['reference_spectra_y'] is not None:
-            ref_spectra_y = to_tensor(self.input_args['reference_spectra_y'])
-        
-        self.configs = XANESExperimentGuideConfig(
-            dim_measurement_space=1,
-            num_candidates=1,
-            model_class=botorch.models.SingleTaskGP,
-            model_params={'covar_module': gpytorch.kernels.MaternKernel(2.5)},
-            noise_variance=1e-6,
-            override_kernel_lengthscale=self.input_args['override_kernel_lengthscale'],
-            lower_bounds=torch.tensor([self.input_args['energy_range'][0]]),
-            upper_bounds=torch.tensor([self.input_args['energy_range'][1]]),
-            acquisition_function_class=ComprehensiveAugmentedAcquisitionFunction,
-            acquisition_function_params={'gradient_order': 2,
-                                        'differentiation_method': 'numerical',
-                                        'reference_spectra_x': ref_spectra_x,
-                                        'reference_spectra_y': ref_spectra_y,
-                                        'phi_r': self.input_args['phi_r'],
-                                        'phi_g': self.input_args['phi_g'],
-                                        'phi_g2': self.input_args['phi_g2'],
-                                        'beta': self.input_args['beta'],
-                                        'gamma': self.input_args['gamma'],
-                                        'addon_term_lower_bound': 3e-2,
-                                        'estimate_posterior_mean_by_interpolation': True,
-                                        'subtract_background_gradient': True,
-                                        'debug': False,
-                                        },
 
-            optimizer_class=DiscreteOptimizer,
-            optimizer_params={'optim_func': botorch.optim.optimize.optimize_acqf_discrete,
-                                'optim_func_params': {
-                                    'choices': torch.linspace(0, 1, self.input_args['n_discrete_optimizer_points'])[:, None]
-                                }
-                            },
+    def _ensure_eaa(self) -> None:
+        if AdaptiveXANESBayesianOptimization is None:
+            raise ImportError(
+                "Adaptive XANES sampling requires optional EAA dependencies. "
+                "Install `eaa-core` and `eaa-spectroscopy` to use this plan."
+            )
 
-            n_updates_create_acqf_weight_func=5,
-            acqf_weight_func_floor_value=0.01,
-            acqf_weight_func_post_edge_gain=self.input_args['acqf_weight_func_post_edge_gain'],
-            acqf_weight_func_post_edge_offset=self.input_args['acqf_weight_func_post_edge_offset'],
-            acqf_weight_func_post_edge_width=self.input_args['acqf_weight_func_post_edge_width'],
-            stopping_criterion_configs=StoppingCriterionConfig(
-                method='max_uncertainty',
-                params={'threshold': self.input_args['stopping_criterion_uncertainty']},
-                n_max_measurements=self.input_args['n_max_measurements']
+    def _build_acquisition_kwargs(self) -> dict:
+        self._ensure_eaa()
+        ref_spectra_x = self.input_args["reference_spectra_x"]
+        ref_spectra_y = self.input_args["reference_spectra_y"]
+        return {
+            "gradient_order": 2,
+            "differentiation_method": "numerical",
+            "reference_spectra_x": (
+                to_tensor(ref_spectra_x) if ref_spectra_x is not None else None
             ),
-            use_spline_interpolation_for_posterior_mean=self.input_args['use_spline_interpolation_for_posterior_mean'],
-        )
-        
+            "reference_spectra_y": (
+                to_tensor(ref_spectra_y) if ref_spectra_y is not None else None
+            ),
+            "phi_r": self.input_args["phi_r"],
+            "phi_g": self.input_args["phi_g"],
+            "phi_g2": self.input_args["phi_g2"],
+            "beta": self.input_args["beta"],
+            "gamma": self.input_args["gamma"],
+            "addon_term_lower_bound": 3e-2,
+            "estimate_posterior_mean_by_interpolation": (
+                self.input_args["use_spline_interpolation_for_posterior_mean"]
+            ),
+            "subtract_background_gradient": True,
+            "acqf_weight_func_floor_value": 0.01,
+            "acqf_weight_func_post_edge_gain": self.input_args[
+                "acqf_weight_func_post_edge_gain"
+            ],
+            "acqf_weight_func_post_edge_offset": self.input_args[
+                "acqf_weight_func_post_edge_offset"
+            ],
+            "acqf_weight_func_post_edge_width": self.input_args[
+                "acqf_weight_func_post_edge_width"
+            ],
+        }
+
     def build_device(self):
         if self.cpu_only:
-            torch.set_default_device('cpu')
+            torch.set_default_device("cpu")
         else:
             if torch.cuda.is_available():
-                torch.set_default_device('cuda')
+                torch.set_default_device("cuda")
             else:
-                torch.set_default_device('cpu')
-                
+                torch.set_default_device("cpu")
+
     def check_guide(self):
         if self.guide is None:
             raise ValueError("Guide is not initialized yet.")
-                
+
     def initialize_guide(self, energies: list[float], values: list[float]) -> None:
+        self._ensure_eaa()
         energies = to_tensor(energies).reshape(-1, 1)
-        values = to_tensor(values).reshape(-1, 1)
-        self.guide = XANESExperimentGuide(self.configs)
-        self.guide.build(energies, values)
-        
+        values = to_tensor(values)
+        if values.ndim == 1:
+            values = values.reshape(-1, 1)
+
+        kernel_lengthscale = self.input_args["override_kernel_lengthscale"]
+        if kernel_lengthscale is not None:
+            kernel_lengthscale = torch.tensor([kernel_lengthscale], dtype=torch.float32)
+
+        self.guide = AdaptiveXANESBayesianOptimization(
+            bounds=(
+                [float(self.input_args["energy_range"][0])],
+                [float(self.input_args["energy_range"][1])],
+            ),
+            acquisition_function_class=ComprehensiveAugmentedAcquisitionFunction,
+            acquisition_function_kwargs=self._build_acquisition_kwargs(),
+            model_class=botorch.models.SingleTaskGP,
+            model_kwargs={"covar_module": gpytorch.kernels.MaternKernel(2.5)},
+            n_observations=1,
+            kernel_lengthscales=kernel_lengthscale,
+            noise_std=np.sqrt(1e-6),
+            n_updates_create_acqf_weight_func=5,
+            n_discrete_choices=self.input_args["n_discrete_optimizer_points"],
+            stopping_uncertainty_threshold=self.input_args[
+                "stopping_criterion_uncertainty"
+            ],
+            stopping_n_updates_to_begin=10,
+            stopping_check_interval=5,
+            n_max_measurements=self.input_args["n_max_measurements"],
+        )
+        self.guide.update(energies, values)
+        self.guide.build()
+
     def get_initial_measurement_locations(
-            self, n: int, 
-            method: Literal['uniform', 'random', 'quasirandom', 'supplied'] = 'uniform', 
-            supplied_initial_points: Optional[ndarray] = None,
-            random_seed: int = None,
+        self,
+        n: int,
+        method: Literal["uniform", "random", "quasirandom", "supplied"] = "uniform",
+        supplied_initial_points: Optional[ndarray] = None,
+        random_seed: int = None,
     ):
         if random_seed is not None:
             torch.random.manual_seed(random_seed)
             np.random.seed(random_seed)
             random.seed(random_seed)
         lb, ub = self.energy_range
-        if method == 'uniform':
-            x_init = np.linspace(lb, ub, n).double().reshape(-1, 1)
-        elif method == 'random':
+        if method == "uniform":
+            x_init = np.linspace(lb, ub, n, dtype=float)
+        elif method == "random":
             assert n > 2
             x_init = np.random.rand(n - 2) * (ub - lb) + lb
             x_init = np.concatenate([x_init, np.array([lb, ub])])
             x_init = np.sort(x_init)
-        elif method == 'quasirandom':
+        elif method == "quasirandom":
             assert n > 2
             x_init = np.linspace(lb, ub, n)
             dx = (np.random.rand(n - 2) - 0.5) * (ub - lb) / (n - 1)
             x_init[1:-1] = x_init[1:-1] + dx
             x_init = np.sort(x_init)
-        elif method == 'supplied':
-            x_init = supplied_initial_points
+        elif method == "supplied":
+            x_init = np.asarray(supplied_initial_points, dtype=float)
         else:
-            raise ValueError('{} is not a valid method to generate initial locations.'.format(method))
+            raise ValueError(
+                f"{method} is not a valid method to generate initial locations."
+            )
         return x_init
 
     def tell(self, energy: list[float], value: float) -> None:
@@ -234,7 +262,7 @@ class XANESSamplingRecommender:
           Measured x-ray absorption coefficient at the energy.
         """
         self.check_guide()
-        energy = to_tensor([[float(energy[0])]])
+        energy = to_tensor([[float(np.atleast_1d(energy)[0])]])
         value = to_tensor([[float(value)]])
         self.guide.update(energy, value)
 
@@ -246,10 +274,16 @@ class XANESSamplingRecommender:
         """
         self.check_guide()
         tenergies = to_tensor(energies).reshape(-1, 1)
-        # Convert the µ(E)
-        I0 = values[:, 0]
-        It = values[:, 1]
-        µ = -np.log(It/I0)
+        values = np.asarray(values)
+        if values.ndim == 1:
+            µ = values
+        elif values.shape[1] == 1:
+            µ = values[:, 0]
+        else:
+            # Convert the measured intensities to µ(E).
+            I0 = values[:, 0]
+            It = values[:, 1]
+            µ = -np.log(It / I0)
         tvalues = to_tensor(µ).reshape(-1, 1)
         self.guide.update(tenergies, tvalues)
 
@@ -262,20 +296,33 @@ class XANESSamplingRecommender:
             one point at a time, this is a list of length 1.
         """
         if n != 1:
-            raise NotImplementedError('Only one point at a time is supported.')
-        candidates = self.guide.suggest().double()
-        candidates = list(np.atleast_1d(np.squeeze(to_numpy(candidates))))
-        
-        if self.guide.stopping_criterion.check():
-            logging.info("Stopping criterion reached. Reason: {} ({} measured)".format(
-                self.guide.stopping_criterion.reason, len(self.guide.data_x)))
+            raise NotImplementedError("Only one point at a time is supported.")
+        if self.guide.should_stop():
+            logging.info(
+                "Stopping criterion reached. Reason: %s (%s measured)",
+                self.guide.stop_reason,
+                len(self.guide.xs_untransformed),
+            )
             raise NoRecommendation
-        
+        candidates = self.guide.suggest(n_suggestions=1)
+        candidates = list(np.atleast_1d(np.squeeze(to_numpy(candidates))))
+
         return candidates
 
 
 def dummy_measure(*args, **kwargs):
     return None
+
+
+def _get_tiled_client():
+    try:
+        from ..catalog import tiled_client
+    except ImportError as exc:
+        raise ImportError(
+            "Adaptive XANES plans require Haven's Tiled client support, "
+            "but `haven.catalog.tiled_client` is not available."
+        ) from exc
+    return tiled_client()
 
 
 def adaptive_xanes(
@@ -353,7 +400,7 @@ def adaptive_xanes(
 
     # Retrieve reference spectra from the database
     ref_uids = input_args.pop("reference_spectra_uids")
-    client = tiled_client()
+    client = _get_tiled_client()
     runs = [client[uid]['primary/data'].read() for uid in ref_uids]
     # Re-sample the reference spectra so they have the same energy basis
     x_datas = []
@@ -422,7 +469,7 @@ def _prime_initial_points(It, I0, energy_positioner, recommender, n_initial_meas
                                                            method='quasirandom')
     init_uid = yield from bp.list_scan([It, I0], energy_positioner, x_init)
     # Retrieve scan data from the database
-    client = tiled_client()
+    client = _get_tiled_client()
     run = client[init_uid]
     It_data = run['primary/data'][It.scaler_channel.net_count.name].read()
     I0_data = run['primary/data'][I0.scaler_channel.net_count.name].read()
