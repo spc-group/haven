@@ -257,9 +257,12 @@ class XANESSamplingRecommender:
         Parameters
         ----------
         energy
-          The energy (eV) of the measurement.
+          The energy (eV) of the measurement. This may be a scalar-like value
+          or a length-1 sequence. Internally it is converted to a tensor with
+          shape ``(1, 1)`` before updating the optimizer.
         value
-          Measured x-ray absorption coefficient at the energy.
+          Measured x-ray absorption coefficient at the energy. Internally it is
+          converted to a tensor with shape ``(1, 1)``.
         """
         self.check_guide()
         energy = to_tensor([[float(np.atleast_1d(energy)[0])]])
@@ -269,8 +272,23 @@ class XANESSamplingRecommender:
     def tell_many(self, energies: list[float], values: list[float]) -> None:
         """Update model with multiple data points.
 
-        :param xs: _description_
-        :param ys: _description_
+        Parameters
+        ----------
+        energies
+          Measured energies. The input is reshaped internally to a tensor with
+          shape ``(n_samples, 1)``.
+        values
+          Measured values associated with ``energies``. Accepted input layouts
+          are:
+
+          - ``(n_samples,)``: direct :math:`\mu(E)` values
+          - ``(n_samples, 1)``: direct :math:`\mu(E)` values
+          - ``(n_samples, 2)``: intensity pairs ``[I0, It]``, which are
+            converted internally to :math:`\mu(E) = -\log(It / I0)` before
+            updating the optimizer
+
+          The final values are always converted to a tensor with shape
+          ``(n_samples, 1)``.
         """
         self.check_guide()
         tenergies = to_tensor(energies).reshape(-1, 1)
@@ -289,11 +307,20 @@ class XANESSamplingRecommender:
 
     def ask(self, n=1, *args, **kwargs) -> list[float]:
         """Figure out the next point based on the past ones we've measured.
-        
+
+        Parameters
+        ----------
+        n
+          Number of requested suggestions. Only ``n=1`` is currently
+          supported.
+
         Returns
         -------
-        list[float]. The next point to measure. Since the algorithm suggests
-            one point at a time, this is a list of length 1.
+        list[float]
+          The next point to measure. Since the algorithm suggests one point at
+          a time, this is a list of length 1. Internally, the underlying EAA
+          optimizer returns a tensor with shape ``(1, 1)``, which is converted
+          to a Python list.
         """
         if n != 1:
             raise NotImplementedError("Only one point at a time is supported.")
