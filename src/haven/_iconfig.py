@@ -45,7 +45,7 @@ FEATURE_FLAGS = {
     # Declare a feature flags to develop some new feature. Be
     # conservative when deciding on expiration dates.
     "undulator_fast_step_scanning_mode": FeatureFlag(
-        expires=dt.datetime(2026, 4, 1).timestamp(),
+        expires=dt.datetime(2026, 5, 1).timestamp(),
         description="new controls added to the 25-ID undulator for step scanning faster",
     ),
 }

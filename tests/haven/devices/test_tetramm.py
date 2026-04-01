@@ -1,6 +1,11 @@
+import asyncio
+from unittest.mock import call
+
 import pytest
 import pytest_asyncio
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_value
+from ophyd_async.epics.adcore import ADImageMode
+from ophyd_async.testing import assert_has_calls
 
 from haven.devices.detectors.tetramm import BaseTetrAmmDetector
 
@@ -32,6 +37,35 @@ async def test_signals(tetramm):
         "tetramm-driver-trigger_mode",
         "tetramm-driver-trigger_polarity",
     }
+
+
+@pytest.mark.asyncio
+async def test_prepare_internal(tetramm):
+    await tetramm.prepare(
+        TriggerInfo(trigger=DetectorTrigger.INTERNAL, number_of_events=11)
+    )
+    assert_has_calls(
+        tetramm.driver,
+        [
+            call.acquire_mode.put(ADImageMode.MULTIPLE),
+            call.num_acquisitions.put(11),
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_trigger(tetramm):
+    status = tetramm.trigger()
+    await asyncio.sleep(0.01)
+    set_mock_value(tetramm.driver.acquire, False)
+    await status
+    # assert_has_calls(
+    #     tetramm.driver,
+    #     [
+    #         call.acquire_mode.put(ADImageMode.MULTIPLE),
+    #         call.num_acquisitions.put(11),
+    #     ],
+    # )
 
 
 # -----------------------------------------------------------------------------

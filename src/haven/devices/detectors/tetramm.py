@@ -5,10 +5,13 @@ should add these for specific configurations, e.g. split ion chamber.
 
 """
 
+import asyncio
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Annotated as A
 
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     DetectorArmLogic,
     DetectorTriggerLogic,
     SignalR,
@@ -17,8 +20,13 @@ from ophyd_async.core import (
     StrictEnum,
     non_zero,
 )
-from ophyd_async.epics.adcore import ADImageMode, NDPluginBaseIO
-from ophyd_async.epics.core import EpicsDevice, EpicsOptions, PvSuffix
+from ophyd_async.epics.adcore import ADArmLogic, ADImageMode, NDPluginBaseIO
+from ophyd_async.epics.core import (
+    EpicsDevice,
+    EpicsOptions,
+    PvSuffix,
+    wait_for_good_state,
+)
 
 from ..synApps import ScanInterval
 
@@ -71,8 +79,8 @@ class BaseTetrAmmDriverIO(EpicsDevice):
     averaging_time: A[SignalRW[float], PvSuffix.rbv("AveragingTime")]
     fast_averaging_scan: A[SignalRW[ScanInterval], PvSuffix("FastAverageScan.SCAN")]
     fast_averaging_time: A[SignalRW[float], PvSuffix.rbv("FastAveragingTime")]
-    acquisition_counter: A[SignalRW[int], PvSuffix.rbv("NumAcquire")]
-    num_acquisitions: A[SignalR[int], PvSuffix("NumAcquired")]
+    num_acquisitions: A[SignalRW[int], PvSuffix.rbv("NumAcquire")]
+    acquisition_counter: A[SignalR[int], PvSuffix("NumAcquired")]
     num_to_average: A[SignalR[int], PvSuffix("NumAverage_RBV")]
     num_averaged: A[SignalR[int], PvSuffix("NumAveraged_RBV")]
     num_to_average_fast: A[SignalR[int], PvSuffix("NumFastAverage")]
@@ -88,11 +96,43 @@ class BaseTetrAmmDriverIO(EpicsDevice):
     temperature: A[SignalR[float], PvSuffix("Temperature")]
 
 
+@dataclass()
+class TetrAmmTrigerLogic(DetectorTriggerLogic):
+    driver: BaseTetrAmmDriverIO
+
+    async def prepare_internal(self, num: int, livetime: float, deadtime: float):
+        """Prepare the detector to take internally triggered exposures.
+
+        Parameters
+        ==========
+        num
+          the number of exposures to take
+        livetime
+          how long the exposure should be, 0 means what is currently set
+        deadtime
+          how long between exposures, 0 means the shortest possible
+        """
+        await asyncio.gather(
+            self.driver.acquire_mode.set(ADImageMode.MULTIPLE),
+            self.driver.num_acquisitions.set(num),
+        )
+
+
+class TetrAmmArmLogic(ADArmLogic):
+    async def wait_for_idle(self):
+        if self.acquire_status:
+            await self.acquire_status
+        await wait_for_good_state(
+            self.driver.acquire,
+            {False},
+            timeout=DEFAULT_TIMEOUT,
+        )
+
+
 class BaseTetrAmmDetector(StandardDetector):
     def __init__(
         self,
         arm_logic: DetectorArmLogic | None = None,
-        trigger_logic: DetectorTriggerLogic | None = None,
         prefix: str = "",
         plugins: Mapping[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
@@ -102,10 +142,10 @@ class BaseTetrAmmDetector(StandardDetector):
         if plugins is not None:
             for plugin_name, plugin in plugins.items():
                 setattr(self, plugin_name, plugin)
-        if trigger_logic:
-            self.add_detector_logics(trigger_logic)
-        if arm_logic:
-            self.add_detector_logics(arm_logic)
+        trigger_logic = TetrAmmTrigerLogic(driver=self.driver)
+        self.add_detector_logics(trigger_logic)
+        arm_logic = TetrAmmArmLogic(self.driver)
+        self.add_detector_logics(arm_logic)
         self.add_config_signals(
             self.driver.model,
             self.driver.firmware,
@@ -122,32 +162,6 @@ class BaseTetrAmmDetector(StandardDetector):
             *config_sigs
         )
         super().__init__(name=name)
-
-    # def __init__(
-    #     self,
-    #     prefix: str,
-    #     path_provider: PathProvider | None = None,
-    #     driver_suffix="",
-    #     override_deadtime: float | None = None,
-    #     writer_type: ADWriterType | None = None,
-    #     writer_suffix: str | None = None,
-    #     plugins: dict[str, NDPluginBaseIO] | None = None,
-    #     config_sigs: Sequence[SignalR] = (),
-    #     name: str = "",
-    # ) -> None:
-    #     driver = BaseTetrAmmDriverIO(prefix + driver_suffix)
-    #     super().__init__(
-    #         prefix=prefix,
-    #         driver=driver,
-    #         # arm_logic=ADArmLogic(driver),
-    #         # trigger_logic=AravisTriggerLogic(driver, override_deadtime),
-    #         path_provider=path_provider,
-    #         writer_type=writer_type,
-    #         writer_suffix=writer_suffix,
-    #         plugins=plugins,
-    #         config_sigs=config_sigs,
-    #         name=name,
-    #     )
 
 
 # -----------------------------------------------------------------------------

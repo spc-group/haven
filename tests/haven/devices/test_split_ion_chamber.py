@@ -1,4 +1,7 @@
+import asyncio
+
 import pytest_asyncio
+from ophyd_async.core import set_mock_value
 
 from haven.devices import SplitIonChamberSet
 
@@ -11,7 +14,10 @@ async def ion_chamber():
 
 
 async def test_reading_signals(ion_chamber):
-    await ion_chamber.trigger()
+    status = ion_chamber.trigger()
+    await asyncio.sleep(0.01)
+    set_mock_value(ion_chamber.driver.acquire, False)
+    await status
     reading = await ion_chamber.read()
     assert set(reading.keys()) == {
         # Global
@@ -32,7 +38,10 @@ async def test_reading_signals(ion_chamber):
 
 
 async def test_hinted_signals(ion_chamber):
-    await ion_chamber.trigger()
+    status = ion_chamber.trigger()
+    await asyncio.sleep(0.01)
+    set_mock_value(ion_chamber.driver.acquire, False)
+    await status
     hints = set(ion_chamber.hints["fields"])
     assert hints == {
         "Ipreslit-current",
@@ -46,7 +55,10 @@ async def test_hinted_signals(ion_chamber):
 
 
 async def test_configuration_signals(ion_chamber):
-    await ion_chamber.trigger()
+    status = ion_chamber.trigger()
+    await asyncio.sleep(0.01)
+    set_mock_value(ion_chamber.driver.acquire, False)
+    await status
     hints = set(ion_chamber.hints["fields"])
     assert hints == {
         "Ipreslit-current",
