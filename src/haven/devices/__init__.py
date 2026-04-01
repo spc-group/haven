@@ -12,7 +12,9 @@ from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
-from .detectors.xspress import Xspress3Detector  # noqa: F401
+from .detectors.split_ion_chamber import SplitIonChamber as SplitIonChamber
+from .detectors.split_ion_chamber import SplitIonChamberSet as SplitIonChamberSet
+from .detectors.xspress import Xspress3Detector as Xspress3Detector
 from .ion_chamber import IonChamber  # noqa: F401
 from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401

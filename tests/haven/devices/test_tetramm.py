@@ -2,12 +2,12 @@ import pytest
 import pytest_asyncio
 from ophyd_async.core import TriggerInfo
 
-from haven.devices.detectors.tetramm import BaseTetraAmmDetector
+from haven.devices.detectors.tetramm import BaseTetrAmmDetector
 
 
 @pytest_asyncio.fixture()
 async def tetramm():
-    device = BaseTetraAmmDetector(prefix="255idTetra:QUAD1:", name="tetramm")
+    device = BaseTetrAmmDetector(prefix="255idTetra:QUAD1:", name="tetramm")
     await device.connect(mock=True)
     return device
 

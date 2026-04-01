@@ -105,6 +105,7 @@ beamline = HavenInstrument(
         "robot": devices.Robot,
         "scaler": devices.MultiChannelScaler,
         "soft_glue_flyer_controller": devices.SoftGlueFlyerController,
+        "split_ion_chambers": devices.SplitIonChamberSet,
         "synchrotron": devices.ApsMachine,
         "table": devices.Table,
         "undulator": devices.PlanarUndulator,

@@ -88,7 +88,7 @@ class BaseTetrAmmDriverIO(EpicsDevice):
     temperature: A[SignalR[float], PvSuffix("Temperature")]
 
 
-class BaseTetraAmmDetector(StandardDetector):
+class BaseTetrAmmDetector(StandardDetector):
     def __init__(
         self,
         arm_logic: DetectorArmLogic | None = None,
