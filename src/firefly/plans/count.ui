@@ -60,6 +60,32 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QCheckBox" name="multiframe_checkbox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If enabled, trigger multiple separate frames per bluesky reading. This is done through the haven.count_multiple() plan.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Multi-frame counting is not compatible with all detectors.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Multi-frame</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="multiframe_spinbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>The number of frames to measure in each reading.</string>
+       </property>
+       <property name="minimum">
+        <number>2</number>
+       </property>
+       <property name="maximum">
+        <number>1000</number>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -215,5 +241,22 @@
   <tabstop>detectors_list</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>multiframe_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>multiframe_spinbox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>322</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>22</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

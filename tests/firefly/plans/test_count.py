@@ -39,7 +39,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     assert display.ui.total_duration_label.text() == "0 h 1 m 38 s"
 
 
-def test_plan_args(display, qtbot, xspress):
+def test_plan(display, qtbot, xspress):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
@@ -47,8 +47,27 @@ def test_plan_args(display, qtbot, xspress):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress]
     )
-    args, kwargs = display.plan_args()
-    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
+    plan = display.plan()
+    assert plan.name == "count"
+    assert plan.kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
+
+
+def test_multiframe_plan(display, qtbot, xspress):
+    """Do we get count_multiple() if 'multi-frame' is checked?"""
+    display.ui.run_button.setEnabled(True)
+    display.ui.num_spinbox.setValue(5)
+    display.ui.delay_spinbox.setValue(0.5)
+    display.ui.multiframe_checkbox.setChecked(True)
+    display.ui.multiframe_spinbox.setValue(47)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=[xspress]
+    )
+    plan = display.plan()
+    assert plan.name == "count_multiple"
+    assert plan.kwargs == dict(
+        num=5, detectors=["vortex_me4"], delay=0.5, collections_per_event=47, md={}
+    )
 
 
 def test_plan_metadata(display, qtbot, xspress, ion_chamber):
@@ -63,8 +82,8 @@ def test_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
     )
-    args, kwargs = display.plan_args()
-    assert kwargs == dict(
+    plan = display.plan()
+    assert plan.kwargs == dict(
         num=5,
         detectors=["vortex_me4", "I00"],
         delay=0.0,

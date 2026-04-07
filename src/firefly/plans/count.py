@@ -43,7 +43,7 @@ class CountDisplay(display.PlanDisplay):
         self.ui.scan_duration_label.set_seconds(time_per_scan)
         self.ui.total_duration_label.set_seconds(total_time)
 
-    def plan_args(self):
+    def plan(self):
         args = ()
         names = [det.name for det in self.ui.detectors_list.selected_detectors()]
         kwargs = {
@@ -52,14 +52,18 @@ class CountDisplay(display.PlanDisplay):
             "delay": self.ui.delay_spinbox.value(),
             "md": self.plan_metadata(),
         }
-        return args, kwargs
+        use_multiframe = self.ui.multiframe_checkbox.isChecked()
+        if use_multiframe:
+            kwargs["collections_per_event"] = self.ui.multiframe_spinbox.value()
+        plan_name = "count_multiple" if use_multiframe else "count"
+        return BPlan(plan_name, *args, **kwargs)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        args, kwargs = self.plan_args()
-        item = BPlan("count", *args, **kwargs)
+        item = self.plan()
         # Submit the item to the queueserver
         log.info("Add ``count()`` plan to queue.")
+        log.debug(item)
 
         # repeat scans
         for i in range(self.ui.spinBox_repeat_scan_num.value()):
