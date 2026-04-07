@@ -26,7 +26,7 @@ class TiledConfig(TypedDict):
 
 
 @stamina.retry(on=httpx.HTTPError, attempts=3)
-def tiled_writer(config: TiledConfig):
+def tiled_writer(config: TiledConfig) -> TiledWriter:
     """Load a tiled writer instance as specified in *config*.
 
     Looks for keys:

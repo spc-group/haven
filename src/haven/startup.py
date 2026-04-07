@@ -25,11 +25,12 @@ from ophyd_async.core import NotConnectedError
 import haven  # noqa: F401
 
 # Import plans (needed for the qserver, optional for ipython/firefly)
-from haven import plans  # noqa: F401
+from haven import plans as plans
 from haven.plans import (  # noqa: F401
     auto_gain,
     calibrate,
     count,
+    count_multiple,
     emission_map_scan,
     energy_scan,
     fly_scan,
@@ -56,6 +57,7 @@ config = haven.load_config()
 
 # Create a run engine
 writer = haven.tiled_writer(config["tiled"]) if "tiled" in config else None
+catalog = writer.client if writer is not None else None
 RE = haven.run_engine(
     tiled_writer=writer,
     call_returns_result=not is_re_worker_active(),
