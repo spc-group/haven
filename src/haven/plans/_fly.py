@@ -95,9 +95,14 @@ def fly_segment(
     yield from bps.wait(group=prepare_group)
     yield from declare_streams(secondary_detectors=detectors)
     # Start the detectors before the motors so we know they'll be ready
+    yield from bps.checkpoint()
     for motor in motors:
         yield from bps.monitor(motor, name=motor.name)
-    yield from bps.kickoff_all(*detectors, wait=True)
+    # (kickoff_all causes trouble with the shared ion chambers, once
+    # the ion chamber device is re-written as a standard detector,
+    # this can become kickoff_all)
+    for detector in detectors:
+        yield from bps.kickoff(detector, wait=True)
     if len(flyer_controllers) > 0:
         yield from bps.kickoff_all(*flyer_controllers, wait=True)
     yield from bps.kickoff_all(*motors, wait=True)
@@ -110,7 +115,6 @@ def fly_segment(
         yield from bps.collect(detector)
     for motor in motors:
         yield from bps.unmonitor(motor)
-    yield from bps.checkpoint()
 
 
 def fly_scan(
@@ -370,6 +374,7 @@ def grid_fly_scan(
             mv_args = [arg for args in mv_args for arg in args]  # Flatten the list
             yield from bps.mv(*mv_args)
             # Execute the fly segment
+            yield from bps.checkpoint()
             for motor in step_motors:
                 yield from bps.monitor(motor, name=motor.name)
             segment = fly_segment(

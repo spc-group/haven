@@ -421,12 +421,14 @@ class IonChamber(StandardReadable, Triggerable):
         # Decide how many frames we expect
         num_channels = next(self._trigger_channel_nums)
         await self.mcs.num_channels.set(num_channels)
-        # Start acquiring
-        self.mcs.erase_start.trigger()
-        # Wait for acquisition to start
-        await wait_for_value(
-            self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT
-        )
+        # Start acquiring if another ion chamber hasn't done so already
+        if await self.mcs.acquiring.get_value() != self.mcs.Acquiring.ACQUIRING:
+            # Wait for acquisition to start
+            await wait_for_value(
+                self.mcs.acquiring,
+                self.mcs.Acquiring.ACQUIRING,
+                timeout=DEFAULT_TIMEOUT,
+            )
         self._fly_start_timestamp_local = time.time()
         return
 

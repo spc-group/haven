@@ -326,6 +326,11 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     start_mock_put = get_mock_put(ion_chamber.mcs.erase_start)
     # Kickoff the fly scan
     status = ion_chamber.kickoff()
+    # The timing matters here, scaler needs to be idle to make sure it
+    # can acquire, then needs to be acquiring so the coroutine
+    # finishes.
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.DONE)
+    await asyncio.sleep(0.01)
     set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.ACQUIRING)
     await status
     await assert_value(ion_chamber.mcs.num_channels, 8000)
