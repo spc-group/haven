@@ -59,6 +59,7 @@ scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 p4p = ">=4.2.2, <5"
+watchfiles = ">=1.1.1, <2"
 
 [feature.ipython]
 dependencies = { python = "3.12.*", ipython = "*" }

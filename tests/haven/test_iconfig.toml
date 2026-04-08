@@ -1,11 +1,20 @@
-[beamline]
-pv_prefix = "spam"
+area_detector_root_path = "/tmp"
+
+[ run_engine ]
+use_progress_bar = true
+
+[ run_engine.default_metadata ]
+# Additional metadata to inject in every scan
+facility = "Zero Gradient Synchrotron"
+beamline_id = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
+
 
 # This one is similar to the camera in the default prefix, except it's
 # missing a field. This is to test if importer merges mutliple files
 # correctly.
 
-[camera.camA]
+# [camera.camA]
 
-name = "s25id-gige-A"
-ioc = "camA_ioc"
+# name = "s25id-gige-A"
+# ioc = "camA_ioc"

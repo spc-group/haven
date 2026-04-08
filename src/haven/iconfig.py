@@ -1,9 +1,6 @@
 """Provide beamline configuration from the iconfig.toml file.
 
-Example TOML configuration file: iconfig_default.toml
-
-This module is currently being re-written and will be replaced by
-./iconfig.py.
+Example TOML configuration file: iconfig_testing.toml
 
 """
 
@@ -11,50 +8,27 @@ __all__ = [
     "load_config",
 ]
 
-import argparse
-import datetime as dt
 import logging
 import os
 import time
 import warnings
-from collections.abc import Callable, Mapping, Sequence
-from contextlib import contextmanager
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
 from functools import wraps
 from pathlib import Path
-from pprint import pprint
 from typing import Any
 
 import tomli
-from mergedeep import merge
+from pydantic import BaseModel
 
 from haven.exceptions import ExpiredFeatureFlag, UndeclaredFeatureFlag
+
+from .iconfig_schema import FEATURE_FLAGS, HavenConfig
 
 log = logging.getLogger(__name__)
 
 
-_local_overrides: Mapping[str, Any] = {}
-
-
-@dataclass(frozen=False)
-class FeatureFlag:
-    expires: float | int
-    description: str = ""
-    default: Any = False
-
-
-FEATURE_FLAGS = {
-    # Declare a feature flags to develop some new feature. Be
-    # conservative when deciding on expiration dates.
-    "undulator_fast_step_scanning_mode": FeatureFlag(
-        expires=dt.datetime(2026, 5, 1).timestamp(),
-        description="new controls added to the 25-ID undulator for step scanning faster",
-    ),
-}
-
-
-class Configuration(Mapping):
-    """A mapping of config keys to values.
+class Configuration(HavenConfig):
+    """A mapping of config keys to values with validation.
 
     Allows complicated lookup by dotted keys:
 
@@ -70,20 +44,22 @@ class Configuration(Mapping):
 
     """
 
-    _configs: Sequence[Mapping | Path | str]
+    _config: Mapping | Path | str
     _feature_flags: Mapping[str, Any]
 
     def __init__(
         self,
-        *configs: Mapping | Path | str,
+        config: Mapping | Path | str,
         feature_flags: Mapping[str, Any] = FEATURE_FLAGS,
+        model_class: BaseModel = HavenConfig,
     ):
-        self._configs = configs
+        self._config = config
         self._feature_flags = feature_flags
+        self._model_class = model_class
 
     def check_feature_flags(self, config):
         feature_flags = self._feature_flags
-        flags = config.get("haven.feature_flags", {})
+        flags = config.get("feature_flags", {})
         extra_flags = [
             flag for flag in flags.keys() if flag not in feature_flags.keys()
         ]
@@ -97,34 +73,32 @@ class Configuration(Mapping):
                 f"Expired feature flags are declared: {expired}.", ExpiredFeatureFlag
             )
 
-    def _config(self):
+    def _model(self):
         # Load configuration from TOML files
-        configs = [
-            cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in self._configs
-        ]
-        config = merge({}, *configs, _local_overrides)
+        config = _load_config_dict(self._config)
         check_deprecated_keys(config)
+        model = self._model_class(**config)
         self.check_feature_flags(config)
-        return config
+        return model
 
     def __getitem__(self, key):
-        config = self._config()
+        model = self._model()
         extra_parts = []
         _key = key
         while _key != "":
-            if _key in config:
+            if hasattr(model, _key):
                 if len(extra_parts) > 0:
                     # Look up the rest of the keys
-                    config = config[_key]
+                    model = getattr(model, _key)
                     _key = ".".join(extra_parts[::-1])
                     extra_parts = []
                     continue
-                elif isinstance(config[_key], Mapping):
+                elif isinstance(getattr(model, _key), BaseModel):
                     # Not a leaf of the config tree
-                    return type(self)(config[_key])
+                    return getattr(model, _key).model_dump()
                 else:
                     # Leaf of the config tree
-                    return config[_key]
+                    return getattr(model, _key)
             try:
                 _key, tail = _key.rsplit(".", maxsplit=1)
             except ValueError:
@@ -133,11 +107,11 @@ class Configuration(Mapping):
             extra_parts.append(tail)
 
     def __iter__(self):
-        for obj in self._config():
-            yield obj
+        model = self._model()
+        return iter(model.model_dump().keys())
 
-    def __len__(self):
-        return len(self._config)
+    # def __len__(self):
+    #     return len(self._config)
 
     def feature_flag(self, key: str) -> Any:
         # Feature flags must be declared so they can be properly
@@ -147,10 +121,7 @@ class Configuration(Mapping):
         except KeyError as exc:
             raise UndeclaredFeatureFlag(key) from exc
         # Now get the feature flag's value if possible
-        try:
-            return self[f"haven.feature_flags.{key}"]
-        except KeyError as exc:
-            return self._feature_flags[key].default
+        return self[f"feature_flags.{key}"]
 
     def with_feature_flag(self, flag: str, alternate: Callable, *, eq: Any = True):
         """Call an alternate implementation if a feature flag is set.
@@ -182,19 +153,6 @@ class Configuration(Mapping):
 
         return wrapper
 
-    @contextmanager
-    def feature_flag_override(self, flag_name, value):
-        """Context manager that temporarily alters a feature flag. Mostly
-        meant for testing.
-
-        """
-        old_value = self._feature_flags[flag_name].default
-        self._feature_flags[flag_name].default = value
-        try:
-            yield
-        finally:
-            self._feature_flags[flag_name].default = old_value
-
 
 def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
@@ -209,13 +167,17 @@ def load_file(file_path: Path):
         return {}
 
 
-def lookup_file_paths():
-    if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
-        return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
+def default_config_file():
+    if os.environ.get("HAVEN_CONFIG_FILE", "") != "":
+        return Path(os.environ["HAVEN_CONFIG_FILE"])
     elif os.environ.get("HAVEN_CONFIG_DIR", "") != "":
-        return [Path(os.environ["HAVEN_CONFIG_DIR"]) / "iconfig.toml"]
+        return Path(os.environ["HAVEN_CONFIG_DIR"]) / "iconfig.toml"
     else:
-        return [Path(__file__).parent / "iconfig_testing.toml"]
+        raise RuntimeError(
+            "Could not find Haven configuration file. "
+            "Set `HAVEN_CONFIG_FILE` environmental variable with path "
+            "to configuration file."
+        )
 
 
 DEPRECATED_KEYS = [
@@ -260,7 +222,11 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(*configs: Path | str | Mapping) -> Configuration:
+def _load_config_dict(config: Path | str | Mapping):
+    return config if isinstance(config, Mapping) else load_file(Path(config))
+
+
+def load_config(config: Path | str | Mapping | None = None) -> Configuration:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -271,44 +237,20 @@ def load_config(*configs: Path | str | Mapping) -> Configuration:
     4. iconfig_default.toml file included with Haven.
 
     """
-    if len(configs) == 0:
+    if config is None:
         # Add config file from environmental variable
-        configs = lookup_file_paths()
-    return Configuration(*configs)
-
-
-def print_config_value(args: Sequence[str] | None = None):
-    """Print a config value from TOML files.
-
-    Parameters
-    ----------
-    key
-      The path to the value to retrieve from config files. Sections
-      should be separated by dots, e.g. "shutter.A.open_pv"
-
-    """
-    # Set up command line arguments
-    parser = argparse.ArgumentParser(
-        prog="haven_config",
-        description="Retrieve a value from Haven's config files.",
-    )
-    parser.add_argument("key", help="The dot-separated key to look up.")
-    args_ = parser.parse_args(args=args)
-    # Get the keys from the config file
-    value = load_config()
-    for part in args_.key.split("."):
-        value = value[part]
-    if hasattr(value, "strip"):
-        # Simple string, so just print it
-        print(value)
-    else:
-        pprint(value.strip())
+        try:
+            config = default_config_file()
+        except RuntimeError as exc:
+            log.warning(exc)
+            config = {}
+    return Configuration(config)
 
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2026, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #

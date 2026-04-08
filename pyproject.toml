@@ -60,6 +60,7 @@ tag_prefix = "haven-"
 parentdir_prefix = "haven-"
 
 [tool.mypy]
+plugins = ['pydantic.mypy']
 files = [
     'src/haven/',
     'tests/haven',
