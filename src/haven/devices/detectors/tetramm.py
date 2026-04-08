@@ -97,7 +97,7 @@ class BaseTetrAmmDriverIO(EpicsDevice):
 
 
 @dataclass()
-class TetrAmmTrigerLogic(DetectorTriggerLogic):
+class TetrAmmTriggerLogic(DetectorTriggerLogic):
     driver: BaseTetrAmmDriverIO
 
     async def prepare_internal(self, num: int, livetime: float, deadtime: float):
@@ -142,7 +142,7 @@ class BaseTetrAmmDetector(StandardDetector):
         if plugins is not None:
             for plugin_name, plugin in plugins.items():
                 setattr(self, plugin_name, plugin)
-        trigger_logic = TetrAmmTrigerLogic(driver=self.driver)
+        trigger_logic = TetrAmmTriggerLogic(driver=self.driver)
         self.add_detector_logics(trigger_logic)
         arm_logic = TetrAmmArmLogic(self.driver)
         self.add_detector_logics(arm_logic)
