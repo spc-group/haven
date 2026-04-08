@@ -44,6 +44,9 @@ def test_fly_segment(flyer, xspress):
     plan = fly_segment([xspress], motors=[flyer], spec=spec, trigger_info=trigger_info)
     msgs = list(plan)
     assert len(msgs) > 2
+    from pprint import pprint
+
+    pprint([msg.command for msg in msgs])
     # Prepare the scan
     assert msgs[0].command == "prepare"
     assert msgs[0].obj is flyer
@@ -54,26 +57,26 @@ def test_fly_segment(flyer, xspress):
     assert msgs[3].command == "declare_stream"
     assert msgs[3].args[0] is xspress
     # Start the scan
-    assert msgs[4].command == "monitor"
-    assert msgs[4].obj is flyer
-    assert msgs[5].command == "kickoff"
-    assert msgs[5].obj is xspress
-    assert msgs[6].command == "wait"
-    assert msgs[7].command == "kickoff"
-    assert msgs[7].obj is flyer
-    assert msgs[8].command == "wait"
+    assert msgs[4].command == "checkpoint"
+    assert msgs[5].command == "monitor"
+    assert msgs[5].obj is flyer
+    assert msgs[6].command == "kickoff"
+    assert msgs[6].obj is xspress
+    assert msgs[7].command == "wait"
+    assert msgs[8].command == "kickoff"
+    assert msgs[8].obj is flyer
+    assert msgs[9].command == "wait"
     # Finish the scan
-    assert msgs[9].command == "complete"
-    assert msgs[9].obj is flyer
-    assert msgs[10].command == "wait"
-    assert msgs[11].command == "complete"
-    assert msgs[11].obj is xspress
-    assert msgs[12].command == "wait"
-    assert msgs[13].command == "collect"
-    assert msgs[13].obj is xspress
-    assert msgs[14].command == "unmonitor"
-    assert msgs[14].obj is flyer
-    assert msgs[15].command == "checkpoint"
+    assert msgs[10].command == "complete"
+    assert msgs[10].obj is flyer
+    assert msgs[11].command == "wait"
+    assert msgs[12].command == "complete"
+    assert msgs[12].obj is xspress
+    assert msgs[13].command == "wait"
+    assert msgs[14].command == "collect"
+    assert msgs[14].obj is xspress
+    assert msgs[15].command == "unmonitor"
+    assert msgs[15].obj is flyer
 
 
 def test_fly_segment_controller_triggers(flyer, xspress, controller, monkeypatch):
@@ -132,9 +135,6 @@ def test_line_prepares_controller_path(flyer, controller):
         [], flyer, -20, 30, num=6, dwell_time=1.5, flyer_controllers=[controller]
     )
     messages = list(plan)
-    from pprint import pprint
-
-    pprint(messages)
     prep_msg = [
         msg for msg in messages if msg.command == "prepare" and msg.obj is controller
     ][0]
@@ -223,9 +223,6 @@ def test_grid_fly_scan_setup(flyer, stepper, xspress, controller):
     )
     messages = list(plan)
     # Check initial setup messages
-    from pprint import pprint
-
-    pprint(messages)
     assert messages[0].command == "stage"
     assert messages[0].obj is stepper
     assert messages[1].command == "stage"
@@ -234,8 +231,8 @@ def test_grid_fly_scan_setup(flyer, stepper, xspress, controller):
     assert messages[2].obj is controller
     assert messages[3].command == "open_run"
     # Detectors are staged per-line later in the plan
-    assert messages[7].command == "stage"
-    assert messages[7].obj is xspress
+    assert messages[8].command == "stage"
+    assert messages[8].obj is xspress
 
 
 def test_grid_fly_scan_stepper_positions(flyer, stepper, xspress, controller):

@@ -423,6 +423,7 @@ class IonChamber(StandardReadable, Triggerable):
         await self.mcs.num_channels.set(num_channels)
         # Start acquiring if another ion chamber hasn't done so already
         if await self.mcs.acquiring.get_value() != self.mcs.Acquiring.ACQUIRING:
+            self.mcs.erase_start.trigger()
             # Wait for acquisition to start
             await wait_for_value(
                 self.mcs.acquiring,
