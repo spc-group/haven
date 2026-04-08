@@ -1,6 +1,6 @@
 import pytest
 
-from haven.devices.motor import Motor, load_motors
+from haven.devices.motor import Motor, load_motors, short_name
 from haven.devices.undulator import TrajectoryMotorInfo
 
 
@@ -38,6 +38,86 @@ async def test_prepare_trajectory(motor):
     """We should be able to prepare a trajectory scan, but have it just be a normal scan really."""
     tinfo = TrajectoryMotorInfo(positions=[], times=[])
     await motor.prepare(tinfo)
+
+
+names = [
+    ("aerotech-horizontal", "AerotechH"),
+    ("camera-upstream", "CamUS"),
+    ("secondary_mono-bragg", "SecMonoBragg"),
+    ("downstream_table-upstream", "DSTableUS"),
+    ("sample_wheel", "SamWheel"),
+    ("DXAFS_detector_horizontal", "DxafsDetH"),
+    ("beryllium_lens_rotation", "BeLensRot"),
+    # Other candidates:
+    # Slt Top
+    # Slt Bottom
+    # Slt_OutB
+    # Slt InB
+    # kb_upstream-horiz-downstream
+    # kb_upstream-horiz-upstream
+    # kb_upstream-vert-downstream
+    # kb_upstream-vert-upstream
+    # upstream_table-horizontal
+    # upstream_table-vertical
+    # cam_V
+    # cam_H
+    # cam_in_out
+    # motor 14
+    # motor 15
+    # det_ge_in_out
+    # sam_beam
+    # polyCrys_bend
+    # I0_H
+    # I0_V
+    # sam_inout_ADC
+    # sam_vert_ADC
+    # sam_beam_ADC
+    # Si_rot
+    # split_ion_chamber_H
+    # split_ion_chamber_V
+    # DXAS_detHoriz
+    # lensRot
+    # lens_V
+    # lens_H
+    # sam_chi
+    # polyCrys_horiz
+    # secondary_mono-bragg
+    # sam_wheel
+    # polyCrys_horiz
+    # polyCrys_rot
+    # ion_V
+    # foil_wheel
+    # polyCrys_vert
+    # bad for NO
+    # downstream_table-horizontal
+    # downstream_table-upstream
+    # downstream_table-downstream
+    # I0_V_Cds
+    # Slt Top Cds
+    # Slt OutB Cds
+    # Slt InB Cds
+    # Slt Bottom Cds
+    # kb_downstream-horiz-downstream
+    # kb_downstream-horiz-upstream
+    # kb_downstream-horiz-bender_downstream
+    # kb_downstream-horiz-bender_upstream
+    # kb_downstream-vert-bender_downstream
+    # kb_downstream-vert-bender_upstream
+    # kb_downstream-vert-downstream
+    # kb_downstream-vert-upstream
+    # sam_h_cds
+    # sam_beam_cds
+    # sam_v_cds
+    # I0_H_Cds
+    # mini_vertical
+    # mini_beam
+    # DXAS_detHoriz
+]
+
+
+@pytest.mark.parametrize("full,short", names)
+def test_short_name(full: str, short: str):
+    assert short_name(full) == short
 
 
 # -----------------------------------------------------------------------------

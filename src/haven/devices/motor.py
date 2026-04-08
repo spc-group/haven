@@ -1,4 +1,5 @@
 import logging
+import re
 from collections.abc import Generator
 
 from ophyd_async.core import (
@@ -45,6 +46,35 @@ class Motor(MotorBase):
     async def prepare(self, value: FlyMotorInfo | TrajectoryMotorInfo):
         if isinstance(value, FlyMotorInfo):
             return await super().prepare(value)
+
+
+name_conversions = {
+    "horizontal": "H",
+    "vertical": "V",
+    "camera": "Cam",
+    "upstream": "US",
+    "downstream": "DS",
+    "secondary": "Sec",
+    "monochromator": "Mono",
+    "sample": "Sam",
+    "detector": "Det",
+    "beryllium": "Be",
+    "rotation": "Rot",
+}
+
+
+def short_name(full):
+    """Shorten the device name to fit into the motor .DESC field.
+
+    E.g. "aerotech-horizontal" -> "AerotechH".
+
+    """
+    bits = re.split(r"[-_]", full)
+    # Capitalize
+    bits = [bit.title() for bit in bits]
+    # Abbreviate known tokens
+    bits = [name_conversions.get(bit.lower(), bit) for bit in bits]
+    return "".join(bits)
 
 
 def load_motors(**defns: str) -> Generator[Motor, None, None]:
