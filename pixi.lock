@@ -5599,7 +5599,7 @@ packages:
 - pypi: ./
   name: haven-spc
   version: 2025.2.1
-  sha256: 5a638fd111dabc414422078f54e0ec48214fc7a5e8b93e1649cde201365d06fa
+  sha256: bd8dfd0339866fd8add7e759b5cd51832b57668e15dfe7e5738a58cfff13bc26
 - pypi: https://files.pythonhosted.org/packages/ba/db/8d85bd3f5b9ee894518f9d9ed1019fd8b7014340beca512dfb76d5632ec9/hdf5plugin-5.1.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
   name: hdf5plugin
   version: 5.1.0

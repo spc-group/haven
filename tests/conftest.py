@@ -23,13 +23,7 @@ haven_dir = top_dir / "src" / "haven"
 # Specify the configuration files to use for testing
 @pytest.fixture(autouse=True)
 def default_iconfig(monkeypatch):
-    files = ",".join(
-        [
-            f"{haven_dir/'iconfig_testing.toml'}",
-            f"{haven_dir/'iconfig_default.toml'}",
-        ]
-    )
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", files)
+    monkeypatch.setenv("HAVEN_CONFIG", "")
 
 
 @pytest.fixture(autouse=True, scope="session")

@@ -62,7 +62,7 @@ writer_profile = "tiled_writable"
 @pytest.fixture()
 def iconfig_file(monkeypatch, tmp_path):
     cfg_file = tmp_path / "iconfig.toml"
-    monkeypatch.setenv("HAVEN_CONFIG_FILE", str(cfg_file))
+    monkeypatch.setenv("HAVEN_CONFIG", str(cfg_file))
     return cfg_file
 
 

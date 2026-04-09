@@ -34,13 +34,13 @@ def test_resolve_device_file_paths(tmp_path):
 def test_config_files_from_env(monkeypatch):
     # Set the environmental variable with the path to a test TOML file
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(test_file))
+    monkeypatch.setenv("HAVEN_CONFIG", str(test_file))
     importlib.reload(iconfig)
     # Load the configuration
     importlib.reload(iconfig)
     config = iconfig.load_config()
     # Check that the test file was loaded
-    assert config.run_engine.default_metadata.facility == "Advanced Photon Source"
+    assert config.run_engine.default_metadata.facility == "Zero Gradient Synchrotron"
 
 
 # -----------------------------------------------------------------------------

@@ -100,14 +100,12 @@ def load_file(file_path: Path):
 
 
 def default_config_file():
-    if os.environ.get("HAVEN_CONFIG_FILE", "") != "":
-        return Path(os.environ["HAVEN_CONFIG_FILE"])
-    elif os.environ.get("HAVEN_CONFIG_DIR", "") != "":
-        return Path(os.environ["HAVEN_CONFIG_DIR"]) / "iconfig.toml"
+    if os.environ.get("HAVEN_CONFIG", "") != "":
+        return Path(os.environ["HAVEN_CONFIG"])
     else:
         raise RuntimeError(
             "Could not find Haven configuration file. "
-            "Set `HAVEN_CONFIG_FILE` environmental variable with path "
+            "Set `HAVEN_CONFIG` environmental variable with path "
             "to configuration file."
         )
 
@@ -120,9 +118,7 @@ def load_config(
     Will load files specified in the following locations:
 
     1. *file_paths* argument
-    2. The $HAVEN_CONFIG_FILES environmental variable.
-    3. The $HAVEN_CONFIG_DIR/iconfig.toml environmental variable.
-    4. iconfig_default.toml file included with Haven.
+    2. The $HAVEN_CONFIG environmental variable.
 
     """
     if config is None:
