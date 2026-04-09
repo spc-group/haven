@@ -6,6 +6,9 @@ from .tiled_server import TiledServerInfo
 
 BASE_CONFIG = """
 area_detector_root_path = "/tmp"
+# Device settings that apply to all devices
+mock_devices = true
+device_files = {device_files}
 
 # Metadata from the beamline scheduling system (BSS)
 ####################################################
@@ -27,19 +30,11 @@ password = "abc123"
 # devices, but is intended to be read by the queueserver and Firefly
 # GUI application to determine how to interact with the queue.
 
-[ RUN_ENGINE.DEFAULT_METADATA ]
+[ run_engine.default_metadata ]
 # Additional metadata to inject in every scan
 facility = "Advanced Photon Source"
-beamline = "SPC Beamline (sector unknown)"
+beamline_id = "SPC Beamline (sector unknown)"
 xray_source = "2.8 mm planar undulator"
-
-#################
-# Device support
-#################
-
-# Device settings that apply to all devices
-[ devices ]
-mock = true
 
 """
 
@@ -57,7 +52,6 @@ prefix = "255idLerix:"
 
 TILED_CONFIG = """
 [tiled]
-default_catalog = "tiled_read_only"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
 writer_profile = "tiled_writable"
 # writer_backup_directory = "/tmp/tiled_writer_backup"
@@ -68,22 +62,24 @@ writer_profile = "tiled_writable"
 @pytest.fixture()
 def iconfig_file(monkeypatch, tmp_path):
     cfg_file = tmp_path / "iconfig.toml"
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(cfg_file))
+    monkeypatch.setenv("HAVEN_CONFIG_FILE", str(cfg_file))
     return cfg_file
 
 
 @pytest.fixture()
-def iconfig_simple(iconfig_file):
-    with open(iconfig_file, mode="a") as fp:
-        fp.write(BASE_CONFIG)
+def iconfig_simple(iconfig_file, tmp_path):
+    devices_file = tmp_path / "devices.toml"
+    with open(devices_file, mode="a") as fp:
         fp.write(DEVICES_CONFIG)
+    with open(iconfig_file, mode="a") as fp:
+        fp.write(BASE_CONFIG.format(device_files=[str(devices_file)]))
     return iconfig_file
 
 
 @pytest.fixture()
 def iconfig_tiled(iconfig_file):
     with open(iconfig_file, mode="a") as fp:
-        fp.write(BASE_CONFIG)
+        fp.write(BASE_CONFIG.format(device_files=[]))
         fp.write(TILED_CONFIG)
     return iconfig_file
 

@@ -3,15 +3,13 @@ import importlib
 import logging
 import os
 import socket
-from functools import partial
-from typing import Any, Mapping
+from typing import Any
 
 import epics
 from bluesky.preprocessors import msg_mutator
 from bluesky.utils import make_decorator
 
 from haven import __version__ as haven_version
-from haven._iconfig import load_config
 
 log = logging.getLogger()
 
@@ -20,9 +18,7 @@ def get_version(pkg_name):
     return importlib.metadata.version(pkg_name)
 
 
-def version_md(config: Mapping | None) -> dict[str, Any]:
-    if config is None:
-        config = load_config()
+def version_md() -> dict[str, Any]:
     # Prepare the metadata dictionary
     md = {
         # Software versions
@@ -42,15 +38,14 @@ def version_md(config: Mapping | None) -> dict[str, Any]:
         "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
         "pid": os.getpid(),
     }
-    md.update(config.get("metadata", {}))
     return md
 
 
-def _inject_md(msg, config: Mapping | None = None):
+def _inject_md(msg):
     if msg.command != "open_run":
         # This is not a message with metadata, so let it pass as-is
         return msg
-    md = version_md(config=config)
+    md = version_md()
     # Filter out `None` values since they were not found
     md = {key: val for key, val in md.items() if val not in [None, ""]}
     # Update the message
@@ -59,7 +54,7 @@ def _inject_md(msg, config: Mapping | None = None):
     return new_msg
 
 
-def inject_metadata_wrapper(plan, config: Mapping | None = None):
+def inject_metadata_wrapper(plan):
     """Inject additional metadata into a run.
 
     This takes precedence over the original metadata dict in the event
@@ -72,7 +67,7 @@ def inject_metadata_wrapper(plan, config: Mapping | None = None):
         a generator, list, or similar containing `Msg` objects
 
     """
-    return (yield from msg_mutator(plan, partial(_inject_md, config=config)))
+    return (yield from msg_mutator(plan, _inject_md))
 
 
 inject_metadata_decorator = make_decorator(inject_metadata_wrapper)

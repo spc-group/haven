@@ -464,8 +464,6 @@ class SRS570PreAmplifier(Device):
         self, values, *, sens_value, sens_unit, offset_value=None, offset_unit=None
     ):
         """Compute the level of gain for given sensitivity settings."""
-        # from pprint import pprint
-        # pprint(values)
         return self._sensitivity_to_level(values[sens_value], values[sens_unit])
 
 

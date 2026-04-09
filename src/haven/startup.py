@@ -56,8 +56,11 @@ config = haven.load_config()
 
 
 # Create a run engine
-writer = haven.tiled_writer(config["tiled"]) if "tiled" in config else None
-catalog = writer.client if writer is not None else None
+writer = None
+if config.tiled is not None:
+    writer = haven.tiled_writer(config.tiled)
+    catalog = writer.client
+
 RE = haven.run_engine(
     tiled_writer=writer,
     call_returns_result=not is_re_worker_active(),
@@ -70,17 +73,14 @@ except AssertionError:
 
 # Prepare the haven instrument
 t0 = time.monotonic()
-beamline_name = (
-    config.get("RUN_ENGINE", {})
-    .get("DEFAULT_METADATA", {})
-    .get("beamline_id", "UNKNOWN BEAMLINE")
-)
+beamline_name = config.run_engine.default_metadata.beamline_id
+
 rich.print(f"Initializing [bold cyan]{beamline_name}[/]…", flush=True)
 loader_exception = None
-haven.beamline.load()
-use_mocks = config.get("devices", {}).get("mock", False)
+for device_file in config.device_files:
+    haven.beamline.load(device_file)
 try:
-    call_in_bluesky_event_loop(haven.beamline.connect(mock=use_mocks))
+    call_in_bluesky_event_loop(haven.beamline.connect(mock=config.mock_devices))
 except NotConnectedError as exc:
     log.exception(exc)
     # Save the exception so we can alert the user later

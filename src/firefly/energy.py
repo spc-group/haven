@@ -51,7 +51,6 @@ class EnergyDisplay(display.FireflyDisplay):
         # Remove existing rows, last row first
         for row_num in range(layout.rowCount(), num_static_rows, -1):
             layout.removeRow(row_num - 1)
-            # print(layout.rowCount())
         # Add new row for each device
         for idx, device in enumerate(devices):
             if hasattr(device.energy, "user_readback"):

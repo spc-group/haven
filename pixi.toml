@@ -41,6 +41,7 @@ test-all = [
     {task = "tests", args = ["--runslow"] },
 ]
 lint-all = [
+    {task = "clean-logs"},
     {task = "lint", args = ["--fix"]},
     {task = "format"},
     {task = "sort-imports"},
@@ -98,6 +99,7 @@ build = "*"
 [feature.dev.tasks]
 check-types = "mypy"
 make-docs = "make html --directory=docs/"
+clean-logs = "rm -rf .logs"
 
 [feature.dev.activation.env]
 QSERVER_HTTP_SERVER_CONFIG = "${PWD}qserver_http_config.yml"
@@ -219,7 +221,7 @@ xraylarch = { version = ">=2026.1.2, <2027", extras = ["all"] }
 # Configuration for quality assurance testing before release
 [feature.qa.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/qa/"
-HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+HAVEN_CONFIG_FILE = "${BLUESKY_DIR}iconfig.toml"
 TILED_CONFIG = "${BLUESKY_DIR}/tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://localhost:60617"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60617"
@@ -232,7 +234,7 @@ test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 
 [feature.25idc.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
-HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+HAVEN_CONFIG_FILE = "${BLUESKY_DIR}iconfig.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_HTTP_SERVER_CONFIG = "${BLUESKY_DIR}qserver_http_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
@@ -245,7 +247,7 @@ test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 
 [feature.25idd.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
-HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+HAVEN_CONFIG_FILE = "${BLUESKY_DIR}iconfig.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60616"
@@ -258,7 +260,7 @@ test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 
 [feature.9bm.activation.env]
 BLUESKY_DIR = "/net/s9data/xorApps/bluesky/9bm/"
-HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+HAVEN_CONFIG_FILE = "${BLUESKY_DIR}iconfig.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60615"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"

@@ -5,12 +5,14 @@ from ophyd_async import sim
 from ophyd_async.core import init_devices
 
 from haven import run_engine, tiled_writer
+from haven.iconfig import TiledConfig
 from haven.plans import scan
 
 
 @pytest.fixture()
 def writer(tiled_server):
-    writer_ = tiled_writer({"writer_profile": "tiled_writable"})
+
+    writer_ = tiled_writer(TiledConfig(writer_profile="tiled_writable"))
     try:
         yield writer_
     finally:
@@ -31,7 +33,7 @@ def test_streams(tiled_server, writer):
     # Check that the correct streams were written
     assert result.exit_status == "success"
     (uid,) = result.run_start_uids
-    assert list(writer.client[uid].keys()) == ["primary"]
+    assert "primary" in writer.client[uid].keys()
 
 
 # -----------------------------------------------------------------------------

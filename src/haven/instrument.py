@@ -1,7 +1,6 @@
 """Loader for creating instances of the devices from a config file."""
 
 import logging
-import os
 from collections.abc import Mapping
 from typing import Generator
 
@@ -38,46 +37,7 @@ class make_devices[T]:
             yield self._Klass(prefix, name=name)
 
 
-class HavenInstrument(Instrument):
-    def load(
-        self,
-        config: Mapping | None = None,
-        return_devices: bool = False,
-        reset_devices: bool = True,
-    ):
-        """Load the beamline instrumentation.
-
-        Adds some custom configuration for Haven.
-
-        Parameters
-        ==========
-        config:
-          The beamline configuration read in from TOML files. Mostly
-          useful for testing.
-        return_devices
-          If true, return the newly loaded devices when complete.
-        reset_registry
-          If true, existing devices will be removed before loading.
-
-        """
-        if reset_devices:
-            self.devices.clear()
-        # Check if config files are available
-        if "HAVEN_CONFIG_FILES" in os.environ:
-            config_files = os.environ.get("HAVEN_CONFIG_FILES", "").split(":")
-        else:
-            config_files = []
-        # Load devices ("motors" is done later)
-        for cfg_file in config_files:
-            super().load(cfg_file, return_exceptions=True)
-        # Return the final list
-        if return_devices:
-            return self.devices
-        else:
-            return self
-
-
-beamline = HavenInstrument(
+beamline = Instrument(
     {
         # Detectors
         "camera": devices.AravisDetector,

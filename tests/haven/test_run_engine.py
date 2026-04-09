@@ -31,10 +31,10 @@ def test_default_metadata():
     RE(bps.open_run())
     start_doc = docs[0][1]
     # Check that metadata matches iconfig_testing.toml
-    default_md = load_config()["RUN_ENGINE.DEFAULT_METADATA"]
-    assert start_doc["facility"] == default_md["facility"]
-    assert start_doc["beamline_id"] == default_md["beamline_id"]
-    assert start_doc["xray_source"] == default_md["xray_source"]
+    default_md = load_config().run_engine.default_metadata
+    assert start_doc["facility"] == default_md.facility
+    assert start_doc["beamline_id"] == default_md.beamline_id
+    assert start_doc["xray_source"] == default_md.xray_source
 
 
 def test_subscribe_tiled_writer(mocker):

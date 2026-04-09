@@ -31,7 +31,6 @@ def energy_to_wavenumber(energy: float, relative_to: float = 0.0):
 
     """
     kref = np.sqrt(relative_to / ALPHA)
-    print(energy, ALPHA)
     k = np.sqrt(energy / ALPHA)
     return k - kref
 

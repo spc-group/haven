@@ -25,16 +25,8 @@ detector_tables = [
     "sim_detector",
     "xspress3",
 ]
-tables = [cfg.get(table, []) for table in detector_tables]
+tables = [getattr(cfg, table, []) for table in detector_tables]
 detector_names = [section["name"] for table in tables for section in table]
-# detector_names = [
-#     "sim_detector",
-#     "ge_13element",
-#     "fine_focus_camera",
-#     "eiger",
-#     "lambda_250k",
-#     "lambda_flex",
-# ]
 
 
 @pytest.mark.beamline()

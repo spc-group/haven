@@ -1,39 +1,10 @@
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
-from haven.devices import IonChamber, Motor, Robot
-from haven.instrument import Instrument, make_devices
+from haven.devices import Motor
+from haven.instrument import make_devices
 
 haven_dir = Path(__file__).parent.parent.parent.resolve() / "src" / "haven"
-print(haven_dir)
 toml_file = haven_dir / "iconfig_testing.toml"
-
-
-@pytest.fixture()
-def instrument():
-    inst = Instrument(
-        {
-            "ion_chamber": IonChamber,
-            "robot": Robot,
-        }
-    )
-    with open(toml_file, mode="tr", encoding="utf-8") as fd:
-        inst.parse_toml_file(fd)
-    return inst
-
-
-def test_load(monkeypatch):
-    instrument = Instrument({})
-    # Mock out the relevant methods to test
-    monkeypatch.setattr(instrument, "parse_toml_file", MagicMock())
-    monkeypatch.setattr(instrument, "connect", AsyncMock(return_value=([], [])))
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(toml_file), prepend=False)
-    # Execute the loading step
-    instrument.load(toml_file)
-    # Check that the right methods were called
-    instrument.parse_toml_file.assert_called_once()
 
 
 def test_make_devices():

@@ -16,8 +16,6 @@ async def eiger():
 
 async def test_signals(eiger):
     """Confirm the device has the right signals."""
-    # for name, sig in eiger.driver.children():
-    #     print(name.ljust(20), sig.source.split("/")[-1])
     # Detector information
     assert (
         eiger.driver.description.source == "mock+ca://255idEiger:cam1:Description_RBV"

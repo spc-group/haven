@@ -9,6 +9,7 @@ from qtpy.QtGui import QStandardItemModel
 
 from firefly.bss import BssDisplay
 from haven.bss import Esaf, Proposal, User
+from haven.iconfig import HavenConfig
 
 
 @pytest.fixture()
@@ -77,11 +78,13 @@ def bss_api(mocker):
 
 
 @pytest.fixture()
-def display(qtbot, bss_api):
+def display(mocker, qtbot, bss_api):
+    new_config = HavenConfig(
+        bss={"uri": "", "beamline": "255-ID-Z", "station_name": "25IDC"}
+    )
+    mocker.patch("firefly.bss.load_config", mocker.MagicMock(return_value=new_config))
     display = BssDisplay(api=bss_api)
     qtbot.addWidget(display)
-    # display.cycle_lineedit.setText("2025-1")
-    # display.beamline_lineedit.setText("255-ID-Z")
     return display
 
 

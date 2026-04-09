@@ -26,9 +26,6 @@ def test_plan_messages(ion_chamber, mono, undulator, analyzer):
         [8500, 8600, 8700],
     )
     msgs = list(plan)
-    from pprint import pprint
-
-    pprint(msgs)
     set_msgs = [msg for msg in msgs if msg.command == "set"]
     # Check the first step
     assert set_msgs[0].command == "set"

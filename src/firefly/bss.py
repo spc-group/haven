@@ -78,8 +78,9 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.proposal_mailin_checkbox.stateChanged.connect(self.check_metadata)
         self.ui.proposal_proprietary_checkbox.stateChanged.connect(self.check_metadata)
         # Set defaults in widgets
-        bss_config = load_config()["bss"]
-        self.beamline_lineedit.setText(bss_config.get("beamline", ""))
+        config = load_config()
+        if config.bss is not None:
+            self.beamline_lineedit.setText(config.bss.beamline)
 
     def check_metadata(self):
         """Emit the latest metadata from display widgets.

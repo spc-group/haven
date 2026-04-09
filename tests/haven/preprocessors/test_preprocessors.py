@@ -70,27 +70,16 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16", prepend=False)
     # Check that the callback has the correct metadata
     plan = bp.count([det], num=1, md={"purpose": "testing"})
-    plan = inject_metadata_wrapper(
-        plan,
-        config={
-            "metadata": {
-                "xray_source": "25-ID-C",
-            }
-        },
-    )
+    plan = inject_metadata_wrapper(plan)
     msgs = list(plan)
     # Check versions
     start_doc = msgs[1].kwargs
-    # from pprint import pprint
-    # print("In tests")
-    # pprint(msgs)
     assert msgs[1].command == "open_run"
     assert "version_haven" in start_doc.keys()
     assert "version_bluesky" in start_doc.keys()
     # Check metadata keys
     expected_keys = [
         "EPICS_HOST_ARCH",
-        "xray_source",
         "epics_libca",
         "EPICS_CA_MAX_ARRAY_BYTES",
         "login_id",
@@ -105,7 +94,6 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     # Check metadata values
     expected_data = {
         "EPICS_HOST_ARCH": "PDP11",
-        "xray_source": "25-ID-C",
         "epics_libca": "/dev/null",
         "EPICS_CA_MAX_ARRAY_BYTES": "16",
         "plan_name": "count",

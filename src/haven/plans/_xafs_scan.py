@@ -11,8 +11,8 @@ from typing import Mapping, Sequence
 from bluesky.utils import MsgGenerator
 from scanspec.specs import Concat, Zip
 
-from haven._iconfig import load_config
 from haven.energy_ranges import EnergyRange, from_tuple, merge_ranges
+from haven.iconfig import load_config
 from haven.instrument import beamline
 from haven.plans._energy_scan import energy_scan, energy_scan_from_scanspec, resolve_E0
 from haven.protocols import DetectorList, EnergyDevice
@@ -168,7 +168,7 @@ def xafs_scan(
       Additional metadata to pass to the run engine.
 
     """
-    use_scan_spec = load_config().feature_flag("undulator_fast_step_scanning_mode")
+    use_scan_spec = load_config().feature_flags.undulator_fast_step_scanning_mode
     # Resolve energy devices into the actual positioners
     energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
     energy_movers = [

@@ -3,19 +3,23 @@ import pytest
 from bluesky import RunEngine
 from ophyd_async.core import set_mock_value
 
-from haven._iconfig import load_config
 from haven.devices import AxilonMonochromator as Monochromator
 from haven.devices import PlanarUndulator
 from haven.energy_ranges import ERange, KRange, from_tuple
+from haven.iconfig import HavenConfig
 from haven.plans._energy_scan import energy_scan, energy_scan_from_scanspec
 from haven.plans._xafs_scan import XAFSRegion, regions_to_scanspec, xafs_scan
 
 
 @pytest.fixture()
 def array_scanning_feature_flag(mocker):
-    cfg = load_config()
-    with cfg.feature_flag_override("undulator_fast_step_scanning_mode", True):
-        yield
+    #     cfg = load_config()
+    # with cfg.feature_flag_override("undulator_fast_step_scanning_mode", True):
+    #     yield
+    config = HavenConfig(feature_flags={"undulator_fast_step_scanning_mode": True})
+    mocker.patch(
+        "haven.plans._xafs_scan.load_config", mocker.MagicMock(return_value=config)
+    )
 
 
 @pytest.fixture()
@@ -78,8 +82,6 @@ def test_energy_scan_basics(mono, undulator, ion_chamber, energies, tmp_path):
         md={"edge": "Ni_K"},
     )
     msgs = list(plan)
-    # from pprint import pprint
-    # pprint(msgs)
     # Check that the mono and ID gap ended up in the right position
     set_msgs = [msg for msg in msgs if msg.command == "set"]
     mono_msgs = [msg for msg in set_msgs if msg.obj is mono.energy]
@@ -298,9 +300,6 @@ def test_remove_duplicate_energies(mono, ion_chamber, array_scanning_feature_fla
         time_signals=[ion_chamber.default_time_signal],
     )
     msgs = list(plan)
-    from pprint import pprint
-
-    pprint([msg for msg in msgs if msg.obj in [mono.energy, ion_chamber]])
     set_msgs = [m for m in msgs if m.command == "set" and m.obj is mono.energy]
     read_msgs = [m for m in msgs if m.command == "read" and m.obj is ion_chamber]
     energies = [m.args[0] for m in set_msgs]
@@ -610,12 +609,8 @@ def test_undulator_prepare(undulator):
     plan = energy_scan_from_scanspec(spec, detectors=[])
     msgs = list(plan)
     prepare_msg = msgs[2]
-    from pprint import pprint
-
-    pprint(msgs)
     assert prepare_msg.command == "prepare"
     assert prepare_msg.obj is undulator.energy
-    # assert False
 
 
 # -----------------------------------------------------------------------------

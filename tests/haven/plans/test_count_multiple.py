@@ -46,8 +46,5 @@ def test_prepare_trigger_info(detectors):
 
 def test_count_multiple_metadata(detectors):
     msgs = list(count_multiple(detectors, num=3, collections_per_event=200, delay=0.5))
-    from pprint import pprint
-
-    pprint(msgs)
     md = msgs[2].kwargs
     assert md["plan_name"] == "count_multiple"

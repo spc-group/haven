@@ -44,9 +44,6 @@ def test_fly_segment(flyer, xspress):
     plan = fly_segment([xspress], motors=[flyer], spec=spec, trigger_info=trigger_info)
     msgs = list(plan)
     assert len(msgs) > 2
-    from pprint import pprint
-
-    pprint([msg.command for msg in msgs])
     # Prepare the scan
     assert msgs[0].command == "prepare"
     assert msgs[0].obj is flyer
@@ -275,8 +272,6 @@ def test_grid_fly_scan_flyer_paths(flyer, stepper, xspress, controller):
         flyer_controllers=[controller],
     )
     messages = list(plan)
-    # from pprint import pprint
-    # pprint([f"{msg.command}: {getattr(msg.obj, 'name', '')}" for msg in messages])
     # Check stepper positions
     flyer_paths = [
         msg.args[0] for msg in messages if msg.command == "prepare" and msg.obj is flyer

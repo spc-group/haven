@@ -43,7 +43,7 @@ def run_engine(
       tiled client.
 
     """
-    config = load_config()
+    config = load_config().model_dump(by_alias=True)
     # Create the run engine
     RE, *_ = init_RE(config, **kwargs)
     # Add custom verbs

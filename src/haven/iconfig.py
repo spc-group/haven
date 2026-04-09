@@ -8,163 +8,95 @@ __all__ = [
     "load_config",
 ]
 
+import datetime as dt
 import logging
 import os
-import time
-import warnings
-from collections.abc import Callable, Mapping
-from functools import wraps
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Annotated as A
 
 import tomli
-from pydantic import BaseModel
-
-from haven.exceptions import ExpiredFeatureFlag, UndeclaredFeatureFlag
-
-from .iconfig_schema import FEATURE_FLAGS, HavenConfig
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 log = logging.getLogger(__name__)
 
 
-class Configuration(HavenConfig):
-    """A mapping of config keys to values with validation.
+class ConfigModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-    Allows complicated lookup by dotted keys:
 
-    .. code-block:: python
+def expires(expiration: dt.datetime) -> str | None:
+    if dt.datetime.now() > expiration:
+        return f"Expired at {expiration}"
+    return None
 
-        example_config = {
-            "spam": {
-                "eggs": "cheese"
-            }
-        }
-        config = Configuration(example_config)
-        assert config["spam"]["eggs"] == config["spam.eggs"]
 
-    """
+class FeatureFlagConfig(ConfigModel):
+    """Declare feature flags to develop some new feature."""
 
-    _config: Mapping | Path | str
-    _feature_flags: Mapping[str, Any]
+    # Be conservative when deciding on expiration dates.
+    undulator_fast_step_scanning_mode: A[
+        bool, Field(deprecated=expires(dt.datetime(2026, 5, 1)))
+    ] = False
 
-    def __init__(
-        self,
-        config: Mapping | Path | str,
-        feature_flags: Mapping[str, Any] = FEATURE_FLAGS,
-        model_class: BaseModel = HavenConfig,
-    ):
-        self._config = config
-        self._feature_flags = feature_flags
-        self._model_class = model_class
 
-    def check_feature_flags(self, config):
-        feature_flags = self._feature_flags
-        flags = config.get("feature_flags", {})
-        extra_flags = [
-            flag for flag in flags.keys() if flag not in feature_flags.keys()
-        ]
-        if len(extra_flags) > 0:
-            raise UndeclaredFeatureFlag(extra_flags)
-        # See if any flags are expired
-        now = time.time()
-        expired = [name for name, flag in feature_flags.items() if flag.expires < now]
-        if len(expired) > 0:
-            warnings.warn(
-                f"Expired feature flags are declared: {expired}.", ExpiredFeatureFlag
-            )
+class BssConfig(ConfigModel):
+    uri: str
+    beamline: str
+    station_name: str
+    username: str | None = None
+    password: str | None = None
 
-    def _model(self):
-        # Load configuration from TOML files
-        config = _load_config_dict(self._config)
-        check_deprecated_keys(config)
-        model = self._model_class(**config)
-        self.check_feature_flags(config)
-        return model
 
-    def __getitem__(self, key):
-        model = self._model()
-        extra_parts = []
-        _key = key
-        while _key != "":
-            if hasattr(model, _key):
-                if len(extra_parts) > 0:
-                    # Look up the rest of the keys
-                    model = getattr(model, _key)
-                    _key = ".".join(extra_parts[::-1])
-                    extra_parts = []
-                    continue
-                elif isinstance(getattr(model, _key), BaseModel):
-                    # Not a leaf of the config tree
-                    return getattr(model, _key).model_dump()
-                else:
-                    # Leaf of the config tree
-                    return getattr(model, _key)
-            try:
-                _key, tail = _key.rsplit(".", maxsplit=1)
-            except ValueError:
-                # We can't split anymore '.', so lookup has failed
-                raise KeyError(key)
-            extra_parts.append(tail)
+class RunEngineMetadata(ConfigModel):
+    facility: str = "Advanced Photon Source"
+    beamline_id: str = "SPC Beamline (sector unknown)"
+    xray_source: str | None = None
 
-    def __iter__(self):
-        model = self._model()
-        return iter(model.model_dump().keys())
 
-    # def __len__(self):
-    #     return len(self._config)
+class TiledConfig(ConfigModel):
+    writer_profile: str
+    cache_filepath: str = "/tmp/tiled/http_response_cache.db"
+    writer_backup_directory: str | None = None
+    writer_batch_size: PositiveInt = 10
 
-    def feature_flag(self, key: str) -> Any:
-        # Feature flags must be declared so they can be properly
-        # managed (expired, etc)
-        try:
-            flag = self._feature_flags[key]
-        except KeyError as exc:
-            raise UndeclaredFeatureFlag(key) from exc
-        # Now get the feature flag's value if possible
-        return self[f"feature_flags.{key}"]
 
-    def with_feature_flag(self, flag: str, alternate: Callable, *, eq: Any = True):
-        """Call an alternate implementation if a feature flag is set.
+class QueueserverConfig(ConfigModel):
+    redis_addr: str = "localhost:6379"
+    redis_prefix: str = "qs_default"
 
-        The argument *eq* can be used to only respond on a specific
-        value for the flag. By default, any truthy value will trigger
-        *alternate* instead of the original function/class.
 
-        Parameters
-        ==========
-        flag:
-          The name of the feature flag to check.
-        alternate
-          What to call if the feature flag is present.
-        eq
-          Value against which to compare the feature flag.
+class RunEngineConfig(ConfigModel):
+    use_progress_bar: bool = Field(default=True, serialization_alias="USE_PROGRESS_BAR")
+    default_metadata: RunEngineMetadata = Field(
+        default=RunEngineMetadata(), serialization_alias="DEFAULT_METADATA"
+    )
 
-        """
 
-        def wrapper(func):
-            @wraps(func)
-            def inner(*args, **kwargs):
-                if self.feature_flag(flag) == eq:
-                    return alternate(*args, **kwargs)
-                else:
-                    return func(*args, **kwargs)
-
-            return inner
-
-        return wrapper
+class HavenConfig(ConfigModel):
+    area_detector_root_path: str = "/tmp"
+    mock_devices: bool = False
+    bss: BssConfig | None = None
+    tiled: TiledConfig | None = None
+    queueserver: QueueserverConfig = QueueserverConfig()
+    run_engine: RunEngineConfig = Field(
+        default=RunEngineConfig(), serialization_alias="RUN_ENGINE"
+    )
+    device_files: Sequence[str] = []
+    feature_flags: FeatureFlagConfig = FeatureFlagConfig()  # type: ignore
 
 
 def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
-    fp = Path(file_path)
-    if fp.exists():
-        with open(fp, mode="rb") as fd:
-            log.debug(f"Loading config file: {fd}")
-            config = tomli.load(fd)
-            return config
-    else:
-        log.info(f"Could not find config file, skipping: {fp}")
-        return {}
+    with open(file_path, mode="rb") as fd:
+        log.debug(f"Loading config file: {fd}")
+        config = tomli.load(fd)
+        # Resolve relative paths since we know we have the main file
+        if "device_files" in config:
+            config["device_files"] = [
+                str(file_path.parent / fp) for fp in config["device_files"]
+            ]
+        return config
 
 
 def default_config_file():
@@ -180,53 +112,9 @@ def default_config_file():
         )
 
 
-DEPRECATED_KEYS = [
-    # (old_key, new_key)
-    ("metadata", "RUN_ENGINE.DEFAULT_METADATA"),
-    ("kafka", None),
-    ("database", None),
-    ("queueserver.control_host", None),
-    ("queueserver.control_port", None),
-    ("queueserver.info_host", None),
-    ("queueserver.info_port", None),
-    ("soft_glue_delay", "soft_glue_flyer_controller"),
-    ("monochromator", "axilon_monochromator"),
-    ("haven.features.grid_fly_scan_by_line", None),
-]
-
-
-def has_key(config, key: str) -> bool:
-    """Check if a given dotted key is in a configuration dictionary."""
-    for bit in key.split("."):
-        try:
-            config = config[bit]
-        except (KeyError, TypeError):
-            return False
-    return True
-
-
-def check_deprecated_keys(config):
-    """Error if renamed keys aren't renamed, or warning if old keys are
-    still there.
-
-    """
-    for old_key, new_key in DEPRECATED_KEYS:
-        needs_new_key = new_key is not None and not has_key(config, new_key)
-        has_old_key = has_key(config, old_key)
-        if has_old_key and needs_new_key:
-            # Without migrating the configuration, things will not work properly
-            raise ValueError(f"Config key {old_key} has been replaced with {new_key}.")
-        elif has_old_key:
-            # Shouldn't break the configuration, just doesn't need to be there
-            # To-do: wanted to make these warnings, but they weren't getting shown
-            raise ValueError(f"Config key '{old_key}' is no longer used")
-
-
-def _load_config_dict(config: Path | str | Mapping):
-    return config if isinstance(config, Mapping) else load_file(Path(config))
-
-
-def load_config(config: Path | str | Mapping | None = None) -> Configuration:
+def load_config(
+    config: Path | str | Mapping | None = None,
+) -> HavenConfig:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -242,9 +130,10 @@ def load_config(config: Path | str | Mapping | None = None) -> Configuration:
         try:
             config = default_config_file()
         except RuntimeError as exc:
-            log.warning(exc)
             config = {}
-    return Configuration(config)
+    # Load the files from disk
+    config_dict = config if isinstance(config, Mapping) else load_file(Path(config))
+    return HavenConfig(**config_dict)
 
 
 # -----------------------------------------------------------------------------

@@ -68,7 +68,6 @@ class VoltmetersDisplay(display.FireflyDisplay):
             # Connect the details button signal
             details_slot = partial(self.device_window_requested.emit, ic.name)
             row.details_button.clicked.connect(details_slot)
-            print("Updating", row.details_button)
         # Remove old shutters from the combobox
         for idx in range(self.ui.shutter_combobox.count()):
             self.ui.shutter_combobox.removeItem(idx)

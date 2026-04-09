@@ -10,6 +10,7 @@ from firefly.action import WindowAction
 from firefly.controller import FireflyController
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
 from firefly.queue_client import QueueClient
+from haven.iconfig import HavenConfig
 
 
 @pytest.fixture()
@@ -147,11 +148,15 @@ def test_window_actions(controller, qtbot, action_name):
 
 
 @pytest.mark.asyncio
-async def test_load_instrument_registry(controller, qtbot, monkeypatch):
+async def test_load_instrument_registry(controller, qtbot, monkeypatch, mocker):
     """Check that the instrument registry gets created."""
     assert isinstance(controller.registry, Registry)
     # Mock the underlying haven instrument loader
     loader = MagicMock()
+    mocker.patch(
+        "firefly.controller.load_config",
+        mocker.MagicMock(return_value=HavenConfig(device_files=["test_devices.toml"])),
+    )
     monkeypatch.setattr(firefly.controller.beamline, "load", loader)
     monkeypatch.setattr(controller, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed

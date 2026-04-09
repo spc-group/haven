@@ -28,7 +28,6 @@ ipython_startup_file = Path(__file__).parent / "ipython_startup.ipy"
 del Path
 
 from . import plans  # noqa: F401
-from ._iconfig import load_config  # noqa: F401
 from ._tiled_writer import TiledWriter, tiled_writer  # noqa: F401
 
 #  Top-level imports
@@ -41,6 +40,7 @@ from .energy_ranges import (  # noqa: F401
     merge_ranges,
     wavenumber_to_energy,
 )
+from .iconfig import load_config  # noqa: F401
 from .instrument import beamline  # noqa: F401
 from .preprocessors import (  # noqa: F401
     aps_suspenders_decorator,

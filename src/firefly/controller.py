@@ -14,7 +14,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
-from haven import beamline
+from haven import beamline, load_config
 from haven.exceptions import InvalidConfiguration
 from haven.utils import titleize
 
@@ -109,7 +109,9 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            beamline.load()
+            config = load_config()
+            for device_file in config.device_files:
+                beamline.load(device_file)
             try:
                 await beamline.connect()
             except NotConnectedError as exc:
