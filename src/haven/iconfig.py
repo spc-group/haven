@@ -85,6 +85,15 @@ class HavenConfig(ConfigModel):
     device_files: Sequence[str] = []
     feature_flags: FeatureFlagConfig = FeatureFlagConfig()  # type: ignore
 
+    def device_parameters(self):
+        """Return the parameters for the devices from "device_files" key."""
+        params = {}
+        for fp in self.device_files:
+            with open(fp, mode="rb") as fd:
+                for key, defns in tomli.load(fd).items():
+                    params[key] = [*params.get(key, []), *defns]
+        return params
+
 
 def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
