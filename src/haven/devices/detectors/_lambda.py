@@ -69,11 +69,12 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
         # 1 ms in 24-bit mode
         return 1e-3
 
-    async def prepare_level(self, num: int) -> None:
+    async def prepare_edge(self, num: int, livetime: float) -> None:
         task = asyncio.ensure_future(
             asyncio.gather(
                 prepare_exposures(self.driver, num),
-                self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_SEQUENCE),
+                self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_IMAGE),
+                self.driver.acquire_time.set(livetime),
             )
         )
         await self._wait_for_num_images(num)
