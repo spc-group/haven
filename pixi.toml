@@ -185,7 +185,7 @@ bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = "==2.0.2"
-tiled = { version = "==0.2.8", extras = ["all"] }
+tiled = { version = "==0.2.8", extras = ["wxgui"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
