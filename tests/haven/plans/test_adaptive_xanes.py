@@ -8,7 +8,7 @@ from bluesky_adaptive.recommendations import NoRecommendation
 pytest.importorskip("eaa_spectroscopy")
 from eaa_spectroscopy import SimulatedSpectrumMeasurementTool
 
-from haven.plans.adaptive_xanes import XANESSamplingRecommender
+from haven.plans._adaptive_xanes import XANESSamplingRecommender
 
 DATA_PATH = Path(__file__).parent / "data" / "test_adaptive_xanes"
 

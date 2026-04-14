@@ -27,6 +27,7 @@ import haven  # noqa: F401
 # Import plans (needed for the qserver, optional for ipython/firefly)
 from haven import plans as plans
 from haven.plans import (  # noqa: F401
+    adaptive_xanes,
     auto_gain,
     calibrate,
     count,

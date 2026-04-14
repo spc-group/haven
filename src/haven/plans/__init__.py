@@ -13,6 +13,7 @@ from haven.preprocessors import (
     open_shutters_decorator,
 )
 
+from ._adaptive_xanes import adaptive_xanes as adaptive_xanes
 from ._align_monochromators import align_monochromators  # noqa: F401
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
@@ -51,6 +52,7 @@ all_decorators = chain(
 
 # Apply decorators to Haven plans
 auto_gain = open_shutters_decorator()(auto_gain)
+adaptive_xanes = all_decorators(adaptive_xanes)
 count_multiple = all_decorators(count_multiple)
 emission_map_scan = all_decorators(emission_map_scan)
 energy_scan = all_decorators(energy_scan)
