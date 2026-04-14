@@ -189,7 +189,6 @@ tiled = { version = "==0.2.8", extras = ["wxgui"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
-# tiled-server = "env"
 
 # 'ai' feature pulls in dependencies for the following capabilities:
 # - ML alignment of KB mirrors (OPT group)
@@ -198,7 +197,8 @@ tiled-server = "tiled serve config"
 # pixi-pycharm = "*"  # For Luca to use pycharm easily
 
 [feature.ai.pypi-dependencies]
-# autobl = { git = "https://github.com/mdw771/auto_beamline_ops", extras = ["steering"] }
+eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
+eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
 # aps-ai-beamline-controller = ">=0.0.12"
 # # Work-around to get CUDA drivers to agree
 # torch = "==2.7.0"

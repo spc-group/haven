@@ -32,9 +32,21 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
+[project.optional-dependencies]
+adaptive-xanes = [
+    "eaa-core[bo] @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core",
+    "eaa-spectroscopy @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-spectroscopy",
+]
+
+[tool.setuptools.package-data]
+firefly = ["firefly.qss"]
+
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/haven", "src/firefly", "src/haven_qserver"]
