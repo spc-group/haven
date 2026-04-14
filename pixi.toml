@@ -41,7 +41,6 @@ test-all = [
     {task = "tests", args = ["--runslow"] },
 ]
 lint-all = [
-    {task = "clean-logs"},
     {task = "lint", args = ["--fix"]},
     {task = "format"},
     {task = "sort-imports"},
@@ -101,7 +100,6 @@ build = "*"
 [feature.dev.tasks]
 check-types = "mypy"
 make-docs = "make html --directory=docs/"
-clean-logs = "rm -rf .logs"
 
 [feature.dev.activation.env]
 QSERVER_HTTP_SERVER_CONFIG = "${PWD}qserver_http_config.yml"
