@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 from ophyd_async.core import (
     Array1D,
@@ -111,7 +113,7 @@ class MultiChannelScaler(StandardReadable):
         MODE_5 = "Mode 5"
         MODE_6 = "Mode 6"
 
-    def __init__(self, prefix, channels: list[int], name=""):
+    def __init__(self, prefix, channels: Sequence[int], name=""):
         # Controls
         self.start_all = epics_signal_x(f"{prefix}StartAll")
         self.stop_all = epics_signal_x(f"{prefix}StopAll")
@@ -176,7 +178,7 @@ class Scaler(StandardReadable):
         ONE_SHOT = "OneShot"
         AUTO_COUNT = "AutoCount"
 
-    def __init__(self, prefix, channels: list[int], name=""):
+    def __init__(self, prefix, channels: Sequence[int], name=""):
         # Add invidiaul scaler channels
         with self.add_children_as_readables():
             # Add individual channels
