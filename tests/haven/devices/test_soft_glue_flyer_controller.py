@@ -1,4 +1,4 @@
-"Test the SRS DG-645 digital delay device support."
+"Test the Soft Glue device support specifically for fly scanning."
 
 import pytest
 from ophyd_async.core import DetectorTrigger, TriggerInfo
@@ -8,7 +8,7 @@ from haven.devices import SoftGlueFlyerController
 
 @pytest.fixture()
 async def soft_glue():
-    sg = SoftGlueFlyerController("", name="delay")
+    sg = SoftGlueFlyerController("", name="delay", edge_outputs=[1], gate_outputs=[2])
     await sg.connect(mock=True)
     return sg
 
@@ -50,7 +50,7 @@ async def test_prepare_softglue_edge_trigger(soft_glue):
         await soft_glue.output_permitted_gate.description.get_value() == "Output permit"
     )
     # For passing the input pulses back out
-    assert await soft_glue.pulse_output.signal.get_value() == "pulseIn"
+    assert await soft_glue.trigger_output.signal.get_value() == "pulseIn"
 
 
 async def test_prepare_softglue_internal(soft_glue):
@@ -64,36 +64,36 @@ async def test_prepare_softglue_internal(soft_glue):
     assert await soft_glue.clock_divider.enable_signal.get_value() == "1"
     assert await soft_glue.clock_divider.reset_signal.get_value() == "reset"
     # Spot check that the gate/trigger outputs also get prepared
-    assert await soft_glue.gate_output.and_gate.inputA_signal.get_value() == "outPermit"
     assert (
-        await soft_glue.trigger_output.and_gate.inputA_signal.get_value() == "outPermit"
+        await soft_glue.gate_outputs[2].and_gate.inputA_signal.get_value()
+        == "outPermit"
+    )
+    assert (
+        await soft_glue.edge_outputs[1].and_gate.inputA_signal.get_value()
+        == "outPermit"
     )
 
 
-async def test_prepare_softglue_gate_output(soft_glue):
+async def test_prepare_softglue_gate_outputs(soft_glue):
     tinfo = TriggerInfo(trigger="EXTERNAL_LEVEL")
-    await soft_glue.gate_output.prepare(tinfo)
+    gate_output = soft_glue.gate_outputs[2]
+    await gate_output.prepare(tinfo)
     # Don't want a trigger input, just internal clocks ticks
-    assert await soft_glue.gate_output.and_gate.inputA_signal.get_value() == "outPermit"
-    assert await soft_glue.gate_output.and_gate.inputB_signal.get_value() == "gateLatch"
-    assert await soft_glue.gate_output.and_gate.output_signal.get_value() == "gateOut"
-    assert await soft_glue.gate_output.output.signal.get_value() == "gateOut"
+    assert await gate_output.and_gate.inputA_signal.get_value() == "outPermit"
+    assert await gate_output.and_gate.inputB_signal.get_value() == "gateLatch"
+    assert await gate_output.and_gate.output_signal.get_value() == "gateOut"
+    assert await gate_output.output.signal.get_value() == "gateOut"
 
 
-async def test_prepare_softglue_trigger_output(soft_glue):
+async def test_prepare_softglue_edge_outputs(soft_glue):
     tinfo = TriggerInfo(trigger="EXTERNAL_EDGE")
-    await soft_glue.trigger_output.prepare(tinfo)
+    edge_output = soft_glue.edge_outputs[1]
+    await edge_output.prepare(tinfo)
     # Don't want a trigger input, just internal clocks ticks
-    assert (
-        await soft_glue.trigger_output.and_gate.inputA_signal.get_value() == "outPermit"
-    )
-    assert (
-        await soft_glue.trigger_output.and_gate.inputB_signal.get_value() == "pulseIn"
-    )
-    assert (
-        await soft_glue.trigger_output.and_gate.output_signal.get_value() == "trigOut"
-    )
-    assert await soft_glue.trigger_output.output.signal.get_value() == "trigOut"
+    assert await edge_output.and_gate.inputA_signal.get_value() == "outPermit"
+    assert await edge_output.and_gate.inputB_signal.get_value() == "pulseIn"
+    assert await edge_output.and_gate.output_signal.get_value() == "trigOut"
+    assert await edge_output.output.signal.get_value() == "trigOut"
 
 
 async def test_kickoff_softglue_single_event(soft_glue):

@@ -5,12 +5,13 @@ These devices will be prepared from a bluesky fly scan plan.
 """
 
 import asyncio
-from collections.abc import Awaitable, Sequence
+from collections.abc import Awaitable, Iterable, Sequence
 
 from bluesky.protocols import Preparable
 from ophyd_async.core import (
     AsyncStatus,
     DetectorTrigger,
+    DeviceVector,
     StandardReadable,
     TriggerInfo,
 )
@@ -77,14 +78,21 @@ class SoftGlueTriggerOutput(StandardReadable, Preparable):
 class SoftGlueFlyerController(StandardReadable, Preparable):
     _ophyd_labels_ = {"flyer_controllers"}
 
-    def __init__(self, prefix: str, name="", pulse_input: int = 0):
+    def __init__(
+        self,
+        prefix: str,
+        edge_outputs: Iterable[int] = (1,),
+        gate_outputs: Iterable[int] = (2,),
+        pulse_input: int = 0,
+        *,
+        name="",
+    ):
         self.output_permitted_gate = soft_glue.LogicGate(f"{prefix}AND-1")
         self.pulse_counter = soft_glue.Counter(
             f"{prefix}DnCntr-1", direction=soft_glue.Counter.Direction.DOWN
         )
         self.reset_buffer = soft_glue.Buffer(f"{prefix}BUFFER-1")
         self.pulse_input = soft_glue.FieldIO(f"{prefix}FI{pulse_input+1}")
-        self.trigger_output = soft_glue.FieldIO(f"{prefix}FO1")
         self.gate_latch = soft_glue.Latch(f"{prefix}DFF-1")
         self.stop_trigger_latch = soft_glue.Latch(f"{prefix}DFF-2")
         # Internal triggering mechanism
@@ -93,25 +101,33 @@ class SoftGlueFlyerController(StandardReadable, Preparable):
         )
         self.clock_divider = soft_glue.Divider(prefix=f"{prefix}DivByN-1")
         # Specific output signal chains
-        self.pulse_output = soft_glue.FieldIO(prefix=f"{prefix}FO1")
-        self.trigger_output = SoftGlueTriggerOutput(prefix=prefix, output_num=1)
-        self.gate_output = SoftGlueTriggerOutput(prefix=prefix, output_num=2)
+        self.trigger_output = soft_glue.FieldIO(f"{prefix}FO1")
+        self.edge_outputs = DeviceVector(
+            {
+                num: SoftGlueTriggerOutput(prefix=prefix, output_num=num)
+                for num in edge_outputs
+            }
+        )
+        self.gate_outputs = DeviceVector(
+            {
+                num: SoftGlueTriggerOutput(prefix=prefix, output_num=num)
+                for num in gate_outputs
+            }
+        )
         super().__init__(name=name)
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
+        gate_trigger = TriggerInfo(trigger=DetectorTrigger.EXTERNAL_LEVEL)
+        edge_trigger = TriggerInfo(trigger=DetectorTrigger.EXTERNAL_EDGE)
         aws: Sequence[Awaitable] = (
             # Configure the specific output channels
-            self.trigger_output.prepare(
-                TriggerInfo(trigger=DetectorTrigger.EXTERNAL_EDGE)
-            ),
-            self.gate_output.prepare(
-                TriggerInfo(trigger=DetectorTrigger.EXTERNAL_LEVEL)
-            ),
+            *(output.prepare(edge_trigger) for output in self.edge_outputs.values()),
+            *(output.prepare(gate_trigger) for output in self.gate_outputs.values()),
             # Input/output channels
             self.reset_buffer.description.set("Reset"),
             self.reset_buffer.output_signal.set(RESET),
-            self.pulse_output.signal.set(INPUT),
+            self.trigger_output.signal.set(INPUT),
             # Latch for opening any gate signals
             self.gate_latch.description.set("Gate latch"),
             self.gate_latch.data_signal.set(HIGH),
