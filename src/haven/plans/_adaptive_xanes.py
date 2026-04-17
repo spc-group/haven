@@ -1,6 +1,7 @@
 import logging
 import random
-from typing import Literal, Optional, Tuple
+import warnings
+from typing import Any, Literal, Optional, Tuple
 
 import numpy as np
 from bluesky import plans as bp
@@ -18,7 +19,9 @@ from haven.callbacks import Collector
 __all__ = ["XANESSamplingRecommender", "adaptive_xanes"]
 
 try:
-    import botorch
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        import botorch
     import gpytorch
     import torch
     from eaa_core.util import to_numpy, to_tensor
@@ -30,8 +33,8 @@ except ImportError:
     botorch = None
     gpytorch = None
     torch = None
-    AdaptiveXANESBayesianOptimization = None
-    ComprehensiveAugmentedAcquisitionFunction = None
+    AdaptiveXANESBayesianOptimization = Any
+    ComprehensiveAugmentedAcquisitionFunction = Any
     to_numpy = None
     to_tensor = None
 
