@@ -74,6 +74,47 @@ def test_config_files_from_env(monkeypatch):
     assert config.run_engine.default_metadata.facility == "Zero Gradient Synchrotron"
 
 
+# Logging config example taken from
+# https://stackoverflow.com/a/7507842
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "default": {
+            "level": "INFO",
+            "formatter": "standard",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",  # Default is stderr
+        },
+    },
+    "loggers": {
+        "": {  # root logger
+            "handlers": ["default"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "my.packg": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "__main__": {  # if __name__ == '__main__'
+            "handlers": ["default"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
+
+
+def test_logging_config():
+    # Check that the example logging dictconfig passes validation
+    cfg = iconfig.load_config({"logging": LOGGING_CONFIG})
+    assert cfg.logging.version == 1
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

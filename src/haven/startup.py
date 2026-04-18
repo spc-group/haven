@@ -2,6 +2,7 @@
 qserver."""
 
 import logging
+import logging.config
 import time
 from collections.abc import Callable
 from functools import partial
@@ -49,11 +50,14 @@ from haven.plans import (  # noqa: F401
 )
 from haven.preprocessors import fixed_offset_wrapper  # noqa: F401
 
-logging.basicConfig(level=logging.WARNING)
-
-log = logging.getLogger(__name__)
-
+# Configure logging
 config = haven.load_config()
+if config.logging is None:
+    logging.basicConfig(level=logging.WARNING)
+else:
+    logging.config.dictConfig(config.logging.model_dump(by_alias=True))
+
+log = logging.getLogger("haven")
 
 
 # Create a run engine

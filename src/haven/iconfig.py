@@ -73,6 +73,40 @@ class RunEngineConfig(ConfigModel):
     )
 
 
+class FormatterConfig(ConfigModel):
+    format: str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    datefmt: str = "%Y-%m-%d %H:%M:%S"
+
+
+class HandlerConfig(ConfigModel):
+    level: str = "WARNING"
+    formatter: str = "standard"
+    class_: str = Field(
+        alias="class", default="logging.StreamHandler"
+    )  # Since "class" is a reserved keyword
+    stream: str = "ext://sys.stderr"  # Default is stderr
+
+
+class LoggerConfig(ConfigModel):
+    handlers: Sequence[str] = []
+    level: str
+    propagate: bool = False
+
+
+class LoggingConfig(ConfigModel):
+    version: int = 1
+    incremental: bool = False
+    disable_existing_loggers: bool = True
+    formatters: Mapping[str, FormatterConfig] = {"standard": FormatterConfig()}
+    handlers: Mapping[str, HandlerConfig] = {
+        "default": HandlerConfig(level="INFO", formatter="standard")
+    }
+    loggers: Mapping[str, LoggerConfig] = {
+        "": LoggerConfig(handlers=["default"], level="WARNING"),
+        "haven": LoggerConfig(handlers=["default"], level="INFO"),
+    }
+
+
 class HavenConfig(ConfigModel):
     area_detector_root_path: str = "/tmp"
     mock_devices: bool = False
@@ -84,6 +118,7 @@ class HavenConfig(ConfigModel):
     )
     device_files: Sequence[str] = []
     feature_flags: FeatureFlagConfig = FeatureFlagConfig()  # type: ignore
+    logging: LoggingConfig | None = None
 
     def device_parameters(self):
         """Return the parameters for the devices from "device_files" key."""
