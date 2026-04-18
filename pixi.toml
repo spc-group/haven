@@ -52,11 +52,11 @@ aioca = ">=2.0"
 bluesky = "==1.14.6"
 # apsbits = ">=2.0.0"  # Use canismarko's version until upstream PR is merged
 # https://github.com/BCDA-APS/BITS/pull/185
-apsbits = { git = "https://github.com/canismarko/BITS", branch = "loggin-config" }
+apsbits = { git = "https://github.com/bcda-aps/bits" }
 apstools = ">=1.7.8"
 guarneri = ">=0.5.0"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.17a2", extras = ["ca"] }
+ophyd-async = { version = "==0.17a3", extras = ["ca"] }
 scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"

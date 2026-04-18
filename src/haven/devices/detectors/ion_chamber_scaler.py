@@ -12,36 +12,38 @@ preamp_prefix="255idc:SR02"
 
 """
 
-import asyncio
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncGenerator, Mapping
 from dataclasses import dataclass
+from typing import Any
 
-from bluesky.protocols import Reading
+import numpy as np
+from event_model import DataKey
 from ophyd_async.core import (
+    Array1D,
     DetectorDataLogic,
+    Device,
+    DeviceVector,
     ReadableDataProvider,
+    SignalR,
+    StreamableDataProvider,
+    derived_signal_r,
 )
 from ophyd_async.epics.core import (
-    EpicsDevice,
+    epics_signal_r,
 )
 
-from .usb_counter import SignalsProvider, USBCounter, USBCounterDriverIO
+from .usb_counter import SignalsProvider, USBCounter, USBCounterDriverIO, _reduce_array
 
 
-class IonChamber(EpicsDevice):
+class IonChamber(Device):
     """An ion chamber with a preamp and voltmeter."""
 
-    pass
-
-
-class IonChamberProvider(SignalsProvider):
-    async def make_readings(self) -> dict[str, Reading]:
-        array_coros = [sig.read() for sig in self.array_signals]
-        readings, array_readings = await asyncio.gather(
-            super().make_readings(),
-            *array_coros,
+    def __init__(self, prefix: str, channel: int, name: str = ""):
+        self.raw_counts_array = epics_signal_r(
+            Array1D[np.int32], f"{prefix}mca{channel}.VAL"
         )
-        return readings
+        self.raw_counts = derived_signal_r(_reduce_array, arr=self.raw_counts_array)
+        super().__init__(name=name)
 
 
 @dataclass
@@ -49,18 +51,49 @@ class StepDataLogic(DetectorDataLogic):
     driver: USBCounterDriverIO
 
     async def prepare_single(self, datakey_name: str) -> ReadableDataProvider:
-        return IonChamberProvider(
-            signals=[
-                self.driver.current_channel,
-                self.driver.clock_ticks,
-            ],
-            array_signals=[mca.counts for mca in self.mcas],
+        child_signals = [
+            [chamber.raw_counts] for chamber in self.driver.ion_chambers.values()
+        ]
+        signals = [
+            self.driver.current_channel,
+            self.driver.clock_ticks,
+            # Include all the flattened child signals
+            *[sig for signals in child_signals for sig in signals],
+        ]
+        return SignalsProvider(
+            signals=signals,
         )
 
 
+@dataclass
+class NullProvider(StreamableDataProvider):
+    collections_written_signal: SignalR[int]
+
+    async def make_datakeys(self, collections_per_event: int) -> dict[str, DataKey]:
+        """Return a DataKey for each Readable that produces a Reading.
+
+        Called before the first exposure is taken.
+        """
+        return {}
+
+
+@dataclass
+class FlyDataLogic(DetectorDataLogic):
+    driver: USBCounterDriverIO
+
+    async def prepare_unbounded(self, datakey_name: str):
+        return NullProvider(self.driver.current_channel)
+
+
 class IonChamberDriver(USBCounterDriverIO):
-    def __init__(self, prefix: str, channels: Sequence[int], name: str = ""):
-        super().__init__(prefix, name=name, channels=channels)
+    def __init__(self, prefix: str, ion_chambers, name: str = ""):
+        self.ion_chambers = DeviceVector(
+            {
+                params["channel"]: IonChamber(prefix=prefix, **params, name=name)
+                for name, params in ion_chambers.items()
+            }
+        )
+        super().__init__(prefix, name=name, channels=())
 
 
 class IonChamberScaler(USBCounter):
@@ -72,9 +105,20 @@ class IonChamberScaler(USBCounter):
     def __init__(
         self, prefix: str, ion_chambers: Mapping[str, Mapping], *, name: str = ""
     ):
-        super().__init__(name=name, prefix=prefix)
+        super().__init__(
+            driver=IonChamberDriver(prefix, ion_chambers=ion_chambers, name=name),
+            name=name,
+            prefix=prefix,
+        )
         step_logic = StepDataLogic(driver=self.driver)
-        self.add_detector_logics(step_logic)
+        fly_logic = FlyDataLogic(driver=self.driver)
+        self.add_detector_logics(step_logic, fly_logic)
+        # We want to save data as "I0-counts", not a much longer auto-generated string
+        for name, ion_chamber in ion_chambers.items():
+            self.driver.ion_chambers[ion_chamber["channel"]].set_name(name)
+
+    async def collect_pages(self) -> AsyncGenerator[Mapping[str, Any], Any]:
+        assert False
 
 
 # -----------------------------------------------------------------------------

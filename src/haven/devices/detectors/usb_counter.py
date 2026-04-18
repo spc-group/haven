@@ -21,6 +21,7 @@ from ophyd_async.core import (
     StandardDetector,
     StrictEnum,
     SubsetEnum,
+    derived_signal_r,
     set_and_wait_for_other_value,
 )
 from ophyd_async.epics.adcore import NDPluginBaseIO
@@ -60,6 +61,11 @@ class NumChannels(StrictEnum):
 class ChannelAdvanceSource(SubsetEnum):
     INTERNAL = "Internal"
     EXTERNAL = "External"
+
+
+def _reduce_array(arr: Array1D[np.int32]) -> int:
+    """Reduce an array to a single point."""
+    return int(arr[-1]) if len(arr) > 0 else 0
 
 
 class PulseGenerator(EpicsDevice):
@@ -104,7 +110,12 @@ class USBCounterDriverIO(EpicsDevice):
         self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
         # Add a clock signal if it's not being used for something else
         if 0 not in self.mcas.keys():
-            self.clock_ticks = epics_signal_r(Array1D[np.int32], f"{prefix}mca1.VAL")
+            self.clock_ticks_array = epics_signal_r(
+                Array1D[np.int32], f"{prefix}mca1.VAL"
+            )
+            self.clock_ticks = derived_signal_r(
+                _reduce_array, arr=self.clock_ticks_array
+            )
         super().__init__(prefix=prefix, name=name)
 
 
@@ -131,7 +142,10 @@ class SignalsProvider(ReadableDataProvider):
 
         Called before the first exposure is taken.
         """
-        return await self.signal.describe()
+        coros = [sig.describe() for sig in self.signals]
+        readings = await asyncio.gather(*coros)
+        merged = dict(pair for reading in readings for pair in reading.items())
+        return merged
 
     async def make_readings(self) -> dict[str, Reading]:
         coros = [sig.read(cached=False) for sig in self.signals]
@@ -186,7 +200,7 @@ class USBCounterArmLogic(DetectorArmLogic):
             timeout=DEFAULT_TIMEOUT,
         )
 
-    async def disarm(self):
+    async def disarm(self, on_unstage: bool):
         disarm_status = await set_and_wait_for_other_value(
             set_signal=self.driver.stop_all,
             set_value=True,
@@ -207,8 +221,9 @@ class USBCounter(StandardDetector):
         plugins: Mapping[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
         name: str = "",
+        driver: USBCounterDriverIO | None = None,
     ) -> None:
-        self.driver = USBCounterDriverIO(prefix, channels=channels)
+        self.driver = driver or USBCounterDriverIO(prefix, channels=channels)
         if plugins is not None:
             for plugin_name, plugin in plugins.items():
                 setattr(self, plugin_name, plugin)
