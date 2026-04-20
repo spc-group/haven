@@ -67,14 +67,14 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
     def get_deadtime(self, exposure: float | None) -> float:
         # From manual: No readout time in 12-bit, 6-bit and 1-bit mode,
         # 1 ms in 24-bit mode
-        return 1e-3
+        return 5e-3
 
     async def prepare_edge(self, num: int, livetime: float) -> None:
         task = asyncio.ensure_future(
             asyncio.gather(
                 prepare_exposures(self.driver, num),
                 self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_IMAGE),
-                self.driver.acquire_time.set(livetime),
+                self.driver.acquire_time.set(livetime - self.get_deadtime(livetime)),
             )
         )
         await self._wait_for_num_images(num)

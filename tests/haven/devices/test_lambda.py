@@ -80,11 +80,11 @@ async def test_prepare_internal(detector):
 async def test_prepare_external(detector):
     set_mock_value(detector.writer.file_path_exists, True)
     tinfo = TriggerInfo(
-        trigger=DetectorTrigger.EXTERNAL_LEVEL,
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
         collections_per_event=5,
     )
     await detector.prepare(tinfo)
-    await assert_value(detector.driver.trigger_mode, "External_SequencePer")
+    await assert_value(detector.driver.trigger_mode, "External_ImagePer")
     await assert_value(detector.driver.num_images, 5)
     await assert_value(detector.driver.image_mode, "Multiple")
 
