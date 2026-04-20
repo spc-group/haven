@@ -199,11 +199,13 @@ tiled-server = "tiled serve config"
 [feature.ai.pypi-dependencies]
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
-# aps-ai-beamline-controller = ">=0.0.12"
+# aps-ai-beamline-controller = ">=0.0.30"
 # # Work-around to get CUDA drivers to agree
 # torch = "==2.7.0"
 # torchvision = "==0.22.0"
 # torchaudio = "==2.7.0"
+# aps-beamline-driver = ">=1.0.19"
+# aps-common-libraries = ">=1.0.37"
 # # This package will eventually be available on PyPI, but for now it
 # # breaks CI so it being removed
 # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
