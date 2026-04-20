@@ -17,9 +17,9 @@ def launch_queueserver():
 
     # Derive internal haven variables
     config = load_config()
-    qs_config = config.get("queueserver", {})
-    redis_addr = qs_config.get("redis_addr", "")
-    redis_prefix = qs_config.get("redis_prefix", "qs_default")
+    qs_config = config.queueserver
+    redis_addr = qs_config.redis_addr
+    redis_prefix = qs_config.redis_prefix
     # Launch the queueserver
     args = [
         shutil.which("start-re-manager"),
