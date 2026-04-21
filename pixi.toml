@@ -27,7 +27,7 @@ default = { solve-group = "default" }
 dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
 qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
 25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 xrftools = { features = ["xrftools"] }
 # designer = { features = ["designer"] }
@@ -199,15 +199,15 @@ tiled-server = "tiled serve config"
 [feature.ai.pypi-dependencies]
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
-# aps-ai-beamline-controller = ">=0.0.30"
-# # Work-around to get CUDA drivers to agree
-# torch = "==2.7.0"
-# torchvision = "==0.22.0"
-# torchaudio = "==2.7.0"
-# aps-beamline-driver = ">=1.0.19"
-# aps-common-libraries = ">=1.0.37"
-# # This package will eventually be available on PyPI, but for now it
-# # breaks CI so it being removed
+aps-ai-beamline-controller = "==0.0.33"
+# Work-around to get CUDA drivers to agree
+torch = "==2.7.0"
+torchvision = "==0.22.0"
+torchaudio = "==2.7.0"
+aps-beamline-driver = ">=1.0.21"
+aps-common-libraries = ">=1.0.37"
+# This package will eventually be available on PyPI, but for now it
+# breaks CI so it being removed
 # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
 
 # (Installing these xrf tools breaks haven with an error about missing
@@ -233,6 +233,8 @@ QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60627"
 # Per beamline configuration
 [feature.25idc.tasks]
 test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
+alignment-gui = "cd $HOME/src/AI-Beamline-25ID/TEST/25-ID-C_KB-US; python -m aps.ai.beamline_controller Alignment-Manager -l0 -p0 -o25-ID-C_KB-US"
+alignment-config = "cd $HOME/src/AI-Beamline-25ID/TEST/25-ID-C_KB-US; python -m aps.ai.beamline_controller Configuration-Editor -l0 -p0 -o25-ID-C_KB-US"
 
 [feature.25idc.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
