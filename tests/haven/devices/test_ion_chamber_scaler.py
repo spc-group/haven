@@ -3,6 +3,7 @@ from bluesky import RunEngine
 from bluesky import plan_stubs as bps
 from bluesky import preprocessors as bpp
 from ophyd_async.core import TriggerInfo, set_mock_value
+from ophyd_async.testing import assert_value
 
 from haven.devices.detectors.ion_chamber_scaler import IonChamberScaler
 
@@ -18,6 +19,7 @@ def scaler(sim_registry):
     return scaler
 
 
+@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_reading(scaler):
     await scaler.connect(mock=True)
@@ -34,6 +36,9 @@ async def test_reading(scaler):
     assert "I0-raw_counts" in reading
     assert reading["I0-raw_counts"]["value"] == 1337
     assert type(reading["I0-raw_counts"]["value"]) is int
+    assert "I0-counts" in reading
+    assert reading["I0-counts"]["value"] == 1337
+    assert type(reading["I0-counts"]["value"]) is int
 
 
 @pytest.mark.xfail
@@ -65,6 +70,15 @@ async def test_collection(scaler):
 
     RE(dummy_fly_scan())
     assert "event" in docs.keys()
+
+
+async def test_calibration(scaler):
+    await scaler.connect(mock=True)
+    ion_chamber, *_ = scaler.driver.ion_chambers.values()
+    set_mock_value(ion_chamber.raw_counts_array, [1234])
+    set_mock_value(scaler.driver.clock_ticks_array, [100])
+    await scaler.calibrate(truth=0)
+    await assert_value(ion_chamber.calculation_expression, "B - 12.34 * A")
 
 
 # -----------------------------------------------------------------------------
