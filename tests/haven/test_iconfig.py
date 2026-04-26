@@ -35,27 +35,19 @@ def test_resolve_device_file_paths(tmp_path):
 def test_device_parameters(tmp_path):
     devices0 = tmp_path / "devices-common.toml"
     with open(devices0, mode="w") as fp:
-        fp.write(
-            dedent(
-                """
+        fp.write(dedent("""
             [[ motors ]]
             m1 = "255idcVME:m1"
 
             [[ motors ]]
             m2 = "255idcVME:m2"
-        """
-            )
-        )
+        """))
     devices1 = tmp_path / "devices-specific.toml"
     with open(devices1, mode="w") as fp:
-        fp.write(
-            dedent(
-                """
+        fp.write(dedent("""
             [[ motors ]]
             m3 = "255idcVME:m2"
-        """
-            )
-        )
+        """))
     config = HavenConfig(device_files=[str(devices0), str(devices1)])
     # Check that the device parameters get loaded properly
     params = config.device_parameters()
