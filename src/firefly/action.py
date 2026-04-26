@@ -1,5 +1,6 @@
 import logging
 from collections import ChainMap
+from pathlib import Path
 from typing import Mapping
 
 from qtpy.QtCore import Signal
@@ -53,7 +54,7 @@ class WindowAction(Action):
         self,
         name: str,
         text: str,
-        display_file,
+        display_file: str | Path | None,
         shortcut: str = None,
         icon: QIcon = None,
         WindowClass: type = QMainWindow,
@@ -89,7 +90,8 @@ class WindowAction(Action):
         kwargs = {}
         if self.macros is not None:
             kwargs["macros"] = self.macros
-        window.open(str(self.display_file.resolve()), **kwargs)
+        if self.display_file is not None:
+            window.open(str(self.display_file.resolve()), **kwargs)
         self.window_created.emit(self)
         # Properly remove the window if it's closed
         window.destroyed.connect(self.forget_window)
@@ -100,7 +102,7 @@ class ActionsRegistry:
     """A common namespace for keeping track of global actions."""
 
     # Actions for showing specific windows
-    bss: WindowAction = None
+    dm_station: WindowAction = None
     energy: WindowAction = None
     log: WindowAction = None
     status: WindowAction = None
@@ -166,7 +168,7 @@ class ActionsRegistry:
     @property
     def all_actions(self):
         return [
-            self.bss,
+            self.dm_station,
             self.energy,
             self.log,
             self.status,

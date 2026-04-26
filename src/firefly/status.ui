@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>582</width>
-    <height>301</height>
+    <width>356</width>
+    <height>285</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -143,7 +143,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="PyDMByteIndicator" name="shutter_permit_indicator">
+         <widget class="PyDMByteIndicator" name="shutter_permit_indicator" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -184,9 +184,6 @@
           </property>
           <property name="circles" stdset="0">
            <bool>false</bool>
-          </property>
-          <property name="labelPosition" stdset="0">
-           <enum>QTabWidget::South</enum>
           </property>
           <property name="numBits" stdset="0">
            <number>1</number>
@@ -237,7 +234,7 @@
         <item row="3" column="1">
          <layout class="QHBoxLayout" name="shutter_A_layout">
           <item>
-           <widget class="PyDMByteIndicator" name="FES_state_indicator">
+           <widget class="PyDMByteIndicator" name="FES_state_indicator" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -264,9 +261,6 @@
             </property>
             <property name="circles" stdset="0">
              <bool>false</bool>
-            </property>
-            <property name="labelPosition" stdset="0">
-             <enum>QTabWidget::South</enum>
             </property>
             <property name="numBits" stdset="0">
              <number>1</number>
@@ -327,7 +321,7 @@
         <item row="4" column="1">
          <layout class="QHBoxLayout" name="shutter_CD_layout">
           <item>
-           <widget class="PyDMByteIndicator" name="SCDS_state_indicator">
+           <widget class="PyDMByteIndicator" name="SCDS_state_indicator" native="true">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -357,9 +351,6 @@
             </property>
             <property name="circles" stdset="0">
              <bool>false</bool>
-            </property>
-            <property name="labelPosition" stdset="0">
-             <enum>QTabWidget::South</enum>
             </property>
             <property name="numBits" stdset="0">
              <number>1</number>
@@ -425,175 +416,6 @@
          </layout>
         </item>
        </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="bss_box">
-     <property name="title">
-      <string>Proposal/ESAF</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <layout class="QFormLayout" name="bss_layout">
-        <property name="rowWrapPolicy">
-         <enum>QFormLayout::DontWrapRows</enum>
-        </property>
-        <property name="labelAlignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Proposal:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <layout class="QHBoxLayout" name="proposal_layout">
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="proposal_id_label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>#######</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="proposal_title_label">
-            <property name="text">
-             <string>&lt;Unset&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>ESAF:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <layout class="QHBoxLayout" name="esaf_layout">
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="esaf_id_label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>#######</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="esaf_title_label">
-            <property name="text">
-             <string>&lt;Unset&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>End Date:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Users:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="esaf_end_date_label">
-          <property name="text">
-           <string>&lt;Unset&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLabel" name="esaf_users_label">
-          <property name="text">
-           <string>&lt;Unset&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>Status:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="esaf_status_label">
-          <property name="text">
-           <string>&lt;Unset&gt;</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
-        <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="bss_modify_button">
-          <property name="toolTip">
-           <string>Load the window for changing beamline scheduling system (BSS) details.</string>
-          </property>
-          <property name="text">
-           <string>BSS</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <spacer name="verticalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
       </item>
      </layout>
     </widget>

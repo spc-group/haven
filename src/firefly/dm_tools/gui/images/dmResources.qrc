@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+	<qresource prefix="splash">
+		<file alias="splash.jpg">splash.jpg</file>
+		<file alias="splash2.jpg">splash2.jpg</file>
+		<file alias="splash3.png">splash3.png</file>
+	</qresource>
+    <qresource prefix="icons">
+		<file alias="calendar.svg">calendar.svg</file>
+		<file alias="settings.svg">settings.svg</file>
+		<file alias="wrench.svg">wrench.svg</file>
+    </qresource>
+</RCC>

@@ -75,7 +75,6 @@ files = [
     'tests/haven',
     'tests/integration/',
     'tests/end_to_end/',
-    'src/firefly/bss.py', 'tests/firefly/test_bss_display.py',
     'src/firefly/energy.py', 'tests/firefly/test_energy_display.py',
     'src/firefly/devices/axilon_monochromator.py', 'tests/firefly/devices/test_monochromator.py',
     'src/firefly/devices/undulator.py', 'tests/firefly/devices/test_undulator.py',
@@ -96,6 +95,5 @@ follow_untyped_imports = true
 exclude = [
     # To-do: Get these files to pass the type-checker
     "src/haven/devices/srs570.py",
-    "src/haven/_iconfig.py",
     "src/haven/instrument.py",
 ]

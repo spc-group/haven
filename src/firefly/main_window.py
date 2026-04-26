@@ -104,7 +104,9 @@ class FireflyMainWindow(PyDMMainWindow):
 
     async def update_devices(self, registry):
         self.registry = registry
-        await self.display_widget().update_devices(registry)
+        display = self.display_widget()
+        if display is not None:
+            await display.update_devices(registry)
 
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
@@ -199,7 +201,7 @@ class FireflyMainWindow(PyDMMainWindow):
             undulator_actions=actions.undulators,
             xrf_detector_actions=actions.xrf_detectors,
             status_window_action=actions.status,
-            bss_window_action=actions.bss,
+            dm_station_window_action=actions.dm_station,
         )
 
     def _setup_menu_actions(
@@ -224,7 +226,7 @@ class FireflyMainWindow(PyDMMainWindow):
         undulator_actions,
         xrf_detector_actions,
         status_window_action,
-        bss_window_action,
+        dm_station_window_action,
     ):
         # Log viewer window
         if logs_window_action is not None:
@@ -321,8 +323,8 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         if status_window_action is not None:
             self.ui.menuView.addAction(status_window_action)
-        if bss_window_action is not None:
-            self.ui.setup_menu.addAction(bss_window_action)
+        if dm_station_window_action is not None:
+            self.ui.setup_menu.addAction(dm_station_window_action)
         # Make tooltips show up for menu actions
         for menu in [self.ui.setup_menu, self.ui.detectors_menu, self.ui.queue_menu]:
             menu.setToolTipsVisible(True)

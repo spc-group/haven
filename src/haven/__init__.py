@@ -7,19 +7,6 @@ __all__ = [
     "xafs_scan",
 ]
 
-# Get installed version number
-import importlib.metadata
-
-try:
-    __version__ = importlib.metadata.version("haven-spc")
-except importlib.metadata.PackageNotFoundError:
-    import pkg_resources
-
-    __version__ = pkg_resources.get_distribution("haven-spc").version
-    del pkg_resources
-finally:
-    del importlib
-
 
 # Determine the file path of the ipython startup file
 from pathlib import Path

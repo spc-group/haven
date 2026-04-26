@@ -40,10 +40,15 @@ class FeatureFlagConfig(ConfigModel):
     ] = False
 
 
-class BssConfig(ConfigModel):
-    uri: str
-    beamline: str
-    station_name: str
+class DataManagementConfig(ConfigModel):
+    # API URI's taken from the data management environmental variables
+    scheduling_uri: str  # DM_APS_DB_WEB_SERVICE_URL
+    data_transfer_uri: str  # DM_DAQ_WEB_SERVICE_URL
+    workflow_uri: str  # DM_PROC_WEB_SERVICE_URL
+    data_storage_uri: str  # DM_DS_WEB_SERVICE_URL
+    catalog_uri: str  # DM_CAT_WEB_SERVICE_URL
+    beamline: str  # DM_BEAMLINE_NAME
+    station_name: str  # DM_STATION_NAME
     username: str | None = None
     password: str | None = None
 
@@ -110,7 +115,7 @@ class LoggingConfig(ConfigModel):
 class HavenConfig(ConfigModel):
     area_detector_root_path: str = "/tmp"
     mock_devices: bool = False
-    bss: BssConfig | None = None
+    data_management: DataManagementConfig | None = None
     tiled: TiledConfig | None = None
     queueserver: QueueserverConfig = QueueserverConfig()
     run_engine: RunEngineConfig = Field(

@@ -9,8 +9,6 @@ import epics
 from bluesky.preprocessors import msg_mutator
 from bluesky.utils import make_decorator
 
-from haven import __version__ as haven_version
-
 log = logging.getLogger()
 
 
@@ -27,7 +25,7 @@ def version_md() -> dict[str, Any]:
         "version_bluesky": get_version("bluesky"),
         "version_epics_ca": epics.__version__,
         "version_epics": epics.__version__,
-        "version_haven": haven_version,
+        "version_haven": "unknown",
         "version_ophyd": get_version("ophyd"),
         "version_ophyd_async": get_version("ophyd_async"),
         # Controls

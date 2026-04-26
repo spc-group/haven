@@ -19,6 +19,8 @@ from haven.exceptions import InvalidConfiguration
 from haven.utils import titleize
 
 from .action import Action, ActionsRegistry, WindowAction
+from .display import FireflyDisplay
+from .dm_tools.gui.dmStationUi import DmStationUi
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
 
@@ -231,7 +233,6 @@ class FireflyController(QtCore.QObject):
             display_file=ui_dir / "status.py",
             WindowClass=PlanMainWindow,
         )
-        self.actions.status.window_created.connect(self.finalize_status_window)
         # Actions for executing plans
         self.actions.plans = {
             "count": WindowAction(
@@ -276,14 +277,13 @@ class FireflyController(QtCore.QObject):
             ),
         }
         # Action for showing the beamline scheduling window
-        self.actions.bss = WindowAction(
-            name="show_bss_window_action",
-            text="Scheduling (&BSS)",
-            display_file=ui_dir / "bss.py",
-            WindowClass=FireflyMainWindow,
-            icon=qta.icon("fa6s.calendar"),
+        self.actions.dm_station = WindowAction(
+            name="show_dm_station_window_action",
+            text="&Data Management",
+            display_file=None,
+            WindowClass=DmStationUi,
+            icon=qta.icon("fa6s.database"),
         )
-        self.actions.bss.window_created.connect(self.finalize_bss_window)
         # Launch ion chamber voltmeters window
         self.actions.voltmeter = WindowAction(
             name="show_voltmeters_window_action",
@@ -319,41 +319,32 @@ class FireflyController(QtCore.QObject):
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
-        action.window.setup_menu_actions(actions=self.actions)
-        # Connect signals for viewing other device windows
-        action.display.device_window_requested.connect(self.launch_device_window)
-        # Prepare queue-server interactions
-        self.queue_status_changed.connect(action.window.update_queue_status)
-        self.queue_status_changed.connect(action.window.update_queue_controls)
-        if getattr(self, "_queue_client", None) is not None:
-            status = await self._queue_client.queue_status()
-            action.window.update_queue_status(status)
-            action.window.update_queue_controls(status)
-        action.display.queue_item_submitted.connect(self.add_queue_item)
-        action.display.execute_item_submitted.connect(self.execute_queue_item)
-        # Send the current devices to the window
-        await action.window.update_devices(self.registry)
-        # Update the scheduling metadata for each window (especially plans)
-        self.bss_metadata_changed.connect(action.display.update_bss_metadata)
-        action.display.update_bss_metadata(self._bss_metadata)
+        if isinstance(action.window, FireflyMainWindow):
+            action.window.setup_menu_actions(actions=self.actions)
+            # Prepare queue-server interactions
+            self.queue_status_changed.connect(action.window.update_queue_status)
+            self.queue_status_changed.connect(action.window.update_queue_controls)
+            if getattr(self, "_queue_client", None) is not None:
+                status = await self._queue_client.queue_status()
+                action.window.update_queue_status(status)
+                action.window.update_queue_controls(status)
+            # Send the current devices to the window
+            await action.window.update_devices(self.registry)
+        if isinstance(getattr(action, "display", None), FireflyDisplay):
+            # Connect signals for viewing other device windows
+            action.display.device_window_requested.connect(self.launch_device_window)
+            # Prepare queue-server interactions
+            action.display.queue_item_submitted.connect(self.add_queue_item)
+            action.display.execute_item_submitted.connect(self.execute_queue_item)
+            # Update the scheduling metadata for each window (especially plans)
+            self.bss_metadata_changed.connect(action.display.update_bss_metadata)
+            action.display.update_bss_metadata(self._bss_metadata)
 
     @asyncSlot(QAction)
     async def finalize_plan_regions(self, action: QAction):
         """Finished setting up the plan windows."""
         display = action.display
         await display.setup_default_regions()
-
-    @asyncSlot(QAction)
-    async def finalize_bss_window(self, action: QAction):
-        """Connect up signals for the scheduling display window."""
-        action.display.metadata_changed.connect(self._stash_bss_metadata)
-        action.display.metadata_changed.connect(self.bss_metadata_changed)
-        await action.display.load_models()
-
-    def finalize_status_window(self, action: QAction):
-        """Connect up signals that are specific to the voltmeters window."""
-        display = action.display
-        display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
 
     def launch_queuemonitor(self):
         subprocess.Popen(["queue-monitor"])

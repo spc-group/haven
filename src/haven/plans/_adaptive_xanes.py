@@ -1,6 +1,7 @@
 import logging
 import random
 import warnings
+from collections.abc import Mapping
 from typing import Any, Literal, Optional, Tuple
 
 import numpy as np
@@ -491,7 +492,9 @@ def adaptive_xanes(
         n_initial_measurements=n_initial_measurements,
     )
     # Execute the plan
-    first_point = {energy_positioner: np.median(energy_range)}
+    first_point: Mapping[Device, int | float] = {
+        energy_positioner: np.median(energy_range)
+    }
     yield from adaptive_plan(
         dets=detectors,
         first_point=first_point,

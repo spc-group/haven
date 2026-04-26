@@ -1,5 +1,3 @@
-from haven import __version__  # noqa: F401
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

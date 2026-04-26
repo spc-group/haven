@@ -9,6 +9,9 @@ from functools import partial
 
 import numpy as np  # noqa: F401
 import rich
+import rich.console
+import rich.panel
+import rich.theme
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
 from bluesky import preprocessors as bpp  # noqa: F401

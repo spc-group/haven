@@ -1,5 +1,5 @@
 [workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "aps-anl-tag"]
 platforms = ["linux-64"]
 
 [activation.env]
@@ -137,7 +137,8 @@ pyqtgraph = "*"
 pydm = ">=1.28.1"
 qasync = "*"
 bluesky-widgets = "*"
-
+pandas = "<3"  # Otherwise aps-dm-api will preempt tiled's dependencies
+aps-dm-api = ">=10.1.0,<11"
 
 [feature.gui.pypi-dependencies]
 apsbss = "*"
@@ -185,7 +186,7 @@ bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = "==2.0.2"
-tiled = { version = "==0.2.8", extras = ["wxgui"] }
+tiled = { version = "==0.2.8", extras = ["all"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"

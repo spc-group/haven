@@ -1,10 +1,8 @@
 import logging
-from typing import Mapping
 
 import qtawesome as qta
 from pydm import PyDMChannel
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
-from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
@@ -24,7 +22,6 @@ def name_to_title(name: str):
 
 class StatusDisplay(display.FireflyDisplay):
     first_shutter_row = 3
-    bss_window_requested = Signal()
 
     async def update_devices(self, registry):
         await super().update_devices(registry)
@@ -100,19 +97,7 @@ class StatusDisplay(display.FireflyDisplay):
             closable_channel = None
         self.shutter_channels.append((openable_channel, closable_channel))
 
-    def update_bss_metadata(self, md: Mapping[str, str]):
-        super().update_bss_metadata(md)
-        self.ui.proposal_id_label.setText(md.get("proposal_id", ""))
-        self.ui.proposal_title_label.setText(md.get("proposal_title", ""))
-        self.ui.esaf_id_label.setText(md.get("esaf_id", ""))
-        self.ui.esaf_title_label.setText(md.get("esaf_title", ""))
-        self.ui.esaf_status_label.setText(md.get("esaf_status", ""))
-        self.ui.esaf_end_date_label.setText(md.get("esaf_end", ""))
-        self.ui.esaf_users_label.setText(md.get("esaf_users", ""))
-
     def customize_ui(self):
-        self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
-        self.ui.bss_modify_button.setIcon(qta.icon("fa6s.calendar"))
         # Remove existing designer shutter widgets
         self.beamline_layout.removeRow(self.ui.shutter_A_layout)
         self.beamline_layout.removeRow(self.ui.shutter_CD_layout)

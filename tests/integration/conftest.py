@@ -13,12 +13,12 @@ device_files = {device_files}
 # Metadata from the beamline scheduling system (BSS)
 ####################################################
 
-[bss]
-uri = "https://localhost:12345/dm"
-beamline = "255-ID-Z"
-station_name = "255IDZ"
-username = "s255idzuser"
-password = "abc123"
+# [data_management]
+# uri = "https://localhost:12345/dm"
+# beamline = "255-ID-Z"
+# station_name = "255IDZ"
+# username = "s255idzuser"
+# password = "abc123"
 
 
 ##############
