@@ -36,7 +36,7 @@ class FeatureFlagConfig(ConfigModel):
 
     # Be conservative when deciding on expiration dates.
     undulator_fast_step_scanning_mode: A[
-        bool, Field(deprecated=expires(dt.datetime(2026, 5, 1)))
+        bool, Field(deprecated=expires(dt.datetime(2026, 6, 1)))
     ] = False
 
 

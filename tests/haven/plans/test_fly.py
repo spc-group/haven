@@ -32,7 +32,9 @@ def controller():
 
 @pytest.fixture()
 def xspress():
-    xsp = Xspress3Detector(prefix="XSP3:", name="xspress")
+    xsp = Xspress3Detector(
+        prefix="XSP3:", name="xspress", sensor_material="Si", sensor_thickness_mm=1
+    )
     return xsp
 
 

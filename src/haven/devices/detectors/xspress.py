@@ -67,7 +67,7 @@ class XspressTriggerMode(StrictEnum):
 class XspressDriverIO(ADBaseIO):
     data_type: ADBaseDataType
 
-    def __init__(self, prefix, name=""):
+    def __init__(self, prefix, *, name=""):
         self.trigger_mode = epics_signal_rw(XspressTriggerMode, f"{prefix}TriggerMode")
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
         self.erase = epics_signal_x(f"{prefix}ERASE")
@@ -180,6 +180,8 @@ class Xspress3Detector(AreaDetector):
     def __init__(
         self,
         prefix: str,
+        sensor_material: str,
+        sensor_thickness_mm: int | float,
         path_provider: PathProvider | None = None,
         driver_suffix="det1:",
         writer_type: ADWriterType | None = ADWriterType.HDF,
@@ -198,6 +200,12 @@ class Xspress3Detector(AreaDetector):
         )
         # Extra configuration signals
         self.ev_per_bin, _ = soft_signal_r_and_setter(float, initial_value=ev_per_bin)
+        self.sensor_material, _ = soft_signal_r_and_setter(
+            str, initial_value=sensor_material
+        )
+        self.sensor_thickness, _ = soft_signal_r_and_setter(
+            float, initial_value=sensor_thickness_mm, units="mm"
+        )
         # Area detector IO and control
         driver = XspressDriverIO(f"{prefix}{driver_suffix}")
         if path_provider is None:
@@ -206,6 +214,8 @@ class Xspress3Detector(AreaDetector):
             driver.acquire_period,
             driver.acquire_time,
             self.ev_per_bin,
+            self.sensor_material,
+            self.sensor_thickness,
             *config_sigs,
         )
         # We need the driver to be a plugin so that NDAttributes get saved

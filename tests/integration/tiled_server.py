@@ -80,9 +80,6 @@ class TiledServerInfo:
         cmd = " ".join(tiled_cmd)
         self.executor = HTTPExecutor(cmd, self.uri, "(405|200)")
         self.executor.start()
-        # self.Popen = subprocess.Popen(tiled_cmd, env={"TILED_CONFIG": str(config_file)})
-        # Wait for the server to spin up
-        # wait_for_server(self.uri, timeout=30)
 
     def stop(self):
         """End a Tiled server started with *start_server()*."""

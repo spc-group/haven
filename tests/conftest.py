@@ -69,7 +69,13 @@ async def ion_chamber(sim_registry):
 
 @pytest.fixture()
 async def xspress(sim_registry):
-    vortex = Xspress3Detector(name="vortex_me4", prefix="255id_vortex:", elements=4)
+    vortex = Xspress3Detector(
+        name="vortex_me4",
+        prefix="255id_vortex:",
+        elements=4,
+        sensor_material="Si",
+        sensor_thickness_mm=1,
+    )
     await vortex.connect(mock=True)
     sim_registry.register(vortex)
     yield vortex

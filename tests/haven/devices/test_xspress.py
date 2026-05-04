@@ -14,7 +14,13 @@ this_dir = Path(__file__).parent
 
 @pytest.fixture()
 async def detector():
-    det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
+    det = Xspress3Detector(
+        "255id_xsp:",
+        name="vortex_me4",
+        elements=4,
+        sensor_material="Si",
+        sensor_thickness_mm=1,
+    )
     await det.connect(mock=True)
     set_mock_value(det.writer.file_path_exists, True)
     return det
@@ -40,9 +46,13 @@ async def test_signals(detector):
     assert elem0.dead_time_factor.source == "mock+ca://255id_xsp:C1SCA:9:Value_RBV"
 
 
-async def test_description(detector):
+async def test_configuration(detector):
     config = await detector.read_configuration()
     assert f"{detector.name}-ev_per_bin" in config
+    assert f"{detector.name}-sensor_material" in config
+    assert f"{detector.name}-sensor_thickness" in config
+    desc = await detector.describe_configuration()
+    assert desc["vortex_me4-sensor_thickness"]["units"] == "mm"
 
 
 @pytest.mark.asyncio

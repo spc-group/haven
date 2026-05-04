@@ -8,6 +8,7 @@ from pathlib import Path
 
 from bluesky_queueserver_api.comm_base import RequestTimeoutError
 from bluesky_queueserver_api.zmq import REManagerAPI
+from mirakuru import TCPExecutor
 
 TICK = 0.2  # Seconds between check-ins with the server
 
@@ -20,6 +21,7 @@ class QserverInfo:
     info_port: str = ""
     Popen: subprocess.Popen | None = None
     api: REManagerAPI | None = None
+    executor: TCPExecutor | None = None
 
     @property
     def control_addr(self):
@@ -31,6 +33,8 @@ class QserverInfo:
 
     def start(self) -> None:
         """Start a simple bluesky queue server for testing."""
+        # if self.executor is not None:
+        #     raise RuntimeError("qserver is already running")
         qserver_cmd = shutil.which("start-re-manager")
         if qserver_cmd is None:
             raise RuntimeError("Could not locate binary for `start-re-manager`.")
@@ -48,6 +52,12 @@ class QserverInfo:
             "--redis-name-prefix",
             "qserver_tests",
         ]
+        cmd = " ".join(cmds)
+        print(cmd)
+        # process = OutputExecutor(cmd, banner='ZeroMQ server is waiting', timeout=20)
+        # process.start()
+        # self.executor = TCPExecutor(cmd, host=self.host, port=int(self.control_port))
+        # self.executor.start()
         self.Popen = subprocess.Popen(cmds)
 
     def connect(self, timeout: int | float = 30) -> REManagerAPI:
