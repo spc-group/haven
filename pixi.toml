@@ -6,7 +6,7 @@ platforms = ["linux-64"]
 PYDM_DEFAULT_PROTOCOL = "ca"
 
 [dependencies]
-python = "3.12.*"
+python = "3.13.*"
 
 [pypi-dependencies]
 haven-spc = { path = ".", editable = true }
@@ -64,7 +64,7 @@ p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"
 
 [feature.ipython]
-dependencies = { python = "3.12.*", ipython = "*" }
+dependencies = { python = "3.13.*", ipython = "*" }
 pypi-dependencies = { rich = "*" }
 tasks = {haven = "ipython -i ./src/haven/startup.py"}
 
@@ -200,7 +200,7 @@ tiled-server = "tiled serve config"
 [feature.ai.pypi-dependencies]
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
-aps-ai-beamline-controller = "==0.0.33"
+aps-ai-beamline-controller = "==0.0.36"
 # Work-around to get CUDA drivers to agree
 torch = "==2.7.0"
 torchvision = "==0.22.0"
