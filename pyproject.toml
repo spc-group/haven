@@ -1,6 +1,7 @@
 [project]
 name = "haven-spc"
-version = "2025.02.1"
+# version = "2025.02.1"
+dynamic = ['version']
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
@@ -43,13 +44,17 @@ firefly = ["firefly.qss"]
 
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/haven", "src/firefly", "src/haven_qserver"]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "calver-by-date" }
 
 [tool.isort]
 profile = "black"

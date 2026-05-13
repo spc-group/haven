@@ -7,6 +7,12 @@ from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det
 
 from haven import baseline_decorator, baseline_wrapper
+from haven.iconfig import (
+    DataManagementConfig,
+    HavenConfig,
+    RunEngineConfig,
+    RunEngineMetadata,
+)
 from haven.preprocessors import (
     inject_metadata_wrapper,
 )
@@ -68,6 +74,28 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     monkeypatch.setenv("EPICS_HOST_ARCH", "PDP11", prepend=False)
     monkeypatch.setenv("PYEPICS_LIBCA", "/dev/null", prepend=False)
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16", prepend=False)
+    config = HavenConfig(
+        data_management=DataManagementConfig(
+            scheduling_uri="",
+            data_transfer_uri="",
+            workflow_uri="",
+            data_storage_uri="",
+            catalog_uri="",
+            beamline="255-ID-Z",
+            station_name="255IDZ",
+        ),
+        run_engine=RunEngineConfig(
+            default_metadata=RunEngineMetadata(
+                facility="deathstar",
+                beamline_id="255-ID-Z",
+                xray_source="super laser",
+            ),
+        ),
+    )
+    mocker.patch(
+        "haven.preprocessors.inject_metadata.load_config",
+        new=mocker.MagicMock(return_value=config),
+    )
     # Check that the callback has the correct metadata
     plan = bp.count([det], num=1, md={"purpose": "testing"})
     plan = inject_metadata_wrapper(plan)
@@ -88,6 +116,10 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
         "detectors",
         "hints",
         "purpose",
+        "facility",
+        "beamline_id",
+        "xray_source",
+        "dm_station_name",
     ]
     missing_keys = set(expected_keys) - set(start_doc.keys())
     assert not missing_keys, missing_keys

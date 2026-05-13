@@ -3,17 +3,45 @@ import importlib
 import logging
 import os
 import socket
+from pathlib import Path
 from typing import Any
 
 import epics
 from bluesky.preprocessors import msg_mutator
 from bluesky.utils import make_decorator
 
+from ..iconfig import load_config
+
 log = logging.getLogger()
 
 
 def get_version(pkg_name):
     return importlib.metadata.version(pkg_name)
+
+
+def _get_hatch_version():
+    """Compute the most up-to-date version number in a development environment.
+
+    For more details, see <https://github.com/maresb/hatch-vcs-footgun-example/>.
+    """
+    from hatchling.metadata.core import ProjectMetadata
+    from hatchling.plugin.manager import PluginManager
+    from hatchling.utils.fs import locate_file
+
+    pyproject_toml = locate_file(__file__, "pyproject.toml")
+    if pyproject_toml is None:
+        raise RuntimeError("pyproject.toml not found although hatchling is installed")
+    root = Path(pyproject_toml).parent
+
+    # Temporarily set cwd to project root for PEP 517 compliance.
+    old_cwd = Path.cwd()
+    os.chdir(root)
+    try:
+        metadata = ProjectMetadata(root=str(root), plugin_manager=PluginManager())
+        # Version can be static in pyproject.toml or computed dynamically:
+        return metadata.core.version or metadata.hatch.version.cached
+    finally:
+        os.chdir(old_cwd)
 
 
 def version_md() -> dict[str, Any]:
@@ -25,7 +53,7 @@ def version_md() -> dict[str, Any]:
         "version_bluesky": get_version("bluesky"),
         "version_epics_ca": epics.__version__,
         "version_epics": epics.__version__,
-        "version_haven": "unknown",
+        "version_haven": _get_hatch_version(),
         "version_ophyd": get_version("ophyd"),
         "version_ophyd_async": get_version("ophyd_async"),
         # Controls
@@ -44,6 +72,11 @@ def _inject_md(msg):
         # This is not a message with metadata, so let it pass as-is
         return msg
     md = version_md()
+    # Add in metadata from configuration file dynamically
+    config = load_config()
+    md.update(config.run_engine.default_metadata.model_dump())
+    if config.data_management is not None:
+        md["dm_station_name"] = config.data_management.station_name
     # Filter out `None` values since they were not found
     md = {key: val for key, val in md.items() if val not in [None, ""]}
     # Update the message
