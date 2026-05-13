@@ -285,6 +285,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>dm_experiment_combo_box</tabstop>
+  <tabstop>sample_combo_box</tabstop>
+  <tabstop>formula_combo_box</tabstop>
+  <tabstop>standard_check_box</tabstop>
+  <tabstop>scan_line_edit</tabstop>
+  <tabstop>purpose_combo_box</tabstop>
+  <tabstop>notes_text_edit</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

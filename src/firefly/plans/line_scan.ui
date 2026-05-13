@@ -171,7 +171,7 @@
           <x>0</x>
           <y>0</y>
           <width>498</width>
-          <height>370</height>
+          <height>345</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -431,15 +431,15 @@
    <header>firefly.plans.duration_label</header>
   </customwidget>
   <customwidget>
-   <class>RelativeCheckbox</class>
-   <extends>QCheckBox</extends>
-   <header>firefly.plans.relative_checkbox</header>
-  </customwidget>
-  <customwidget>
    <class>MetadataWidget</class>
    <extends>QWidget</extends>
    <header>firefly.plans.metadata</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RelativeCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>firefly.plans.relative_checkbox</header>
   </customwidget>
   <customwidget>
    <class>FlyScanWidget</class>
@@ -452,7 +452,13 @@
   <tabstop>num_regions_spin_box</tabstop>
   <tabstop>relative_scan_checkbox</tabstop>
   <tabstop>log_scan_checkbox</tabstop>
+  <tabstop>fly_checkbox</tabstop>
   <tabstop>scan_pts_spin_box</tabstop>
+  <tabstop>enable_all_checkbox</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+  <tabstop>detectors_list</tabstop>
+  <tabstop>spinBox_repeat_scan_num</tabstop>
+  <tabstop>run_button</tabstop>
  </tabstops>
  <resources/>
  <connections>

@@ -1,7 +1,9 @@
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from qtpy import QtWidgets, uic
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QWidget
 
 from firefly.display import SampleMetadata
@@ -10,6 +12,7 @@ from firefly.plans.util import is_valid_value
 
 class MetadataWidget(QWidget):
     ui_file = Path(__file__).parent / "metadata.ui"
+    sample_metadata_changed = Signal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -19,6 +22,22 @@ class MetadataWidget(QWidget):
         )
         self.ui.purpose_combo_box.setCurrentText("")
         self.ui.standard_check_box.clicked.connect(self.confirm_public_standard)
+        # We need to inform other displays about changed *sample* metadata
+        self.ui.formula_combo_box.currentTextChanged.connect(
+            partial(self.change_sample_metadata, key="chemical_formula")
+        )
+        self.ui.sample_combo_box.currentTextChanged.connect(
+            partial(self.change_sample_metadata, key="sample_name")
+        )
+        self.ui.dm_experiment_combo_box.currentTextChanged.connect(
+            partial(self.change_sample_metadata, key="dm_experiment")
+        )
+        self.ui.standard_check_box.toggled.connect(
+            partial(self.change_sample_metadata, key="is_standard")
+        )
+
+    def change_sample_metadata(self, value: str | bool, key: str):
+        self.sample_metadata_changed.emit({key: value})
 
     def confirm_public_standard(self, is_checked):
         """If 'Is standard' is checked, warn that the data will be public."""

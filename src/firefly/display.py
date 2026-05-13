@@ -26,6 +26,7 @@ class FireflyDisplay(Display):
     _sample_metadata: SampleMetadata = SampleMetadata()
 
     # Signals
+    sample_metadata_changed = Signal(dict)
     status_message_changed = Signal(str, int)
     queue_item_submitted = Signal(object)
     execute_item_submitted = Signal(object)

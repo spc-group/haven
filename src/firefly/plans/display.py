@@ -83,6 +83,12 @@ class PlanDisplay(PlanStubDisplay):
 
     scan_repetitions: int = 1
 
+    def customize_ui(self):
+        super().customize_ui()
+        self.metadata_widget.sample_metadata_changed.connect(
+            self.sample_metadata_changed
+        )
+
     def plan_metadata(self) -> dict[str, Any]:
         """Build a metadata dictionary to be suitable for including in the plan."""
         return self.metadata_widget.metadata()

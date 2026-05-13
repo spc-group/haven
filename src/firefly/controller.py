@@ -1,6 +1,8 @@
+import dataclasses
 import logging
 import subprocess
 from collections import OrderedDict
+from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
 
@@ -42,7 +44,7 @@ plans_dir = ui_dir / "plans"
 
 class FireflyController(QtCore.QObject):
     default_display = None
-    _sample_metadata: SampleMetadata = SampleMetadata
+    _sample_metadata: SampleMetadata = SampleMetadata()
 
     # For keeping track of ophyd devices
     registry: Registry = None
@@ -343,9 +345,10 @@ class FireflyController(QtCore.QObject):
             # Prepare queue-server interactions
             action.display.queue_item_submitted.connect(self.add_queue_item)
             action.display.execute_item_submitted.connect(self.execute_queue_item)
-            # Update the scheduling metadata for each window (especially plans)
-            self.sample_metadata_changed.connect(action.display.update_sample_metadata)
+            # Update select metadata for each window (especially plans)
             action.display.update_sample_metadata(self._sample_metadata)
+            action.display.sample_metadata_changed.connect(self.update_sample_metadata)
+            self.sample_metadata_changed.connect(action.display.update_sample_metadata)
 
     @asyncSlot(QAction)
     async def finalize_plan_regions(self, action: QAction):
@@ -576,8 +579,11 @@ class FireflyController(QtCore.QObject):
         self.prepare_queue_client()
         self.start_queue_client()
 
-    def _stash_sample_metadata(self, metadata: SampleMetadata):
-        self._sample_metadata = metadata
+    def update_sample_metadata(self, update: Mapping[str, bool | str]):
+        print(update)
+        new_md = {**dataclasses.asdict(self._sample_metadata), **update}
+        self._sample_metadata = SampleMetadata(**new_md)
+        self.sample_metadata_changed.emit(self._sample_metadata)
 
     def update_devices_allowed(self, devices):
         pass

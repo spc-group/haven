@@ -9,6 +9,7 @@ from ophyd.sim import make_fake_device
 import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
+from firefly.display import SampleMetadata
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
 from firefly.queue_client import QueueClient
 from haven.iconfig import HavenConfig
@@ -216,6 +217,12 @@ async def test_autostart_changed(controller, qtbot, api):
     with qtbot.waitSignal(client.autostart_changed, timeout=3):
         client.autostart_changed.emit(True)
     assert autostart_action.isChecked()
+
+
+def test_update_sample_metadata(controller, qtbot):
+    with qtbot.waitSignal(controller.sample_metadata_changed, timeout=1000) as blocker:
+        controller.update_sample_metadata({"sample_name": "xenonite"})
+    assert blocker.args == [SampleMetadata(sample_name="xenonite")]
 
 
 # -----------------------------------------------------------------------------

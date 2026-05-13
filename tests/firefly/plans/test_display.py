@@ -13,6 +13,7 @@ class DummyScanDisplay(PlanDisplay):
     def customize_ui(self):
         self.metadata_widget = MetadataWidget(parent=self)
         self.run_button = QPushButton(parent=self)
+        super().customize_ui()
 
     def plan_args(self):
         return ("async_motor_1", 111.0, "sync_motor_2", 222.0), {}
@@ -69,6 +70,12 @@ def test_plan_metadata(display):
         "sample_formula": "Xe260",
         "sample_name": "Xenonite",
     }
+
+
+def test_sample_metadata_changed(display, qtbot):
+    with qtbot.waitSignal(display.sample_metadata_changed, timeout=1000) as blocker:
+        display.metadata_widget.formula_combo_box.setCurrentText("Xe260")
+    assert blocker.args == [{"chemical_formula": "Xe260"}]
 
 
 # -----------------------------------------------------------------------------
