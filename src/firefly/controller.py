@@ -3,7 +3,6 @@ import subprocess
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
-from typing import Mapping
 
 import qtawesome as qta
 from guarneri import Registry
@@ -19,7 +18,7 @@ from haven.exceptions import InvalidConfiguration
 from haven.utils import titleize
 
 from .action import Action, ActionsRegistry, WindowAction
-from .display import FireflyDisplay
+from .display import FireflyDisplay, SampleMetadata
 from .dm_tools.gui.dmStationUi import DmStationUi
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
@@ -43,7 +42,7 @@ plans_dir = ui_dir / "plans"
 
 class FireflyController(QtCore.QObject):
     default_display = None
-    _bss_metadata: Mapping[str, str] = {}
+    _sample_metadata: SampleMetadata = SampleMetadata
 
     # For keeping track of ophyd devices
     registry: Registry = None
@@ -55,7 +54,7 @@ class FireflyController(QtCore.QObject):
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
-    bss_metadata_changed = Signal(dict)
+    sample_metadata_changed = Signal(SampleMetadata)
 
     # Signals responding to queueserver changes
     queue_status_changed = Signal(dict)
@@ -135,8 +134,16 @@ class FireflyController(QtCore.QObject):
     def show_default_window(self):
         """Show the first starting window for the application."""
         # Launch the default display
-        default_window_action = getattr(self.actions, self.default_display)
-        default_window = default_window_action.show_window()
+        attr, *keys = self.default_display.split(".")
+        if len(keys) == 0:
+            default_window_action = getattr(self.actions, attr)
+        elif len(keys) == 1:
+            default_window_action = getattr(self.actions, attr)[keys[0]]
+        else:
+            raise ValueError(
+                f"Firefly does not yet support nested windows: {self.default_display}"
+            )
+        default_window_action.show_window()
         # Set up the window to show list of PV connections
         #   This is not compatible with pyside6
         # pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
@@ -337,8 +344,8 @@ class FireflyController(QtCore.QObject):
             action.display.queue_item_submitted.connect(self.add_queue_item)
             action.display.execute_item_submitted.connect(self.execute_queue_item)
             # Update the scheduling metadata for each window (especially plans)
-            self.bss_metadata_changed.connect(action.display.update_bss_metadata)
-            action.display.update_bss_metadata(self._bss_metadata)
+            self.sample_metadata_changed.connect(action.display.update_sample_metadata)
+            action.display.update_sample_metadata(self._sample_metadata)
 
     @asyncSlot(QAction)
     async def finalize_plan_regions(self, action: QAction):
@@ -569,8 +576,8 @@ class FireflyController(QtCore.QObject):
         self.prepare_queue_client()
         self.start_queue_client()
 
-    def _stash_bss_metadata(self, metadata: Mapping[str, str]):
-        self._bss_metadata = metadata
+    def _stash_sample_metadata(self, metadata: SampleMetadata):
+        self._sample_metadata = metadata
 
     def update_devices_allowed(self, devices):
         pass

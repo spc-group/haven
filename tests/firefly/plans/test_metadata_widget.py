@@ -1,5 +1,6 @@
 import pytest
 
+from firefly.display import SampleMetadata
 from firefly.plans.metadata import MetadataWidget
 
 
@@ -17,14 +18,14 @@ def test_purpose_combobox(widget):
 
 
 def test_update_bss_metadata(widget):
-    md = {
-        "esaf_title": "Xenonite XAFS",
-        "esaf_id": "12345",
-        "proposal_title": "New materials for interstellar space travel",
-        "proposal_id": "5678",
-    }
-    widget.update_bss_metadata(md)
-    assert widget.ui.proposal_id_label.text() == md["proposal_id"]
-    assert widget.ui.proposal_title_label.text() == md["proposal_title"]
-    assert widget.ui.esaf_id_label.text() == md["esaf_id"]
-    assert widget.ui.esaf_title_label.text() == md["esaf_title"]
+    md = SampleMetadata(
+        is_standard=True,
+        chemical_formula="Xe260",
+        sample_name="Xenonite",
+        dm_experiment="cabana-2026-C3",
+    )
+    widget.update_sample_metadata(md)
+    assert widget.ui.sample_combo_box.currentText() == "Xenonite"
+    assert widget.ui.standard_check_box.isChecked()
+    assert widget.ui.formula_combo_box.currentText() == "Xe260"
+    assert widget.ui.dm_experiment_combo_box.currentText() == "cabana-2026-C3"

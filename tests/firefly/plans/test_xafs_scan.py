@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 import pytest_asyncio
 
+from firefly.display import SampleMetadata
 from firefly.plans.xafs_scan import Domain, XafsScanDisplay
 
 HALF_SPACE = "\u202f"
@@ -149,7 +150,7 @@ async def test_plan_energies_k_mixed(display):
 async def test_plan_metadata(display):
     """Check that the metadata are passed properly."""
     # set up meta data
-    display.metadata_widget.sample_line_edit.setText("sam")
+    display.metadata_widget.sample_combo_box.setCurrentText("sam")
     display.metadata_widget.standard_check_box.setChecked(True)
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
     display.metadata_widget.notes_text_edit.setText("sam_notes")
@@ -270,15 +271,21 @@ def test_queue_plan(display, qtbot):
         display.queue_plan()
 
 
-def test_update_bss_metadata(display):
-    md = {
-        "esaf_title": "Xenonite XAFS",
-        "esaf_id": "12345",
-        "proposal_title": "New materials for interstellar space travel",
-        "proposal_id": "5678",
-    }
-    display.update_bss_metadata(md)
-    assert display.ui.metadata_widget.esaf_id_label.text() == "12345"
+def test_update_sample_metadata(display):
+    md = SampleMetadata(
+        is_standard=True,
+        chemical_formula="Xe260",
+        sample_name="Xenonite",
+        dm_experiment="cabana-2026-C3",
+    )
+    display.update_sample_metadata(md)
+    assert (
+        display.ui.metadata_widget.dm_experiment_combo_box.currentText()
+        == "cabana-2026-C3"
+    )
+    assert display.ui.metadata_widget.formula_combo_box.currentText() == "Xe260"
+    assert display.ui.metadata_widget.sample_combo_box.currentText() == "Xenonite"
+    assert display.ui.metadata_widget.standard_check_box.isChecked() == True
 
 
 # -----------------------------------------------------------------------------

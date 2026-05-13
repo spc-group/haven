@@ -128,7 +128,7 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
         return_value=[xspress, ion_chamber]
     )
     # Set up meta data
-    display.metadata_widget.sample_line_edit.setText("sam")
+    display.metadata_widget.sample_combo_box.setCurrentText("sam")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
     display.metadata_widget.notes_text_edit.setText("notes")
     # Check arguments that will get used by the plan
@@ -188,7 +188,7 @@ async def test_fly_plan_args(display, xspress, ion_chamber, qtbot, soft_glue):
         return_value=[xspress, ion_chamber]
     )
     # Set up meta data
-    display.metadata_widget.sample_line_edit.setText("sam")
+    display.metadata_widget.sample_combo_box.setCurrentText("sam")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
     display.metadata_widget.notes_text_edit.setText("notes")
     # Check arguments that will get used by the plan

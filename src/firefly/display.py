@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
@@ -8,13 +9,21 @@ from qtpy.QtCore import Signal
 from haven import beamline
 
 
+@dataclass(eq=True, frozen=True)
+class SampleMetadata:
+    dm_experiment: str = ""
+    sample_name: str = ""
+    is_standard: bool = False
+    chemical_formula: str = ""
+
+
 class FireflyDisplay(Display):
     caqtdm_ui_file: str = ""
     caqtdm_command: str = "/APSshare/bin/caQtDM -style plastique -noMsg -attach"
     caqtdm_actions: Sequence
     device: Optional[Device]
     registry = None
-    _bss_metadata: Mapping[str, str] = {}
+    _sample_metadata: SampleMetadata = SampleMetadata()
 
     # Signals
     status_message_changed = Signal(str, int)
@@ -44,8 +53,8 @@ class FireflyDisplay(Display):
     def customize_ui(self):
         pass
 
-    def update_bss_metadata(self, md: Mapping[str, str]):
-        self._bss_metadata = md
+    def update_sample_metadata(self, md: Mapping[str, str]):
+        self._sample_metadata = md
 
     def update_queue_status(self, status):
         pass

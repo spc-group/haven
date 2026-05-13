@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+from firefly.display import SampleMetadata
 from firefly.plans.count import CountDisplay
 
 
@@ -74,10 +75,10 @@ def test_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
-    display.metadata_widget.sample_line_edit.setText("LMO")
+    display.metadata_widget.sample_combo_box.setCurrentText("LMO")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
     display.metadata_widget.notes_text_edit.setText("notes")
-    display.metadata_widget.formula_line_edit.setText("LiMn0.5Ni0.5O")
+    display.metadata_widget.formula_combo_box.setCurrentText("LiMn0.5Ni0.5O")
     display.metadata_widget.standard_check_box.setChecked(True)
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
@@ -103,15 +104,21 @@ async def test_update_devices(display, sim_registry):
     assert display.detectors_list.update_devices.called
 
 
-def test_update_bss_metadata(display):
-    md = {
-        "esaf_title": "Xenonite XAFS",
-        "esaf_id": "12345",
-        "proposal_title": "New materials for interstellar space travel",
-        "proposal_id": "5678",
-    }
-    display.update_bss_metadata(md)
-    assert display.ui.metadata_widget.esaf_id_label.text() == "12345"
+def test_update_sample_metadata(display):
+    md = SampleMetadata(
+        sample_name="Xenonite",
+        chemical_formula="Xe260",
+        is_standard=True,
+        dm_experiment="cabana-2026-C3",
+    )
+    display.update_sample_metadata(md)
+    assert (
+        display.ui.metadata_widget.dm_experiment_combo_box.currentText()
+        == "cabana-2026-C3"
+    )
+    assert display.ui.metadata_widget.formula_combo_box.currentText() == "Xe260"
+    assert display.ui.metadata_widget.sample_combo_box.currentText() == "Xenonite"
+    assert display.ui.metadata_widget.standard_check_box.isChecked() == True
 
 
 # -----------------------------------------------------------------------------
