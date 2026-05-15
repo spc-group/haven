@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import logging
+import os
 import smtplib
 import sys
 from datetime import datetime
@@ -218,6 +219,14 @@ class DmStationUi(FireflyMainWindow):
         #         self.onlyEsaf = 1
         # if self.beamlineManagers:
         #     self.beamlineManagers = list(set(self.beamlineManagers.split(',')))
+
+        # Hack to make sure the other client code has the right info
+        # Eventually, we should roll our own version of this with
+        # explicit parameters.
+        if config.admin_account is not None:
+            os.environ["DM_BEAMLINE_ADMIN_ACCOUNT"] = config.admin_account
+        if self.username is not None:
+            os.environ["DM_BEAMLINE_USER_ACCOUNT"] = self.username
 
     # Centers window on the screen where the mouse is detected
     def center(self):

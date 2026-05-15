@@ -51,6 +51,7 @@ class DataManagementConfig(ConfigModel):
     station_name: str  # DM_STATION_NAME
     username: str | None = None
     password: str | None = None
+    admin_account: str | None = None
 
 
 class RunEngineMetadata(ConfigModel):
