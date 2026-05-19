@@ -5,7 +5,7 @@ import logging
 import logging.config
 import time
 from collections.abc import Callable
-from functools import partial
+from functools import partial, wraps
 
 import numpy as np  # noqa: F401
 import rich
@@ -155,6 +155,7 @@ try:
         primary_mono=haven.beamline.devices["monochromator"],
         secondary_mono=haven.beamline.devices["secondary_mono"],
     )
+    wrapper = wraps(fixed_offset_wrapper)(wrapper)
 except ComponentNotFound as exc:
     log.info(f"Could not couple mono offsets: {exc}")
 else:
