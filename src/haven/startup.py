@@ -150,12 +150,12 @@ xafs_scan = plan_decorator(xafs_scan)
 
 # Apply a wrapper for keeping the beam at a fixed offset
 try:
-    wrapper = partial(
+    inner = partial(
         fixed_offset_wrapper,
         primary_mono=haven.beamline.devices["monochromator"],
         secondary_mono=haven.beamline.devices["secondary_mono"],
     )
-    wrapper = wraps(fixed_offset_wrapper)(wrapper)
+    wrapper = wraps(fixed_offset_wrapper)(inner)
 except ComponentNotFound as exc:
     log.info(f"Could not couple mono offsets: {exc}")
 else:

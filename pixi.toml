@@ -191,7 +191,7 @@ bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = "==2.0.2"
-tiled = { version = "==0.2.8", extras = ["all"] }
+tiled = { version = "==0.2.10-rc2", extras = ["all"] }
 
 [feature.tiled.tasks]
 tiled-server = "tiled serve config"
@@ -247,9 +247,9 @@ BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
 HAVEN_CONFIG = "${BLUESKY_DIR}haven.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_HTTP_SERVER_CONFIG = "${BLUESKY_DIR}qserver_http_config.yml"
-QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://jackson-hole.xray.aps.anl.gov:60615"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
-QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60625"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://jackson-hole.xray.aps.anl.gov:60625"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"
 
 [feature.25idd.tasks]
@@ -259,9 +259,9 @@ test-e2e = "pytest tests/end_to_end --beamline -Werror -vv"
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
 HAVEN_CONFIG = "${BLUESKY_DIR}haven.toml"
 TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
-QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://jackson-hole.xray.aps.anl.gov:60616"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60616"
-QSERVER_ZMQ_INFO_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60626"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://jackson-hole.xray.aps.anl.gov:60626"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60626"
 
 [feature.9bm.tasks]
