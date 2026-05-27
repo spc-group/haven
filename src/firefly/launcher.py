@@ -7,6 +7,7 @@ import sys
 import time
 from pathlib import Path
 
+import qtawesome as qta
 from pydm import config
 from pydm.utilities import setup_renderer
 from qasync import QEventLoop
@@ -34,6 +35,9 @@ def main(default_fullscreen=False, default_display="status"):
         """
     except ImportError:
         log.debug("QtWebEngine is not supported.")
+
+    # For some reason we need to use glyphrun otherwise fonts show up bad
+    qta.set_global_defaults(draw="glyphrun")
 
     # Set up splash screen
     app = QApplication(sys.argv)

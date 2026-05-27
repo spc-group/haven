@@ -134,13 +134,14 @@ cmd = "black src/ tests/ {{ check_flag }}"
 # Old dependencies until pydm is stable with pyside6
 qt = ">=5.15"
 pyqt = ">=5.15"
-qtawesome = ">=1.4.0"
+qtawesome = ">=1.4.2"
 pyqtgraph = "*"
 pydm = ">=1.28.1"
 qasync = "*"
 bluesky-widgets = "*"
 pandas = "<3"  # Otherwise aps-dm-api will preempt tiled's dependencies
 aps-dm-api = ">=10.1.0,<11"
+font-otf-fontawesome = ">=7.2.0,<8"
 
 [feature.gui.pypi-dependencies]
 apsbss = "*"
