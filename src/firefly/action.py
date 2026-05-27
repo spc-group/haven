@@ -1,4 +1,5 @@
 import logging
+import webbrowser
 from collections import ChainMap
 from pathlib import Path
 from typing import Mapping
@@ -42,6 +43,30 @@ class Action(QAction):
 
     def __repr__(self) -> str:
         return f"<WindowAction: {self.objectName()}>"
+
+
+class BrowserAction(Action):
+    """An action that opens a URI in a browser when triggered."""
+
+    def __init__(
+        self,
+        name: str,
+        text: str,
+        uri: str,
+        shortcut: str = None,
+        icon: QIcon = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            name=name, text=text, shortcut=shortcut, icon=icon, *args, **kwargs
+        )
+        self.uri = uri
+        # Connect signals
+        self.triggered.connect(self.open_uri)
+
+    def open_uri(self):
+        webbrowser.open(self.uri)
 
 
 class WindowAction(Action):
@@ -100,6 +125,9 @@ class WindowAction(Action):
 
 class ActionsRegistry:
     """A common namespace for keeping track of global actions."""
+
+    # Actions for connecting to external resources
+    prefect: BrowserAction | None = None
 
     # Actions for showing specific windows
     dm_station: WindowAction = None
@@ -168,6 +196,7 @@ class ActionsRegistry:
     @property
     def all_actions(self):
         return [
+            self.prefect,
             self.dm_station,
             self.energy,
             self.log,

@@ -19,7 +19,7 @@ from haven import beamline, load_config
 from haven.exceptions import InvalidConfiguration
 from haven.utils import titleize
 
-from .action import Action, ActionsRegistry, WindowAction
+from .action import Action, ActionsRegistry, BrowserAction, WindowAction
 from .display import FireflyDisplay, SampleMetadata
 from .dm_tools.gui.dmStationUi import DmStationUi
 from .main_window import FireflyMainWindow, PlanMainWindow
@@ -292,6 +292,12 @@ class FireflyController(QtCore.QObject):
             display_file=None,
             WindowClass=DmStationUi,
             icon=qta.icon("fa6s.database"),
+        )
+        self.actions.prefect = BrowserAction(
+            name="prefect_action",
+            text="&Prefect Dashboard",
+            uri="http://goldendale.xray.aps.anl.gov:4200",
+            icon=qta.icon("mdi.robot"),
         )
         # Launch ion chamber voltmeters window
         self.actions.voltmeter = WindowAction(
