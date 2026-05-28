@@ -128,6 +128,7 @@ class ActionsRegistry:
 
     # Actions for connecting to external resources
     prefect: BrowserAction | None = None
+    ptz_cameras: Mapping[str, BrowserAction]
 
     # Actions for showing specific windows
     dm_station: WindowAction = None
@@ -160,6 +161,7 @@ class ActionsRegistry:
 
     def __init__(self):
         self.plans = {}
+        self.ptz_cameras = {}
         self.queue_settings = {}
         self.queue_controls = {}
         # Devices
@@ -197,6 +199,7 @@ class ActionsRegistry:
     def all_actions(self):
         return [
             self.prefect,
+            *self.ptz_cameras,
             self.dm_station,
             self.energy,
             self.log,

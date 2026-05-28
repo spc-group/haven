@@ -123,6 +123,7 @@ class HavenConfig(ConfigModel):
         default=RunEngineConfig(), serialization_alias="RUN_ENGINE"
     )
     device_files: Sequence[str] = []
+    ptz_cameras: Mapping[str, str] = {}
     feature_flags: FeatureFlagConfig = FeatureFlagConfig()  # type: ignore
     logging: LoggingConfig | None = None
 

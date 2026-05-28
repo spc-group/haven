@@ -197,6 +197,7 @@ class FireflyMainWindow(PyDMMainWindow):
             motor_actions=actions.motors,
             ion_chamber_actions=actions.ion_chambers,
             camera_actions=actions.cameras,
+            ptz_camera_actions=actions.ptz_cameras,
             area_detector_actions=actions.area_detectors,
             undulator_actions=actions.undulators,
             xrf_detector_actions=actions.xrf_detectors,
@@ -223,6 +224,7 @@ class FireflyMainWindow(PyDMMainWindow):
         motor_actions,
         ion_chamber_actions,
         camera_actions,
+        ptz_camera_actions,
         area_detector_actions,
         undulator_actions,
         xrf_detector_actions,
@@ -311,6 +313,10 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.detectors_menu.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the cameras sub-menus
         for action in camera_actions.values():
+            self.ui.menuCameras.addAction(action)
+        if len(camera_actions) > 0:
+            self.ui.menuCameras.addSeparator()
+        for action in ptz_camera_actions.values():
             self.ui.menuCameras.addAction(action)
         # Add area detectors to detectors menu
         if len(area_detector_actions) > 0:

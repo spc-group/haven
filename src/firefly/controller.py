@@ -157,6 +157,7 @@ class FireflyController(QtCore.QObject):
         windows. Window-specific actions belong with the window.
 
         """
+        config = load_config()
         # Setup actions for the various categories of devices
         self.actions.motors = self.device_actions(
             device_label="extra_motors",
@@ -299,6 +300,15 @@ class FireflyController(QtCore.QObject):
             uri="http://goldendale.xray.aps.anl.gov:4200",
             icon=qta.icon("mdi.robot"),
         )
+        # Include links for the individual PTZ cameras
+        ptz_icon = qta.icon("mdi6.dome-light")
+        self.actions.ptz_cameras = {
+            name: BrowserAction(
+                name=name, text=name.title().replace("-", " — "), uri=uri, icon=ptz_icon
+            )
+            for name, uri in config.ptz_cameras.items()
+        }
+
         # Launch ion chamber voltmeters window
         self.actions.voltmeter = WindowAction(
             name="show_voltmeters_window_action",
