@@ -10,6 +10,8 @@ from ophyd_async.core import (
     ReadableDataProvider,
     SignalDataProvider,
     SignalR,
+    StandardReadable,
+    StandardReadableFormat,
     StrictEnum,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
@@ -69,7 +71,7 @@ class SignalDataLogic(DetectorDataLogic):
         return [self.signal.name] if self.hinted else []
 
 
-class SplitIonChamber(Device):
+class SplitIonChamber(StandardReadable):
     def __init__(
         self,
         prefix: str,
@@ -78,11 +80,18 @@ class SplitIonChamber(Device):
         negative_channel: int,
         name: str = "",
     ):
-        self.current = epics_signal_r(float, f"{prefix}Current{axis}:MeanValue_RBV")
-        self.difference = epics_signal_r(float, f"{prefix}Diff{axis}:MeanValue_RBV")
-        self.position = epics_signal_r(float, f"{prefix}Pos{axis}:MeanValue_RBV")
-        self.positive_plate = SplitIonChamberPlate(prefix, channel_num=positive_channel)
-        self.negative_plate = SplitIonChamberPlate(prefix, channel_num=negative_channel)
+        with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
+            self.current = epics_signal_r(float, f"{prefix}Sum{axis}:MeanValue_RBV")
+        with self.add_children_as_readables():
+            self.difference = epics_signal_r(float, f"{prefix}Diff{axis}:MeanValue_RBV")
+            self.position = epics_signal_r(float, f"{prefix}Pos{axis}:MeanValue_RBV")
+            self.positive_plate = SplitIonChamberPlate(
+                prefix, channel_num=positive_channel
+            )
+            self.negative_plate = SplitIonChamberPlate(
+                prefix, channel_num=negative_channel
+            )
+        # Track config signals separately to work with the StandardDetector paradigm
         self.position_offset = epics_signal_rw(float, f"{prefix}PositionOffset{axis}")
         self.position_scale = epics_signal_rw(float, f"{prefix}PositionScale{axis}")
         self.precision = epics_signal_rw(Precision, f"{prefix}PositionPrec{axis}")
@@ -96,13 +105,14 @@ class SplitIonChamber(Device):
         super().__init__(name=name)
 
 
-class SplitIonChamberPlate(Device):
+class SplitIonChamberPlate(StandardReadable):
     def __init__(self, prefix: str, channel_num: int, name: str = ""):
-        self.current = epics_signal_r(
-            float, f"{prefix}Current{channel_num}:MeanValue_RBV"
-        )
-        self.offset = epics_signal_rw(int, f"{prefix}CurrentOffset{channel_num}")
-        self.scale = epics_signal_rw(int, f"{prefix}CurrentScale{channel_num}")
+        with self.add_children_as_readables():
+            self.current = epics_signal_r(
+                float, f"{prefix}Current{channel_num}:MeanValue_RBV"
+            )
+        self.offset = epics_signal_rw(float, f"{prefix}CurrentOffset{channel_num}")
+        self.scale = epics_signal_rw(float, f"{prefix}CurrentScale{channel_num}")
         self.precision = epics_signal_rw(Precision, f"{prefix}CurrentPrec{channel_num}")
         self.config_sigs = [self.offset, self.scale, self.precision]
         super().__init__(name=name)
@@ -116,7 +126,7 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
         self.vertical = SplitIonChamber(
             prefix, axis="X", negative_channel=3, positive_channel=4
         )
-        self.current = epics_signal_r(float, "SumAll:MeanValue_RBV")
+        self.current = epics_signal_r(float, f"{prefix}SumAll:MeanValue_RBV")
         # Build configuration signals
         config_sigs = [
             *self.vertical.config_sigs,
