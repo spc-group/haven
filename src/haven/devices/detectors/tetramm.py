@@ -172,7 +172,7 @@ class BaseTetrAmmDetector(StandardDetector):
         """Make sure the detector is idle and ready to be used."""
         self._previous_mode, self._was_acquiring = await asyncio.gather(
             self.driver.acquire_mode.get_value(),
-            self.driver.acquire_mode.get_value(),
+            self.driver.acquire.get_value(),
         )
         return await super().stage()
 

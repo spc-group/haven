@@ -42,10 +42,13 @@ class SplitIonChamberDataProvider(ReadableDataProvider):
     async def make_readings(self) -> dict[str, Reading]:
         readings = await asyncio.gather(
             self.ion_chamber.current.read(cached=False),
-            self.ion_chamber.difference.read(cached=False),
+            self.ion_chamber.current_stdev.read(cached=False),
+            self.ion_chamber.current_difference.read(cached=False),
             self.ion_chamber.position.read(cached=False),
             self.ion_chamber.positive_plate.current.read(cached=False),
+            self.ion_chamber.positive_plate.current_stdev.read(cached=False),
             self.ion_chamber.negative_plate.current.read(cached=False),
+            self.ion_chamber.negative_plate.current_stdev.read(cached=False),
         )
         return {key: val for reading in readings for key, val in reading.items()}
 
@@ -83,9 +86,7 @@ class SplitIonChamber(StandardReadable):
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.current = epics_signal_r(float, f"{prefix}Sum{axis}:MeanValue_RBV")
         with self.add_children_as_readables():
-            self.current_standard_deviation = epics_signal_r(
-                float, f"{prefix}:Sum{axis}:Sigma_RBV"
-            )
+            self.current_stdev = epics_signal_r(float, f"{prefix}Sum{axis}:Sigma_RBV")
             self.current_difference = epics_signal_r(
                 float, f"{prefix}Diff{axis}:MeanValue_RBV"
             )
@@ -117,7 +118,7 @@ class SplitIonChamberPlate(StandardReadable):
             self.current = epics_signal_r(
                 float, f"{prefix}Current{channel_num}:MeanValue_RBV"
             )
-            self.current_standard_deviation = epics_signal_r(
+            self.current_stdev = epics_signal_r(
                 float, f"{prefix}Current{channel_num}:Sigma_RBV"
             )
         self.fast_current = epics_signal_r(float, f"{prefix}Current{channel_num}Ave")
@@ -140,9 +141,7 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
         )
         self.current = epics_signal_r(float, f"{prefix}SumAll:MeanValue_RBV")
         self.fast_current = epics_signal_r(float, f"{prefix}SumAllAve")
-        self.current_standard_deviation = epics_signal_r(
-            float, f"{prefix}:SumAll:Sigma_RBV"
-        )
+        self.current_stdev = epics_signal_r(float, f"{prefix}SumAll:Sigma_RBV")
         # Build configuration signals
         config_sigs = [
             *self.vertical.config_sigs,
@@ -153,7 +152,7 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
             SplitIonChamberDataLogic(ion_chamber=self.vertical),
             SplitIonChamberDataLogic(ion_chamber=self.horizontal),
             SignalDataLogic(signal=self.current, hinted=True),
-            SignalDataLogic(signal=self.current_standard_deviation, hinted=False),
+            SignalDataLogic(signal=self.current_stdev, hinted=False),
         )
 
 

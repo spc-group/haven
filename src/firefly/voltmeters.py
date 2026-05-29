@@ -169,11 +169,9 @@ class SplitIonChamberSetRow:
         ##################
         device_name = self.device.name
         # Description label
-        self.name_label = PyDMLabel(
-            parent=self.parent,
-            init_channel=f"haven://{device_name}.scaler_channel.description",
-        )
+        self.name_label = QLabel(parent=self.parent)
         self.name_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
+        self.name_label.setText(device_name)
         self.column_layouts[0].addWidget(self.name_label)
         # Analog indicator
         self.current_indicator = PyDMAnalogIndicator(
@@ -185,10 +183,10 @@ class SplitIonChamberSetRow:
         self.current_indicator.minorAlarmFromChannel = False
         self.current_indicator.majorAlarmFromChannel = False
         self.current_indicator.userLowerLimit = 0.0
-        # self.current_indicator.userUpperLimit = 5.0
-        self.current_indicator.userUpperMinorAlarm = 4.5
+        self.current_indicator.userUpperLimit = 120
+        # self.current_indicator.userUpperMinorAlarm = 4.5
         self.current_indicator.userLowerMinorAlarm = 0.5
-        self.current_indicator.userUpperMajorAlarm = 5.0
+        # self.current_indicator.userUpperMajorAlarm = 5.0
         self.current_indicator.userLowerMajorAlarm = 0.15
         self.column_layouts[1].addWidget(self.current_indicator)
         # Voltage labels
@@ -199,7 +197,7 @@ class SplitIonChamberSetRow:
         self.voltage_label_layout.addItem(HSpacer())
         self.voltage_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.voltmeter_channel.final_value",
+            init_channel=f"haven://{device_name}.fast_current",
         )
         self.voltage_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.voltage_label_layout.addWidget(self.voltage_label)
@@ -207,7 +205,7 @@ class SplitIonChamberSetRow:
         self.voltage_unit_label.setStyleSheet(
             'font: 12pt "Sans Serif";\nfont-weight: bold;'
         )
-        self.voltage_unit_label.setText("V")
+        self.voltage_unit_label.setText("nA")
         self.voltage_label_layout.addWidget(self.voltage_unit_label)
         self.voltage_label_layout.addItem(HSpacer())
         # Current labels
@@ -262,15 +260,15 @@ class SplitIonChamberSetRow:
         self.gain_label_layout.addItem(HSpacer())
         self.gain_value_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.preamp.sensitivity_value",
+            init_channel=f"haven://{device_name}.driver.current_range",
         )
         self.gain_label_layout.addWidget(self.gain_value_label)
-        self.gain_unit_label = PyDMLabel(
-            parent=self.parent,
-            init_channel=f"haven://{device_name}.preamp.sensitivity_unit",
-        )
-        self.gain_label_layout.addWidget(self.gain_unit_label)
-        self.gain_label_layout.addItem(HSpacer())
+        # self.gain_unit_label = PyDMLabel(
+        #     parent=self.parent,
+        #     init_channel=f"haven://{device_name}.preamp.sensitivity_unit",
+        # )
+        # self.gain_label_layout.addWidget(self.gain_unit_label)
+        # self.gain_label_layout.addItem(HSpacer())
         # Auto-gain and detail window controls
         self.column_layouts[4].addItem(VSpacer())
         self.auto_gain_checkbox = QCheckBox(parent=self.parent)
