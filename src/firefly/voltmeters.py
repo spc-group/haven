@@ -4,7 +4,7 @@ from typing import Sequence
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from pydm.widgets import PyDMChannel, PyDMLabel, PyDMPushButton
+from pydm.widgets import PyDMChannel, PyDMEnumComboBox, PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
 from qasync import asyncSlot
@@ -208,78 +208,41 @@ class SplitIonChamberSetRow:
         self.voltage_unit_label.setText("nA")
         self.voltage_label_layout.addWidget(self.voltage_unit_label)
         self.voltage_label_layout.addItem(HSpacer())
-        # Current labels
-        self.current_label_layout = QHBoxLayout()
-        self.current_label_layout.setSpacing(3)
-        self.column_layouts[2].addLayout(self.current_label_layout)
-        self.current_label_layout.addItem(HSpacer())
-        self.current_label = PyDMLabel(
-            parent=self.parent,
-            init_channel=f"haven://{device_name}.net_current",
-        )
-        self.current_label.displayFormat = DisplayFormat.Exponential
-        self.current_label_layout.addWidget(self.current_label)
-        self.current_unit_label = QLabel(parent=self.parent)
-        self.current_unit_label.setText("A")
-        self.current_label_layout.addWidget(self.current_unit_label)
-        self.current_label_layout.addItem(HSpacer())
         self.column_layouts[2].addItem(VSpacer())
         # Label for the gain/offset column header
         self.column_layouts[3].addItem(VSpacer())
         self.gain_header_label = QLabel()
-        self.gain_header_label.setText("Gain/Offset")
+        self.gain_header_label.setText("Current Range")
         self.gain_header_label.setAlignment(Qt.AlignCenter)
         self.column_layouts[3].addWidget(self.gain_header_label)
-        # Gain up/down buttons
-        self.gain_buttons_layout = QHBoxLayout()
-        self.column_layouts[3].addLayout(self.gain_buttons_layout)
-        self.gain_buttons_layout.addItem(HSpacer())
-        self.gain_down_button = PyDMPushButton(
-            init_channel=f"haven://{device_name}.preamp.gain_level",
-            relative=True,
-            pressValue=-1,
-            icon=qta.icon("fa6s.arrow-left"),
-        )
-        self.gain_buttons_layout.addWidget(self.gain_down_button)
-        self.gain_up_button = PyDMPushButton(
-            init_channel=f"haven://{device_name}.preamp.gain_level",
-            relative=True,
-            pressValue=1,
-            icon=qta.icon("fa6s.arrow-right"),
-        )
-        self.gain_buttons_layout.addWidget(self.gain_up_button)
-        self.gain_buttons_layout.addItem(HSpacer())
-        # self.gain_monitor = PyDMChannel(
-        #     address=f"haven://{device_name}.preamp.gain_level",
-        #     value_slot=self.update_gain_level_widgets,
-        # )
-        # self.gain_monitor.connect()
-        # Reporting the current gain as text
-        self.gain_label_layout = QHBoxLayout()
-        self.column_layouts[3].addLayout(self.gain_label_layout)
-        self.gain_label_layout.addItem(HSpacer())
-        self.gain_value_label = PyDMLabel(
+        # Widget for selecting the current range
+        self.current_range_label = PyDMEnumComboBox(
             parent=self.parent,
             init_channel=f"haven://{device_name}.driver.current_range",
         )
-        self.gain_label_layout.addWidget(self.gain_value_label)
-        # self.gain_unit_label = PyDMLabel(
-        #     parent=self.parent,
-        #     init_channel=f"haven://{device_name}.preamp.sensitivity_unit",
-        # )
-        # self.gain_label_layout.addWidget(self.gain_unit_label)
-        # self.gain_label_layout.addItem(HSpacer())
+        self.column_layouts[3].addWidget(self.current_range_label)
         # Auto-gain and detail window controls
         self.column_layouts[4].addItem(VSpacer())
-        self.auto_gain_checkbox = QCheckBox(parent=self.parent)
-        self.auto_gain_checkbox.setText("Auto-gain")
-        self.column_layouts[4].addWidget(self.auto_gain_checkbox)
         self.details_button = QPushButton(parent=self.parent)
         self.details_button.setText("More")
         self.details_button.setIcon(qta.icon("fa6s.gear"))
         self.details_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.column_layouts[4].addWidget(self.details_button)
         self.column_layouts[4].addItem(VSpacer())
+        ##################
+        # Setup Sockets  #
+        ##################
+        self.range_monitor = PyDMChannel(
+            address=f"haven://{device_name}.driver.current_range",
+            value_slot=self.update_current_range,
+        )
+        self.range_monitor.connect()
+
+    def update_current_range(self, value: str):
+        limit = 4 * 120  # 120 nA per channel and 4 channels
+        if value == "+- 120 uA":
+            limit *= 1000
+        self.current_indicator.userUpperLimit = limit
 
 
 class IonChamberRow:
