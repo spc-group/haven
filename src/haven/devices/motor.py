@@ -40,7 +40,7 @@ class Motor(MotorBase):
 
     async def connect(self, *args, **kwargs):
         await super().connect(*args, **kwargs)
-        await self.description.set(self.name)
+        await self.description.set(short_name(self.name))
 
     @AsyncStatus.wrap
     async def prepare(self, value: FlyMotorInfo | TrajectoryMotorInfo):
@@ -60,6 +60,7 @@ name_conversions = {
     "detector": "Det",
     "beryllium": "Be",
     "rotation": "Rot",
+    "transverse": "Trans",
 }
 
 
