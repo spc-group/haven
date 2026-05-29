@@ -6,6 +6,7 @@ import os
 import re
 import traceback
 
+from prefect.events import emit_event
 from dm import ConfigurationError
 from dm.common.constants.dmEsafConstants import DM_ESAF_ID_KEY, DM_GUP_ID_KEY
 from dm.common.constants.dmExperimentConstants import (
@@ -636,6 +637,16 @@ class GenParamsTab(QWidget):
         except ObjectAlreadyExists:
             self.nameInUseDialog()
         else:
+            # Notify the Prefect event server of the new experiment
+            print(name, exp)
+            emit_event(
+                "aps.data_management.experiment_created",
+                resource = {
+                    "prefect.resource.id": f"firefly.dm_gui",
+                    "aps.data_management.experiment_name": name,
+                },
+                payload=exp
+            )
             # grab esaf info which is not stored w experiment
             esafID = self.parent.generalSettings.get(DM_ESAF_ID_KEY)
             gupID = self.parent.generalSettings.get(DM_GUP_ID_KEY)

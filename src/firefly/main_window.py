@@ -121,7 +121,8 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.re_label.setText(status.get("re_state", "—"))
         # Notify the display of the new status
         display = self.display_widget()
-        display.update_queue_status(status)
+        if display is not None:
+            display.update_queue_status(status)
 
     def open(self, *args, **kwargs):
         widget = super().open(*args, **kwargs)

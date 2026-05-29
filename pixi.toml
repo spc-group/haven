@@ -145,6 +145,7 @@ font-otf-fontawesome = ">=7.2.0,<8"
 
 [feature.gui.pypi-dependencies]
 apsbss = "*"
+prefect = ">=3.7.2, <4"
 # PyQT5 = ">=5.15"
 
 [feature.gui.tasks]
