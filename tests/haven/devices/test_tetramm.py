@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_value
 from ophyd_async.epics.adcore import ADImageMode
-from ophyd_async.testing import assert_has_calls
+from ophyd_async.testing import assert_has_calls, assert_value
 
 from haven.devices.detectors.tetramm import BaseTetrAmmDetector
 
@@ -66,6 +66,19 @@ async def test_trigger(tetramm):
     #         call.num_acquisitions.put(11),
     #     ],
     # )
+
+
+async def test_unstage_acquire(tetramm):
+    """Check that the device restores continuous acquisition."""
+    set_mock_value(tetramm.driver.acquire_mode, ADImageMode.CONTINUOUS)
+    set_mock_value(tetramm.driver.acquire, True)
+    await tetramm.stage()
+    set_mock_value(tetramm.driver.acquire_mode, ADImageMode.MULTIPLE)
+    set_mock_value(tetramm.driver.acquire, False)
+    await assert_value(tetramm.driver.acquire_mode, ADImageMode.MULTIPLE)
+    await tetramm.unstage()
+    await assert_value(tetramm.driver.acquire_mode, ADImageMode.CONTINUOUS)
+    await assert_value(tetramm.driver.acquire, True)
 
 
 # -----------------------------------------------------------------------------

@@ -12,6 +12,7 @@ from typing import Annotated as A
 
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    AsyncStatus,
     DetectorArmLogic,
     DetectorTriggerLogic,
     SignalR,
@@ -130,6 +131,9 @@ class TetrAmmArmLogic(ADArmLogic):
 
 
 class BaseTetrAmmDetector(StandardDetector):
+    _previous_mode: ADImageMode = ADImageMode.CONTINUOUS
+    _was_acquiring: bool = True
+
     def __init__(
         self,
         arm_logic: DetectorArmLogic | None = None,
@@ -162,6 +166,25 @@ class BaseTetrAmmDetector(StandardDetector):
             *config_sigs
         )
         super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def stage(self) -> None:
+        """Make sure the detector is idle and ready to be used."""
+        self._previous_mode, self._was_acquiring = await asyncio.gather(
+            self.driver.acquire_mode.get_value(),
+            self.driver.acquire_mode.get_value(),
+        )
+        return await super().stage()
+
+    @AsyncStatus.wrap
+    async def unstage(self) -> None:
+        """Stop the detector and file writing, and restore acquisition state."""
+        ret = await super().unstage()
+        await asyncio.gather(
+            self.driver.acquire_mode.set(self._previous_mode),
+            self.driver.acquire.set(self._was_acquiring),
+        )
+        return ret
 
 
 # -----------------------------------------------------------------------------
