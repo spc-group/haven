@@ -83,7 +83,12 @@ class SplitIonChamber(StandardReadable):
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.current = epics_signal_r(float, f"{prefix}Sum{axis}:MeanValue_RBV")
         with self.add_children_as_readables():
-            self.difference = epics_signal_r(float, f"{prefix}Diff{axis}:MeanValue_RBV")
+            self.current_standard_deviation = epics_signal_r(
+                float, f"{prefix}:Sum{axis}:Sigma_RBV"
+            )
+            self.current_difference = epics_signal_r(
+                float, f"{prefix}Diff{axis}:MeanValue_RBV"
+            )
             self.position = epics_signal_r(float, f"{prefix}Pos{axis}:MeanValue_RBV")
             self.positive_plate = SplitIonChamberPlate(
                 prefix, channel_num=positive_channel
@@ -91,6 +96,7 @@ class SplitIonChamber(StandardReadable):
             self.negative_plate = SplitIonChamberPlate(
                 prefix, channel_num=negative_channel
             )
+        self.fast_current = epics_signal_r(float, f"{prefix}Sum{axis}Ave")
         # Track config signals separately to work with the StandardDetector paradigm
         self.position_offset = epics_signal_rw(float, f"{prefix}PositionOffset{axis}")
         self.position_scale = epics_signal_rw(float, f"{prefix}PositionScale{axis}")
@@ -111,6 +117,10 @@ class SplitIonChamberPlate(StandardReadable):
             self.current = epics_signal_r(
                 float, f"{prefix}Current{channel_num}:MeanValue_RBV"
             )
+            self.current_standard_deviation = epics_signal_r(
+                float, f"{prefix}Current{channel_num}:Sigma_RBV"
+            )
+        self.fast_current = epics_signal_r(float, f"{prefix}Current{channel_num}Ave")
         self.offset = epics_signal_rw(float, f"{prefix}CurrentOffset{channel_num}")
         self.scale = epics_signal_rw(float, f"{prefix}CurrentScale{channel_num}")
         self.precision = epics_signal_rw(Precision, f"{prefix}CurrentPrec{channel_num}")
@@ -119,6 +129,8 @@ class SplitIonChamberPlate(StandardReadable):
 
 
 class SplitIonChamberSet(BaseTetrAmmDetector):
+    _ophyd_labels_ = {"ion_chambers", "detectors"}
+
     def __init__(self, *args, prefix, **kwargs):
         self.horizontal = SplitIonChamber(
             prefix, axis="Y", negative_channel=1, positive_channel=2
@@ -127,6 +139,10 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
             prefix, axis="X", negative_channel=3, positive_channel=4
         )
         self.current = epics_signal_r(float, f"{prefix}SumAll:MeanValue_RBV")
+        self.fast_current = epics_signal_r(float, f"{prefix}SumAllAve")
+        self.current_standard_deviation = epics_signal_r(
+            float, f"{prefix}:SumAll:Sigma_RBV"
+        )
         # Build configuration signals
         config_sigs = [
             *self.vertical.config_sigs,
@@ -137,6 +153,7 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
             SplitIonChamberDataLogic(ion_chamber=self.vertical),
             SplitIonChamberDataLogic(ion_chamber=self.horizontal),
             SignalDataLogic(signal=self.current, hinted=True),
+            SignalDataLogic(signal=self.current_standard_deviation, hinted=False),
         )
 
 

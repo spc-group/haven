@@ -1,14 +1,15 @@
 import asyncio
 
 import pytest
+import pytest_asyncio
 from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from qtpy import QtWidgets
 
-from firefly.voltmeters import VoltmetersDisplay
-from haven.devices.ion_chamber import IonChamber
+from firefly.voltmeters import SplitIonChamberSetRow, VoltmetersDisplay
+from haven.devices import IonChamber, SplitIonChamberSet
 
 
 @pytest.fixture()
@@ -28,6 +29,17 @@ async def ion_chambers(sim_registry):
         sim_registry.register(ion_chamber)
         devices.append(ion_chamber)
     return devices
+
+
+@pytest_asyncio.fixture()
+async def split_ion_chamber(sim_registry):
+    ion_chamber = SplitIonChamberSet(
+        name="Ipreslit",
+        prefix="255idcVME:3820:",
+    )
+    await ion_chamber.connect(mock=True)
+    sim_registry.register(ion_chamber)
+    return ion_chamber
 
 
 @pytest.fixture()
@@ -52,7 +64,7 @@ async def voltmeters_display(qtbot, ion_chambers, sim_registry):
 
 
 @pytest.mark.asyncio
-async def test_rows(voltmeters_display):
+async def test_ion_chamber_rows(voltmeters_display):
     """Test that the voltmeters creates a new for each ion chamber."""
     vms_display = voltmeters_display
     # Check that the embedded display widgets get added correctly
@@ -91,6 +103,44 @@ async def test_rows(voltmeters_display):
     assert row.auto_gain_checkbox is row.column_layouts[4].itemAt(1).widget()
     # Check that a device has been created properly
     assert isinstance(row.device, IonChamber)
+
+
+@pytest.mark.asyncio
+async def test_split_ion_chamber_rows(split_ion_chamber, sim_registry, qtbot):
+    """Test that the voltmeters creates widgets for a split ion chamber."""
+    vms_display = VoltmetersDisplay()
+    qtbot.addWidget(vms_display)
+    await vms_display.update_devices(sim_registry)
+    # Check that the rows have the correct widgets
+    row = vms_display._ion_chamber_rows[0]
+    assert isinstance(row, SplitIonChamberSetRow)
+    assert isinstance(row.name_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.current_indicator, PyDMAnalogIndicator)
+    assert isinstance(row.voltage_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.voltage_unit_label, QtWidgets.QLabel)
+    assert isinstance(row.current_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.current_unit_label, QtWidgets.QLabel)
+    assert isinstance(row.gain_down_button, PyDMWidgets.PyDMPushButton)
+    assert isinstance(row.gain_up_button, PyDMWidgets.PyDMPushButton)
+    assert isinstance(row.gain_value_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.gain_unit_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.auto_gain_checkbox, QtWidgets.QCheckBox)
+    assert isinstance(row.details_button, QtWidgets.QPushButton)
+    # Check that the widgets are added to the layouts
+    assert row.name_label is row.column_layouts[0].itemAt(0).widget()
+    assert row.current_indicator is row.column_layouts[1].itemAt(0).widget()
+    assert row.voltage_label is row.column_layouts[2].itemAt(1).itemAt(1).widget()
+    assert row.voltage_unit_label is row.column_layouts[2].itemAt(1).itemAt(2).widget()
+    assert row.current_label is row.column_layouts[2].itemAt(2).itemAt(1).widget()
+    assert row.current_unit_label is row.column_layouts[2].itemAt(2).itemAt(2).widget()
+    assert row.column_layouts[3].itemAt(1).widget().text() == "Gain/Offset"
+    assert row.gain_down_button is row.column_layouts[3].itemAt(2).itemAt(1).widget()
+    assert row.gain_up_button is row.column_layouts[3].itemAt(2).itemAt(2).widget()
+    assert row.gain_value_label is row.column_layouts[3].itemAt(3).itemAt(1).widget()
+    assert row.gain_unit_label is row.column_layouts[3].itemAt(3).itemAt(2).widget()
+    assert row.auto_gain_checkbox is row.column_layouts[4].itemAt(1).widget()
+    # Check that a device has been created properly
+    assert isinstance(row.device, SplitIonChamberSet)
 
 
 @pytest.mark.asyncio

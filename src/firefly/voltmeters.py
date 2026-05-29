@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
 
 import haven
 from firefly import display
+from haven.devices import IonChamber, SplitIonChamberSet
 
 log = logging.getLogger(__name__)
 
@@ -51,15 +52,25 @@ class VoltmetersDisplay(display.FireflyDisplay):
     @asyncSlot(object)
     async def update_devices(self, registry):
         ion_chambers = registry.findall(label="ion_chambers")
-        self.ion_chambers = sorted(
-            ion_chambers, key=lambda c: c.scaler_channel.raw_count.source
-        )
+
+        def beamline_position(ion_chamber):
+            return (
+                ion_chamber.scaler_channel.raw_count.source
+                if hasattr(ion_chamber, "scaler_channel")
+                else ""
+            )
+
+        self.ion_chambers = sorted(ion_chambers, key=beamline_position)
         # Clear the voltmeters grid layout
         self.clear_layout(self.voltmeters_layout)
         # Add embedded displays for all the ion chambers
         self._ion_chamber_rows = []
         for row_idx, ic in enumerate(self.ion_chambers):
             # Create the display object
+            Row = {
+                IonChamber: IonChamberRow,
+                SplitIonChamberSet: SplitIonChamberSetRow,
+            }[type(ic)]
             row = Row(number=row_idx, ion_chamber=ic)
             self._ion_chamber_rows.append(row)
             # Add widgets to the grid layout
@@ -137,7 +148,143 @@ class VoltmetersDisplay(display.FireflyDisplay):
         return "voltmeters.ui"
 
 
-class Row:
+class SplitIonChamberSetRow:
+    """An row in the voltmeters display for a set of split ion chambers."""
+
+    def __init__(self, parent=None, *args, number: int, ion_chamber):
+        self.parent = parent
+        self.number = number
+        self.device = ion_chamber
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Create container layouts for each column
+        num_columns = 5
+        self.column_layouts = []
+        for idx in range(num_columns):
+            layout = QVBoxLayout()
+            self.column_layouts.append(layout)
+        ##################
+        # Create widgets #
+        ##################
+        device_name = self.device.name
+        # Description label
+        self.name_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.scaler_channel.description",
+        )
+        self.name_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
+        self.column_layouts[0].addWidget(self.name_label)
+        # Analog indicator
+        self.current_indicator = PyDMAnalogIndicator(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.fast_current",
+        )
+        self.current_indicator.showValue = False
+        self.current_indicator.limitsFromChannel = False
+        self.current_indicator.minorAlarmFromChannel = False
+        self.current_indicator.majorAlarmFromChannel = False
+        self.current_indicator.userLowerLimit = 0.0
+        # self.current_indicator.userUpperLimit = 5.0
+        self.current_indicator.userUpperMinorAlarm = 4.5
+        self.current_indicator.userLowerMinorAlarm = 0.5
+        self.current_indicator.userUpperMajorAlarm = 5.0
+        self.current_indicator.userLowerMajorAlarm = 0.15
+        self.column_layouts[1].addWidget(self.current_indicator)
+        # Voltage labels
+        self.column_layouts[2].addItem(VSpacer())
+        self.voltage_label_layout = QHBoxLayout()
+        self.voltage_label_layout.setSpacing(3)
+        self.column_layouts[2].addLayout(self.voltage_label_layout)
+        self.voltage_label_layout.addItem(HSpacer())
+        self.voltage_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.voltmeter_channel.final_value",
+        )
+        self.voltage_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
+        self.voltage_label_layout.addWidget(self.voltage_label)
+        self.voltage_unit_label = QLabel(parent=self.parent)
+        self.voltage_unit_label.setStyleSheet(
+            'font: 12pt "Sans Serif";\nfont-weight: bold;'
+        )
+        self.voltage_unit_label.setText("V")
+        self.voltage_label_layout.addWidget(self.voltage_unit_label)
+        self.voltage_label_layout.addItem(HSpacer())
+        # Current labels
+        self.current_label_layout = QHBoxLayout()
+        self.current_label_layout.setSpacing(3)
+        self.column_layouts[2].addLayout(self.current_label_layout)
+        self.current_label_layout.addItem(HSpacer())
+        self.current_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.net_current",
+        )
+        self.current_label.displayFormat = DisplayFormat.Exponential
+        self.current_label_layout.addWidget(self.current_label)
+        self.current_unit_label = QLabel(parent=self.parent)
+        self.current_unit_label.setText("A")
+        self.current_label_layout.addWidget(self.current_unit_label)
+        self.current_label_layout.addItem(HSpacer())
+        self.column_layouts[2].addItem(VSpacer())
+        # Label for the gain/offset column header
+        self.column_layouts[3].addItem(VSpacer())
+        self.gain_header_label = QLabel()
+        self.gain_header_label.setText("Gain/Offset")
+        self.gain_header_label.setAlignment(Qt.AlignCenter)
+        self.column_layouts[3].addWidget(self.gain_header_label)
+        # Gain up/down buttons
+        self.gain_buttons_layout = QHBoxLayout()
+        self.column_layouts[3].addLayout(self.gain_buttons_layout)
+        self.gain_buttons_layout.addItem(HSpacer())
+        self.gain_down_button = PyDMPushButton(
+            init_channel=f"haven://{device_name}.preamp.gain_level",
+            relative=True,
+            pressValue=-1,
+            icon=qta.icon("fa6s.arrow-left"),
+        )
+        self.gain_buttons_layout.addWidget(self.gain_down_button)
+        self.gain_up_button = PyDMPushButton(
+            init_channel=f"haven://{device_name}.preamp.gain_level",
+            relative=True,
+            pressValue=1,
+            icon=qta.icon("fa6s.arrow-right"),
+        )
+        self.gain_buttons_layout.addWidget(self.gain_up_button)
+        self.gain_buttons_layout.addItem(HSpacer())
+        # self.gain_monitor = PyDMChannel(
+        #     address=f"haven://{device_name}.preamp.gain_level",
+        #     value_slot=self.update_gain_level_widgets,
+        # )
+        # self.gain_monitor.connect()
+        # Reporting the current gain as text
+        self.gain_label_layout = QHBoxLayout()
+        self.column_layouts[3].addLayout(self.gain_label_layout)
+        self.gain_label_layout.addItem(HSpacer())
+        self.gain_value_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.preamp.sensitivity_value",
+        )
+        self.gain_label_layout.addWidget(self.gain_value_label)
+        self.gain_unit_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.preamp.sensitivity_unit",
+        )
+        self.gain_label_layout.addWidget(self.gain_unit_label)
+        self.gain_label_layout.addItem(HSpacer())
+        # Auto-gain and detail window controls
+        self.column_layouts[4].addItem(VSpacer())
+        self.auto_gain_checkbox = QCheckBox(parent=self.parent)
+        self.auto_gain_checkbox.setText("Auto-gain")
+        self.column_layouts[4].addWidget(self.auto_gain_checkbox)
+        self.details_button = QPushButton(parent=self.parent)
+        self.details_button.setText("More")
+        self.details_button.setIcon(qta.icon("fa6s.gear"))
+        self.details_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+        self.column_layouts[4].addWidget(self.details_button)
+        self.column_layouts[4].addItem(VSpacer())
+
+
+class IonChamberRow:
     """An row in the voltmeters display for a single ion chamber's signal."""
 
     def __init__(self, parent=None, *args, number: int, ion_chamber):
