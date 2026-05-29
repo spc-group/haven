@@ -133,10 +133,10 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
 
     def __init__(self, *args, prefix, **kwargs):
         self.horizontal = SplitIonChamber(
-            prefix, axis="Y", negative_channel=1, positive_channel=2
+            prefix, axis="X", negative_channel=1, positive_channel=2
         )
         self.vertical = SplitIonChamber(
-            prefix, axis="X", negative_channel=3, positive_channel=4
+            prefix, axis="Y", negative_channel=3, positive_channel=4
         )
         self.current = epics_signal_r(float, f"{prefix}SumAll:MeanValue_RBV")
         self.fast_current = epics_signal_r(float, f"{prefix}SumAllAve")
