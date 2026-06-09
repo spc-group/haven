@@ -28,7 +28,7 @@ dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver
 qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
-25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled", "xrftools"], solve-group = "beamlines" }
 xrftools = { features = ["xrftools"] }
 # designer = { features = ["designer"] }
 
@@ -226,8 +226,13 @@ wxPython = ">=4.2"
 spglib = ">=2.7.0,<3"
 
 [feature.xrftools.pypi-dependencies]
-xraylarch = { version = ">=2026.1.2, <2027", extras = ["all"] }
+xraylarch = { version = ">=2026.2.0, <2027", extras = ["larix", "epics"] }
 # xraylarch = { git = "https://github.com/xraypy/xraylarch.git", extras = ["all"] }
+
+[feature.xrftools.tasks]
+# E.g. pixi run epics_xrf -i xspress3 -n 1 dp_xsp3_2
+#   Used like: `pixi run xrfviewer -n4 dp_xsp3_2`
+xrfviewer = "epics_xrf -i xspress3"
 
 # Configuration for quality assurance testing before release
 [feature.qa.activation.env]
