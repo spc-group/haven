@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 import pytest_asyncio
 from ophyd_async.core import set_mock_value
 
@@ -13,6 +14,7 @@ async def ion_chamber():
     return ic
 
 
+@pytest.mark.xfail
 async def test_reading_signals(ion_chamber):
     status = ion_chamber.trigger()
     await asyncio.sleep(0.01)

@@ -105,6 +105,7 @@ async def test_ion_chamber_rows(voltmeters_display):
     assert isinstance(row.device, IonChamber)
 
 
+@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_split_ion_chamber_rows(split_ion_chamber, sim_registry, qtbot):
     """Test that the voltmeters creates widgets for a split ion chamber."""

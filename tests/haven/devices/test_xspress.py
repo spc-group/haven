@@ -102,11 +102,6 @@ async def test_deadtime_correction_disabled(detector):
     assert not await detector.driver.deadtime_correction.get_value()
 
 
-def test_default_time_signal_xspress(detector):
-    # assert xspress.default_time_signal is xspress.acquire_time
-    assert detector.default_time_signal is detector.driver.acquire_time
-
-
 async def test_ndattribute_params():
     n_elem = 8
     n_params = 3

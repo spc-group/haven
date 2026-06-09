@@ -254,10 +254,11 @@ def test_named_E0(mono, ion_chamber, array_scanning_feature_flag):
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
-def test_uses_default_time_signals(xspress, mono):
+def test_uses_default_time_signals(xspress, ion_chamber, mono):
     """Test that the default time positioners are used if no specific ones are given."""
+    # Include the xspress to make sure it doesn't break this default time signal behavior
     scan = xafs_scan(
-        [xspress],
+        [ion_chamber, xspress],
         ERange(-10, 0, 2, exposure=0.5),
         E0=0,
         time_signals=None,
@@ -265,12 +266,35 @@ def test_uses_default_time_signals(xspress, mono):
     )
     msgs = list(scan)
     set_msgs = [
-        m for m in msgs if m.command == "set" and m.obj is xspress.driver.acquire_time
+        m
+        for m in msgs
+        if m.command == "set" and m.obj is ion_chamber.mcs.scaler.preset_time
     ]
     assert len(set_msgs) == 1
     time_msg = set_msgs[0]
-    assert time_msg.obj is xspress.driver.acquire_time
+    assert time_msg.obj is ion_chamber.mcs.scaler.preset_time
     assert time_msg.args[0] == 0.5
+
+
+def test_prepares_detectors(xspress, ion_chamber, mono):
+    """Test that the exposure times are passed to detectors' prepare() if supported."""
+    # Include the ion chamber to make sure it isn't prepared since it
+    # doesn't support this ability yet.
+    scan = xafs_scan(
+        [xspress, ion_chamber],
+        ERange(-10, 0, 2, exposure=0.5),
+        E0=0,
+        time_signals=None,
+        energy_devices=[mono],
+    )
+    msgs = list(scan)
+    prepare_msgs = [
+        m for m in msgs if m.command == "prepare" and m.obj in [xspress, ion_chamber]
+    ]
+    assert len(prepare_msgs) == 2
+    time_msg = prepare_msgs[0]
+    assert time_msg.obj is xspress
+    assert time_msg.args[0].livetime == 0.5
 
 
 def test_remove_duplicate_energies_old(mono, ion_chamber):

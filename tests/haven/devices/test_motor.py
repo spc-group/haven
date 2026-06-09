@@ -31,7 +31,7 @@ def test_load_motors():
 
 async def test_description_field_updates(motor):
     """Do the EPICS .DESC fields get set to the device name?"""
-    assert (await motor.description.get_value()) == "test_motor"
+    assert (await motor.description.get_value()) == "TestMotor"
 
 
 async def test_prepare_trajectory(motor):

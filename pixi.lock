@@ -206,8 +206,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/xarray-2026.4.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: .
-      - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
-      - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
@@ -1743,8 +1743,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/xarray-2026.4.0-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: .
-      - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
-      - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
@@ -6264,9 +6264,9 @@ packages:
 - pypi: .
   name: haven-spc
   requires_dist:
-  - eaa-core[bo] @ git+https://github.com/advancedphotonsource/eaa#subdirectory=packages/eaa-core ; extra == 'adaptive-xanes'
-  - eaa-spectroscopy @ git+https://github.com/advancedphotonsource/eaa#subdirectory=packages/eaa-spectroscopy ; extra == 'adaptive-xanes'
-- pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
+  - eaa-core[bo] @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core ; extra == 'adaptive-xanes'
+  - eaa-spectroscopy @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-spectroscopy ; extra == 'adaptive-xanes'
+- pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
   name: eaa-core
   version: 0.1.0
   requires_dist:
@@ -6292,14 +6292,14 @@ packages:
   - pytest ; extra == 'dev'
   - ruff ; extra == 'dev'
   requires_python: '>=3.11'
-- pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+- pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
   name: eaa-spectroscopy
   version: 0.1.0
   requires_dist:
-  - eaa-core @ git+https://github.com/advancedphotonsource/eaa#subdirectory=packages/eaa-core
+  - eaa-core @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core
   - numpy
   - scipy
-  - eaa-core[bo] @ git+https://github.com/advancedphotonsource/eaa#subdirectory=packages/eaa-core ; extra == 'bo'
+  - eaa-core[bo] @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core ; extra == 'bo'
   - pytest ; extra == 'dev'
   - ruff ; extra == 'dev'
   requires_python: '>=3.11'

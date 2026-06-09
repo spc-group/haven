@@ -136,12 +136,15 @@ def xafs_scan(
     - ("E", -50, 0, 0.25, 1) == XAFSRegion("E", -50, 0, step=0.25, exposure=1)
     - ("k", -50, 0, 0.25, 1.5, 1) == XAFSRegion("k", -50, 0, step=0.25, exposure=1.5, weight=1)
 
-    The calculated exposure times, including k-weights, will be set
-    for every signal in *time_signals*. If *time_signals* is ``None``,
-    then *time_signals* will be determined automatically from
-    *detectors*: for each detector, if it has an attribute/property
-    *default_time_signal*, then this signal will be included in
-    *time_signals*.
+    Detectors will be prepared at each step to ensure they have the
+    correct exposure time.
+
+    Previously, now deprecated, the calculated exposure times,
+    including k-weights, will be set for every signal in
+    *time_signals*. If *time_signals* is ``None``, then *time_signals*
+    will be determined automatically from *detectors*: for each
+    detector, if it has an attribute/property *default_time_signal*,
+    then this signal will be included in *time_signals*.
 
     *energy_devices*, and *time_signals* are mostly useful for
     debugging.

@@ -92,10 +92,6 @@ class EigerDetector(AreaDetector):
             name=name,
         )
 
-    @property
-    def default_time_signal(self):
-        return self.driver.acquire_time
-
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

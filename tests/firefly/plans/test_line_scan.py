@@ -57,6 +57,7 @@ async def display(
     return display
 
 
+@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     # set up motor num

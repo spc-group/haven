@@ -260,10 +260,6 @@ class Xspress3Detector(AreaDetector):
             self._old_xml_file = None
         await super().unstage()
 
-    @property
-    def default_time_signal(self):
-        return self.driver.acquire_time
-
     def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
         """Xspress3 supports internal and gate triggering."""
         if value.trigger == DetectorTrigger.EXTERNAL_EDGE:
