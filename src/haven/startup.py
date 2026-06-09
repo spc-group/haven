@@ -113,6 +113,15 @@ for cpt in devices.root_devices:
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
 
+# Supplemental data monitors background values (e.g. storage ring
+# current)
+sd = bpp.SupplementalData(
+    baseline=[],
+    monitors=[],
+    flyers=[],
+)
+RE.preprocessors.append(sd)
+
 # Plan Decorators
 # ===============
 #
@@ -125,6 +134,7 @@ try:
 except ComponentNotFound:
     log.info("APS device not found, suspenders not installed.")
 else:
+    sd.monitors.append(aps.current)
     # Suspend when shutter permit is disabled or storage ring current is too low
     shutters = haven.beamline.devices.findall("endstation_shutter", allow_none=True)
     plan_decorators.append(
