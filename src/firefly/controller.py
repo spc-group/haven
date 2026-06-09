@@ -596,7 +596,6 @@ class FireflyController(QtCore.QObject):
         self.start_queue_client()
 
     def update_sample_metadata(self, update: Mapping[str, bool | str]):
-        print(update)
         new_md = {**dataclasses.asdict(self._sample_metadata), **update}
         self._sample_metadata = SampleMetadata(**new_md)
         self.sample_metadata_changed.emit(self._sample_metadata)

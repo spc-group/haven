@@ -6,7 +6,6 @@ import os
 import re
 import traceback
 
-from prefect.events import emit_event
 from dm import ConfigurationError
 from dm.common.constants.dmEsafConstants import DM_ESAF_ID_KEY, DM_GUP_ID_KEY
 from dm.common.constants.dmExperimentConstants import (
@@ -39,6 +38,7 @@ from dm.common.exceptions.objectAlreadyExists import ObjectAlreadyExists
 from dm.common.objects.dataDirectoryUrlFactory import DataDirectoryUrlFactory
 from dm.common.utility.configurationManager import ConfigurationManager
 from dm.common.utility.timeUtility import TimeUtility
+from prefect.events import emit_event
 from PyQt5.QtCore import QDate, QRegularExpression, QSize, Qt
 from PyQt5.QtGui import QFont, QIcon, QPalette, QRegularExpressionValidator
 from PyQt5.QtWidgets import (
@@ -638,14 +638,13 @@ class GenParamsTab(QWidget):
             self.nameInUseDialog()
         else:
             # Notify the Prefect event server of the new experiment
-            print(name, exp)
             emit_event(
                 "aps.data_management.experiment_created",
-                resource = {
+                resource={
                     "prefect.resource.id": f"firefly.dm_gui",
                     "aps.data_management.experiment_name": name,
                 },
-                payload=exp
+                payload=exp,
             )
             # grab esaf info which is not stored w experiment
             esafID = self.parent.generalSettings.get(DM_ESAF_ID_KEY)

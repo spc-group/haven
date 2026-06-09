@@ -20,6 +20,7 @@ from ophyd_async.core import (
     StandardDetector,
     StrictEnum,
     non_zero,
+    set_and_wait_for_other_value,
 )
 from ophyd_async.epics.adcore import ADArmLogic, ADImageMode, NDPluginBaseIO
 from ophyd_async.epics.core import (
@@ -180,11 +181,25 @@ class BaseTetrAmmDetector(StandardDetector):
     async def unstage(self) -> None:
         """Stop the detector and file writing, and restore acquisition state."""
         ret = await super().unstage()
-        await asyncio.gather(
-            self.driver.acquire_mode.set(self._previous_mode),
-            self.driver.acquire.set(self._was_acquiring),
+        await self.driver.acquire_mode.set(self._previous_mode)
+        await set_and_wait_for_other_value(
+            set_signal=self.driver.acquire,
+            set_value=self._was_acquiring,
+            match_signal=self.driver.acquire,
+            match_value=self._was_acquiring,
+            wait_for_set_completion=False,
+            timeout=DEFAULT_TIMEOUT,
         )
         return ret
+
+    # self.acquire_status = await set_and_wait_for_other_value(
+    #     set_signal=self.driver.acquire,
+    #     set_value=True,
+    #     match_signal=self.driver_armed_signal,
+    #     match_value=True,
+    #     wait_for_set_completion=False,
+    #     timeout=DEFAULT_TIMEOUT,
+    # )
 
 
 # -----------------------------------------------------------------------------
