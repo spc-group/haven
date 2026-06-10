@@ -191,6 +191,8 @@ def prepare_per_step(detectors: Sequence[Preparable], exposures: Sequence[int | 
     # Avoid name clashes
     preparables = detectors
     exposures_ = iter(exposures)
+    # past_exposures = []
+    past_trigger_infos = [None]
 
     @plan
     def _per_step(
@@ -231,9 +233,13 @@ def prepare_per_step(detectors: Sequence[Preparable], exposures: Sequence[int | 
         exposure = next(exposures_)
         tinfo = TriggerInfo(livetime=exposure)
         prep_group = uuid.uuid4()
-        for det in preparables:
-            yield from bps.prepare(det, tinfo, group=prep_group, wait=False)
-        yield from bps.wait(group=prep_group)
+        if tinfo != past_trigger_infos[-1]:
+            # This data point changes how the detector gets trigger,
+            # so we need to re-prepare
+            for det in preparables:
+                yield from bps.prepare(det, tinfo, group=prep_group, wait=False)
+            yield from bps.wait(group=prep_group)
+            past_trigger_infos.append(tinfo)
         yield from bps.one_nd_step(
             detectors=detectors,
             step=step,

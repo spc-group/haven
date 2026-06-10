@@ -58,7 +58,7 @@ def test_energy_scan_basics(mono, undulator, ion_chamber, energies, tmp_path):
 def test_single_range(mono, ion_chamber):
     E0 = 10000
     expected_energies = np.arange(9990, 10001, step=1)
-    expected_exposures = np.asarray([1.0] * 11)
+    expected_exposures = np.asarray([1.0])
     plan = xafs_scan(
         [ion_chamber],
         # (start, stop, num_points, time)
@@ -89,7 +89,7 @@ def test_multi_range(mono, ion_chamber):
             np.arange(10001, 10011, step=1),
         ]
     )
-    expected_exposures = np.asarray([0.5] * 6 + [1.0] * 10)
+    expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
         [ion_chamber],
         XAFSRegion("E", start=-10, stop=0, num=6, exposure=0.5),
@@ -201,7 +201,7 @@ def test_named_E0(mono, ion_chamber):
             np.arange(8334, 8344, step=1),
         ]
     )
-    expected_exposures = np.asarray([0.5] * 6 + [1.0] * 10)
+    expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
         [ion_chamber],
         XAFSRegion("E", -10, 0, 6, exposure=0.5),
@@ -236,7 +236,7 @@ def test_prepares_detectors(xspress, ion_chamber, mono):
     prepare_msgs = [
         m for m in msgs if m.command == "prepare" and m.obj in [xspress, ion_chamber]
     ]
-    assert len(prepare_msgs) == 4
+    assert len(prepare_msgs) == 2
     time_msg = prepare_msgs[0]
     assert time_msg.obj is xspress
     assert time_msg.args[0].livetime == 0.5
