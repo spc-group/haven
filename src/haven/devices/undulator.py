@@ -53,7 +53,6 @@ from scanspec.core import Path as ScanPath
 
 from haven import exceptions
 from haven.devices.signal import derived_signal_x
-from haven.iconfig import load_config
 from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
@@ -217,11 +216,10 @@ class EnergyPositioner(BasePositioner, Preparable):
         value: float,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
-        use_scanning = load_config().feature_flags.undulator_fast_step_scanning_mode
         is_scanning = (
             await self.parent.scan_mode.get_value() != UndulatorScanMode.NORMAL
         )
-        if not (use_scanning and is_scanning):
+        if not is_scanning:
             # No scan array is active, so just move as normal
             async for update in super()._set(value, timeout=timeout):
                 yield update

@@ -13,7 +13,6 @@ import logging
 import os
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Annotated as A
 
 import tomli
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
@@ -35,9 +34,10 @@ class FeatureFlagConfig(ConfigModel):
     """Declare feature flags to develop some new feature."""
 
     # Be conservative when deciding on expiration dates.
-    undulator_fast_step_scanning_mode: A[
-        bool, Field(deprecated=expires(dt.datetime(2026, 6, 10)))
-    ] = False
+    # Example flag:
+    # undulator_fast_step_scanning_mode: A[
+    #     bool, Field(deprecated=expires(dt.datetime(2026, 6, 10)))
+    # ] = False
 
 
 class DataManagementConfig(ConfigModel):

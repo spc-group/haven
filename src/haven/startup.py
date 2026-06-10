@@ -31,13 +31,13 @@ import haven  # noqa: F401
 # Import plans (needed for the qserver, optional for ipython/firefly)
 from haven import plans as plans
 from haven.plans import (  # noqa: F401
+    XAFSRegion,
     adaptive_xanes,
     auto_gain,
     calibrate,
     count,
     count_multiple,
     emission_map_scan,
-    energy_scan,
     fly_scan,
     grid_fly_scan,
     grid_scan,
@@ -145,7 +145,6 @@ plan_decorator = haven.plans.chain(*plan_decorators)
 
 auto_gain = plan_decorator(auto_gain)
 count = plan_decorator(count)
-energy_scan = plan_decorator(energy_scan)
 fly_scan = plan_decorator(fly_scan)
 grid_scan = plan_decorator(grid_scan)
 grid_fly_scan = plan_decorator(grid_fly_scan)

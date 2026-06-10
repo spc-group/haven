@@ -11,10 +11,9 @@ from typing import Mapping, Sequence
 from bluesky.utils import MsgGenerator
 from scanspec.specs import Concat, Zip
 
-from haven.energy_ranges import EnergyRange, from_tuple, merge_ranges
-from haven.iconfig import load_config
+from haven.energy_ranges import EnergyRange
 from haven.instrument import beamline
-from haven.plans._energy_scan import energy_scan, energy_scan_from_scanspec, resolve_E0
+from haven.plans._energy_scan import energy_scan_from_scanspec, resolve_E0
 from haven.protocols import DetectorList, EnergyDevice
 from haven.specs import Axis, EnergyRegion, KWeighted, Spec, WavenumberRegion
 
@@ -85,7 +84,6 @@ def xafs_scan(
     *energy_ranges: EnergyRange | XAFSRegion | tuple,
     E0: float | str,
     energy_devices: Sequence[EnergyDevice | str] = ["monochromators", "undulators"],
-    time_signals: Sequence | None = None,
     md: Mapping = {},
 ) -> MsgGenerator[str]:
     """Collect a spectrum by scanning X-ray energies relative to an
@@ -96,10 +94,10 @@ def xafs_scan(
     .. code-block:: python
 
         xafs_scan(
-          [detector1, ...],
-          XAFSRegion("E", start=..., stop=..., step=..., exposure=...),
-          XAFSRegion("E", start=..., stop=..., step=...),
-          XAFSRegion("k", start=..., stop=..., step=..., exposure=..., k_weight=...),
+          [vortex_me4, …],
+          XAFSRegion("E", start=…, stop=…, num=…, exposure=…),
+          XAFSRegion("E", start=…, stop=…, num=…),
+          XAFSRegion("k", start=…, stop=…, num=…, exposure=…, k_weight=…),
           E0=8333,
         )
 
@@ -125,28 +123,29 @@ def xafs_scan(
     .. code-block:: python
 
         xafs_scan(
-            [],  # Empty detector list for demo
-            XAFSRegion("E", -100, -30, 2, exposure=0.5),
-            XAFSRegion("E", -30, 50, 0.1, exposure=1.),
-            XAFSRegion("k", 3.623, 8, 0.2, exposure=1.5, weight=0.5),
+            [vortex_me4, …],
+            XAFSRegion("E", -100, -30, 46, exposure=0.5),
+            XAFSRegion("E", -30, 50, 161, exposure=1.),
+            XAFSRegion("k", 3.623, 8, 51, exposure=1.5, weight=0.5),
             E0="Ni_K"
         )
 
     *energy_ranges* can also be tuples like:
-    - ("E", -50, 0, 0.25, 1) == XAFSRegion("E", -50, 0, step=0.25, exposure=1)
-    - ("k", -50, 0, 0.25, 1.5, 1) == XAFSRegion("k", -50, 0, step=0.25, exposure=1.5, weight=1)
 
-    Detectors will be prepared at each step to ensure they have the
-    correct exposure time.
+    .. code-block:: python
 
-    Previously, now deprecated, the calculated exposure times,
-    including k-weights, will be set for every signal in
-    *time_signals*. If *time_signals* is ``None``, then *time_signals*
-    will be determined automatically from *detectors*: for each
-    detector, if it has an attribute/property *default_time_signal*,
-    then this signal will be included in *time_signals*.
+        xafs_scan(
+            [vortex_me4, …],
+            ("E", -100, -30, 46, 0.5),
+            ("E", -30, 50, 161, 1.),
+            ("k", 3.623, 8, 51, 1.5, 0.5),
+            E0="Ni_K"
+        )
 
-    *energy_devices*, and *time_signals* are mostly useful for
+    Detectors will be ``prepare()``'d at each step to ensure they have
+    the correct exposure time.
+
+    *energy_devices* is mostly useful for
     debugging.
 
     Parameters
@@ -164,14 +163,10 @@ def xafs_scan(
       Overrides the list of Ophyd devices used to set energy during
       this scan. Each device must have a child *energy* that is
       movable.
-    time_signals
-      Overrides the list of Ophyd positioners used to set exposure
-      time during this scan. Useful for testing.
     md
       Additional metadata to pass to the run engine.
 
     """
-    use_scan_spec = load_config().feature_flags.undulator_fast_step_scanning_mode
     # Resolve energy devices into the actual positioners
     energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
     energy_movers = [
@@ -188,41 +183,19 @@ def xafs_scan(
             "E0": E0,
             "energy_ranges": list(energy_ranges),
             "energy_devices": list(map(repr, energy_devices)),
-            "time_signals": (
-                list(map(repr, time_signals))
-                if time_signals is not None
-                else time_signals
-            ),
         },
     }
-    if not use_scan_spec:
-        md_["plan_args"]["energy_ranges"] = list(map(repr, energy_ranges))  # type: ignore
     if E0_str != "":
         md_["edge"] = E0_str
     # Execute the energy scan
     md_.update(md)
-    if use_scan_spec:
-        spec = regions_to_scanspec(energy_ranges, E0=E0_val, axes=energy_movers)
-        # md_["scanspec"] = spec.serialize()
-        yield from energy_scan_from_scanspec(
-            detectors=detectors,
-            spec=spec,
-            md=md_,
-            time_signals=time_signals,
-        )
-    else:
-        # Convert energy ranges to energy list and exposure list
-        ranges = [from_tuple(rng) for rng in energy_ranges]
-        energies, exposures = merge_ranges(*ranges)
-        yield from energy_scan(
-            energies=energies,
-            exposure=exposures,
-            E0=E0,
-            detectors=detectors,
-            energy_devices=energy_devices,
-            time_signals=time_signals,
-            md=md_,
-        )
+    spec = regions_to_scanspec(energy_ranges, E0=E0_val, axes=energy_movers)
+    # md_["scanspec"] = spec.serialize()
+    yield from energy_scan_from_scanspec(
+        detectors=detectors,
+        spec=spec,
+        md=md_,
+    )
 
 
 # -----------------------------------------------------------------------------

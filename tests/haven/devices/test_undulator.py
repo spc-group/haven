@@ -133,14 +133,11 @@ async def test_prepare_energy_scan(undulator, mocker):
     np.testing.assert_equal(list(undulator._energy_iter), energies)
 
 
-async def test_move_first_energy_scan(undulator, mocker):
+async def test_move_first_energy_scan(undulator):
     """Can we move the undulator properly to the first point a
     pre-determined energy scan?
 
     """
-    mock_config = mocker.MagicMock()
-    mock_config.feature_flag.return_value = True
-    mocker.patch("haven.devices.undulator.load_config", new=mock_config)
     # Pretend we already prepared it
     undulator._energy_iter = iter([1000, 1100, 1200])
     undulator._gap_iter = iter([35.8, 36, 37.1])
@@ -161,14 +158,11 @@ async def test_move_first_energy_scan(undulator, mocker):
     assert await undulator.scan_next_point.get_value() == 0
 
 
-async def test_move_next_energy_scan(undulator, mocker):
+async def test_move_next_energy_scan(undulator):
     """Can we move the undulator properly to the 2nd, 3rd, etc point as
     part of a pre-determined energy scan?
 
     """
-    mock_config = mocker.MagicMock()
-    mock_config.feature_flag.return_value = True
-    mocker.patch("haven.devices.undulator.load_config", new=mock_config)
     # Pretend we already prepared it
     undulator._energy_iter = iter([1000, 1100, 1200])
     undulator._gap_iter = iter([35.8, 36, 37.1])

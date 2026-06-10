@@ -19,12 +19,12 @@ from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
 from ._count_multiple import count_multiple as count_multiple
 from ._emission_map_scan import emission_map_scan as emission_map_scan
-from ._energy_scan import energy_scan
 from ._fly import fly_scan, grid_fly_scan  # noqa: F401
 from ._record_dark_current import record_dark_current  # noqa: F401
 from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
 from ._set_energy import set_energy  # noqa: F401
 from ._shutters import close_shutters, open_shutters  # noqa: F401
+from ._xafs_scan import XAFSRegion as XAFSRegion
 from ._xafs_scan import xafs_scan
 
 
@@ -55,7 +55,6 @@ auto_gain = open_shutters_decorator()(auto_gain)
 adaptive_xanes = all_decorators(adaptive_xanes)
 count_multiple = all_decorators(count_multiple)
 emission_map_scan = all_decorators(emission_map_scan)
-energy_scan = all_decorators(energy_scan)
 fly_scan = all_decorators(fly_scan)
 grid_fly_scan = all_decorators(grid_fly_scan)
 xafs_scan = all_decorators(xafs_scan)
@@ -81,7 +80,6 @@ __all__ = [
     "auto_gain",
     "calibrate",
     "count_multiple",
-    "energy_scan",
     "grid_fly_scan",
     "focus_kb_mirrors",
     "record_dark_current",
