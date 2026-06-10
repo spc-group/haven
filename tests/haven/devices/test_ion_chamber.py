@@ -294,6 +294,7 @@ async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     assert erase_mock_put.called
     await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
+    await assert_value(ion_chamber.mcs.scaler.preset_time, 1.3)
 
 
 async def test_flyscan_prepare_external_trigger(ion_chamber):
@@ -393,10 +394,6 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
         collected["timestamps"][ion_chamber.mcs.scaler.elapsed_time.name],
         expected_timestamps,
     )
-
-
-def test_default_time_signal(ion_chamber):
-    assert ion_chamber.default_time_signal.source == "ca://255idcVME:3820:scaler1.TP"
 
 
 def test_supported_triggers(ion_chamber):

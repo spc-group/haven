@@ -402,14 +402,19 @@ class IonChamber(StandardReadable, Triggerable):
             channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL
         else:
             raise ValueError(f"Ion chamber does not support {value.trigger}.")
+
         # Fixed number of events
         self._trigger_channel_nums = repeat(num_channels)
-        await asyncio.gather(
+        coros = [
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),
             self.mcs.dwell_time.set(value.livetime),
             self.mcs.erase_all.trigger(),
-        )
+        ]
+        # Set the scaler live time in case we're doing step scanning
+        if value.livetime > 0:
+            coros.append(self.mcs.scaler.preset_time.set(value.livetime))
+        await asyncio.gather(*coros)
         # Start acquiring data
         self._is_flying = False  # Gets set during kickoff
 
@@ -492,14 +497,6 @@ class IonChamber(StandardReadable, Triggerable):
         descriptions = await asyncio.gather(*(sig.describe() for sig in signals))
         desc = {k: v for desc in descriptions for k, v in desc.items()}
         return {self.name: desc}
-
-    @property
-    def default_time_signal(self):
-        """The signal to use for setting exposure time when no other signal is
-        provided.
-
-        """
-        return self.mcs.scaler.preset_time
 
 
 # -----------------------------------------------------------------------------
