@@ -37,11 +37,12 @@ class CountDisplay(display.PlanDisplay):
 
     @asyncSlot()
     async def update_total_time(self):
-        acquire_times = await self.detectors_list.acquire_times()
-        detector_time = max([*acquire_times, float("nan")])
-        time_per_scan, total_time = self.scan_durations(detector_time)
-        self.ui.scan_duration_label.set_seconds(time_per_scan)
-        self.ui.total_duration_label.set_seconds(total_time)
+        log.warning("Predicted scan durations are currently not available.")
+        # acquire_times = await self.detectors_list.acquire_times()
+        # detector_time = max([*acquire_times, float("nan")])
+        # time_per_scan, total_time = self.scan_durations(detector_time)
+        # self.ui.scan_duration_label.set_seconds(time_per_scan)
+        # self.ui.total_duration_label.set_seconds(total_time)
 
     def plan(self):
         args = ()

@@ -198,12 +198,13 @@ class LineScanDisplay(display.PlanDisplay):
     @asyncSlot()
     async def update_total_time(self):
         """Update the total scan time and display it."""
-        acquire_times = await self.detectors_list.acquire_times()
-        detector_time = max([*acquire_times, float("nan")])
-        # Calculate time per scan
-        time_per_scan, total_time = self.scan_durations(detector_time)
-        self.scan_time_changed.emit(time_per_scan)
-        self.total_time_changed.emit(total_time)
+        log.warning("Predicted scan durations are currently not available.")
+        # acquire_times = await self.detectors_list.acquire_times()
+        # detector_time = max([*acquire_times, float("nan")])
+        # # Calculate time per scan
+        # time_per_scan, total_time = self.scan_durations(detector_time)
+        # self.scan_time_changed.emit(time_per_scan)
+        # self.total_time_changed.emit(total_time)
 
     async def update_devices(self, registry):
         """Re-configure the display for a new set of ophyd devices."""

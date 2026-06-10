@@ -1,5 +1,3 @@
-import asyncio
-
 from guarneri import Registry
 from ophyd_async.core import Device
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
@@ -35,15 +33,6 @@ class DetectorListView(QListView):
         names = [item.text() for item in items]
         devices = [self.registry[name] for name in names]
         return devices
-
-    async def acquire_times(self) -> list[float]:
-        devices = self.selected_detectors()
-        devices = [
-            device for device in devices if hasattr(device, "default_time_signal")
-        ]
-        aws = [device.default_time_signal.get_value() for device in devices]
-        times = await asyncio.gather(*aws)
-        return times
 
 
 # -----------------------------------------------------------------------------

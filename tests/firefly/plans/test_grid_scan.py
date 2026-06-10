@@ -46,6 +46,7 @@ async def display(
         await asyncio.sleep(0.1)
 
 
+@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber):
     # Set up motor num

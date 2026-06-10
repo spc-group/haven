@@ -224,11 +224,12 @@ class GridScanDisplay(display.PlanDisplay):
     async def update_total_time(self):
         """Update the total scan time and display it."""
         # Calculate time per scan
-        acquire_times = await self.detectors_list.acquire_times()
-        detector_time = max([*acquire_times, float("nan")])
-        time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
-        self.scan_time_changed.emit(time_per_scan)
-        self.total_time_changed.emit(total_time)
+        log.warning("Predicted scan durations are currently not available.")
+        # acquire_times = await self.detectors_list.acquire_times()
+        # detector_time = max([*acquire_times, float("nan")])
+        # time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
+        # self.scan_time_changed.emit(time_per_scan)
+        # self.total_time_changed.emit(total_time)
 
     def reset_default_regions(self):
         super().reset_default_regions()
