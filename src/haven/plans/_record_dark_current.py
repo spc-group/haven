@@ -5,6 +5,7 @@ from bluesky import Msg
 from bluesky import plan_stubs as bps
 from ophyd import Device
 
+from ..devices import IonChamber
 from ..devices.shutter import ShutterState
 from ..instrument import beamline
 from ._shutters import close_shutters, open_shutters
@@ -18,9 +19,7 @@ def count_is_complete(*, old_value, value, **kwargs):
     return is_done
 
 
-def record_dark_current(
-    ion_chambers: Sequence[Device], shutters: Sequence[Device] = []
-):
+def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] = []):
     """Record the dark current on the ion chambers.
 
     - Close shutters
@@ -30,7 +29,7 @@ def record_dark_current(
 
     Parameters
     ==========
-    ion_chambers
+    detectors
       Ion chamber devices or names.
     shutters
       Shutter devices or names. These shutters will be closed before
@@ -38,21 +37,27 @@ def record_dark_current(
       state afterward recording the dark current.
 
     """
+    detectors = beamline.devices.findall(detectors)
     # Get previous shutter states
     old_shutters = {}
     for shutter in shutters:
         old_shutters[shutter] = yield from bps.rd(shutter.readback)
     # Close shutters
     yield from close_shutters(shutters)
-    # Measure the dark current
-    ion_chambers = beamline.devices.findall(ion_chambers)
+    # Old-style ion chambers need to be handled differently
+    old_ion_chambers = [ic for ic in detectors if isinstance(ic, IonChamber)]
+    new_detectors = [ic for ic in detectors if not isinstance(ic, IonChamber)]
     # Record dark currents
     group = uuid.uuid4()
-    for ic in ion_chambers:
+    for ic in old_ion_chambers:
         yield Msg("trigger", ic, group=group, record_dark_current=True)
-        # yield from bps.trigger(ic.record_dark_current, group=group, wait=False)
+    for detector in new_detectors:
+        yield from bps.trigger(detector, group=group, wait=False)
     # Wait for the devices to be done recording dark current
     yield from bps.wait(group=group)
+    # Calibrate standard detectors to they read zero
+    for detector in new_detectors:
+        yield Msg("calibrate", detector, truth=0)
     # Reset shutters to their original states
     to_open = [
         sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN

@@ -11,6 +11,7 @@ from .delay import DG645Delay  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
+from .detectors.ion_chamber_scaler import IonChamberScaler as IonChamberScaler
 from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.split_ion_chamber import SplitIonChamber as SplitIonChamber
 from .detectors.split_ion_chamber import SplitIonChamberSet as SplitIonChamberSet
