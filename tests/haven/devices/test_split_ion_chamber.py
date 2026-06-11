@@ -1,8 +1,8 @@
 import asyncio
 
-import pytest
 import pytest_asyncio
 from ophyd_async.core import set_mock_value
+from ophyd_async.testing import assert_value
 
 from haven.devices import SplitIonChamberSet
 
@@ -14,7 +14,7 @@ async def ion_chamber():
     return ic
 
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 async def test_reading_signals(ion_chamber):
     status = ion_chamber.trigger()
     await asyncio.sleep(0.01)
@@ -24,18 +24,25 @@ async def test_reading_signals(ion_chamber):
     assert set(reading.keys()) == {
         # Global
         "Ipreslit-current",
+        "Ipreslit-current_stdev",
         # Sets of ion chamber channels
         "Ipreslit-vertical-current",
-        "Ipreslit-vertical-difference",
+        "Ipreslit-vertical-current_difference",
+        "Ipreslit-vertical-current_stdev",
         "Ipreslit-vertical-position",
         "Ipreslit-horizontal-current",
-        "Ipreslit-horizontal-difference",
+        "Ipreslit-horizontal-current_difference",
+        "Ipreslit-horizontal-current_stdev",
         "Ipreslit-horizontal-position",
         # Individual channels
         "Ipreslit-vertical-positive_plate-current",
+        "Ipreslit-vertical-positive_plate-current_stdev",
         "Ipreslit-vertical-negative_plate-current",
+        "Ipreslit-vertical-negative_plate-current_stdev",
         "Ipreslit-horizontal-negative_plate-current",
+        "Ipreslit-horizontal-negative_plate-current_stdev",
         "Ipreslit-horizontal-positive_plate-current",
+        "Ipreslit-horizontal-positive_plate-current_stdev",
     }
 
 
@@ -100,6 +107,14 @@ async def test_configuration_signals(ion_chamber):
         "Ipreslit-horizontal-negative_plate-scale",
         "Ipreslit-horizontal-negative_plate-precision",
     }
+
+
+async def test_calibrate(ion_chamber):
+    set_mock_value(ion_chamber.vertical.positive_plate.current, 1023)
+    set_mock_value(ion_chamber.vertical.positive_plate.offset, 0)
+    await ion_chamber.calibrate()
+    # Check that each ion chamber has its offset set properly
+    await assert_value(ion_chamber.vertical.positive_plate.offset, 1023)
 
 
 # -----------------------------------------------------------------------------

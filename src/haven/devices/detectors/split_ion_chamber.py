@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from bluesky.protocols import Reading
 from event_model import DataKey
 from ophyd_async.core import (
+    AsyncStatus,
     DetectorDataLogic,
     Device,
     ReadableDataProvider,
@@ -128,6 +129,14 @@ class SplitIonChamberPlate(StandardReadable):
         self.config_sigs = [self.offset, self.scale, self.precision]
         super().__init__(name=name)
 
+    @AsyncStatus.wrap
+    async def calibrate(self, truth: int | float = 0, dial: int | float | None = None):
+        if dial is None:
+            # Use the current value if no dial was provided
+            dial = await self.current.get_value()
+        offset = dial - truth
+        await self.offset.set(offset)
+
 
 class SplitIonChamberSet(BaseTetrAmmDetector):
     _ophyd_labels_ = {"ion_chambers", "detectors"}
@@ -153,6 +162,15 @@ class SplitIonChamberSet(BaseTetrAmmDetector):
             SplitIonChamberDataLogic(ion_chamber=self.horizontal),
             SignalDataLogic(signal=self.current, hinted=True),
             SignalDataLogic(signal=self.current_stdev, hinted=False),
+        )
+
+    @AsyncStatus.wrap
+    async def calibrate(self, truth: int | float = 0, dial: int | float | None = None):
+        return await asyncio.gather(
+            self.horizontal.positive_plate.calibrate(truth=truth, dial=dial),
+            self.horizontal.negative_plate.calibrate(truth=truth, dial=dial),
+            self.vertical.positive_plate.calibrate(truth=truth, dial=dial),
+            self.vertical.negative_plate.calibrate(truth=truth, dial=dial),
         )
 
 
