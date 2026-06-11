@@ -19,7 +19,13 @@ def scaler(sim_registry):
     return scaler
 
 
-@pytest.mark.xfail
+# async def test_apply_dark_current(scaler):
+#     """Check that dark current correction is applied properly."""
+#     print(scaler.ion_chambers[2])
+#     set_mock_value(scaler.ion_chambers[2].calculation_expression, "C * 100 / A")
+#     set_mock_value(scaler.ion_chambers[2].calculation_expression, "C * 100 / A")
+
+
 @pytest.mark.asyncio
 async def test_reading(scaler):
     await scaler.connect(mock=True)
@@ -37,8 +43,36 @@ async def test_reading(scaler):
     assert reading["I0-raw_counts"]["value"] == 1337
     assert type(reading["I0-raw_counts"]["value"]) is int
     assert "I0-counts" in reading
-    assert reading["I0-counts"]["value"] == 1337
     assert type(reading["I0-counts"]["value"]) is int
+
+
+@pytest.mark.asyncio
+async def test_describe(scaler):
+    await scaler.connect(mock=True)
+    await scaler.prepare(TriggerInfo())
+    set_mock_value(scaler.driver.clock_ticks_array, [2578])
+    set_mock_value(scaler.driver.ion_chambers[2].raw_counts_array, [1337])
+    reading = await scaler.read()
+    description = await scaler.describe()
+    # Check that the description matches the reading
+    from pprint import pprint
+
+    pprint(reading)
+    pprint(description)
+    assert set(reading.keys()) == set(description.keys())
+
+
+@pytest.mark.asyncio
+async def test_reading_applies_dark_current(scaler):
+    await scaler.connect(mock=True)
+    await scaler.prepare(TriggerInfo())
+    set_mock_value(scaler.driver.clock_ticks_array, [2578])
+    set_mock_value(scaler.driver.ion_chambers[2].raw_counts_array, [1337])
+    set_mock_value(scaler.driver.ion_chambers[2].calculation_expression, "C * 100 / A")
+    reading = await scaler.read()
+    # Check that the correct reading values are included
+    assert reading["I0-raw_counts"]["value"] == 1337
+    assert reading["I0-counts"]["value"] == 1337 * 100 / 2578
 
 
 @pytest.mark.xfail

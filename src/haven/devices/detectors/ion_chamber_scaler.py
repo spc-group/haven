@@ -13,7 +13,9 @@ preamp_prefix="255idc:SR02"
 """
 
 import asyncio
-from collections.abc import AsyncGenerator, Mapping
+import logging
+import re
+from collections.abc import AsyncGenerator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -37,6 +39,8 @@ from ophyd_async.epics.core import (
 )
 
 from .usb_counter import SignalsProvider, USBCounter, USBCounterDriverIO, _reduce_array
+
+log = logging.getLogger("haven")
 
 
 def remove_dark_current(raw_counts: int, expression: str, clock_ticks: int) -> float:
@@ -102,7 +106,9 @@ class IonChamberDataLogic(DetectorDataLogic):
 
 @dataclass
 class IonChamberDataProvider(SignalsProvider):
-    ion_chamber: IonChamber
+    ion_chambers: Sequence[IonChamber]
+    clock_signal: SignalR
+    calc_re = re.compile(r"^[A-Za-z]\s*\*\s*(\d+)\s*/\s*[A-Za-z]$")
 
     async def make_datakeys(self) -> dict[str, DataKey]:
         """Return a DataKey for each Readable that produces a Reading.
@@ -110,13 +116,42 @@ class IonChamberDataProvider(SignalsProvider):
         Called before the first exposure is taken.
         """
         other_keys = await super().make_datakeys()
-        return other_keys
+        new_keys = {
+            f"{ic.name}-counts": {
+                "dtype": "float",
+                "dtype_numpy": "<f32",
+                "shape": [],
+            }
+            for ic in self.ion_chambers
+        }
+        return {**other_keys, **new_keys}
 
     async def make_readings(self) -> dict[str, Reading]:
-        coros = [sig.read(cached=False) for sig in self.signals]
-        readings = await asyncio.gather(*coros)
-        merged = dict(pair for reading in readings for pair in reading.items())
-        return merged
+        coros = [ic.calculation_expression.get_value() for ic in self.ion_chambers]
+        coros = [
+            super().make_readings(),
+            self.clock_signal.get_value(cached=False),
+            *coros,
+        ]
+        readings, clock_ticks, *calc_expressions = await asyncio.gather(*coros)
+        for ic, calc_expr in zip(self.ion_chambers, calc_expressions):
+            # Apply dark current correction
+            reading = readings[ic.raw_counts.name]
+            match = self.calc_re.match(calc_expr)
+            if match:
+                factor = float(match.group(1))
+                new_reading = {
+                    **reading,
+                    "value": reading["value"] * factor / clock_ticks,
+                }
+            else:
+                # Could not parse the calc expression, just return the reading
+                log.warning(
+                    "Could not parse the calc expression {calc_expr} for {ic.name}."
+                )
+                new_reading = reading
+            readings[f"{ic.name}-counts"] = new_reading
+        return readings
 
 
 @dataclass
@@ -133,8 +168,10 @@ class StepDataLogic(DetectorDataLogic):
             # Include all the flattened child signals
             *[sig for signals in child_signals for sig in signals],
         ]
-        return SignalsProvider(
+        return IonChamberDataProvider(
             signals=signals,
+            ion_chambers=self.driver.ion_chambers.values(),
+            clock_signal=self.driver.clock_ticks,
         )
 
 

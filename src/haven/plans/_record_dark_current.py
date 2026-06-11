@@ -24,7 +24,8 @@ def record_dark_current(
     """Record the dark current on the ion chambers.
 
     - Close shutters
-    - Record ion chamber dark current
+    - Trigger detectors
+    - Calibrate to make readings zero
     - Restore shutters to their previous positions
 
     Parameters
