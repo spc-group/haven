@@ -36,7 +36,6 @@ from haven.plans import (  # noqa: F401
     auto_gain,
     calibrate,
     count,
-    count_multiple,
     emission_map_scan,
     fly_scan,
     grid_fly_scan,

@@ -22,42 +22,40 @@ class CountDisplay(display.PlanDisplay):
             self.update_total_time
         )
 
-        self.ui.num_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.num_events_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.collections_per_event_spinbox.valueChanged.connect(
+            self.update_total_time
+        )
         self.ui.delay_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         # Default metadata values
 
-    def scan_durations(self, detector_time: float) -> tuple[float, float]:
-        num_readings = self.ui.num_spinbox.value()
-        delay = self.ui.delay_spinbox.value()
-        time_per_scan = detector_time * num_readings + delay * (num_readings - 1)
-        repetitions = self.ui.spinBox_repeat_scan_num.value()
-        total_time = time_per_scan * repetitions
-        return time_per_scan, total_time
-
     @asyncSlot()
     async def update_total_time(self):
-        log.warning("Predicted scan durations are currently not available.")
-        # acquire_times = await self.detectors_list.acquire_times()
-        # detector_time = max([*acquire_times, float("nan")])
-        # time_per_scan, total_time = self.scan_durations(detector_time)
-        # self.ui.scan_duration_label.set_seconds(time_per_scan)
-        # self.ui.total_duration_label.set_seconds(total_time)
+        livetime = self.ui.livetime_spinbox.value()
+        num_readings = self.ui.num_events_spinbox.value()
+        delay = self.ui.delay_spinbox.value()
+        coll_per_event = self.ui.collections_per_event_spinbox.value()
+        time_per_scan = livetime * num_readings * coll_per_event + (
+            delay * (num_readings - 1)
+        )
+        repetitions = self.ui.spinBox_repeat_scan_num.value()
+        total_time = time_per_scan * repetitions
+        self.ui.scan_duration_label.set_seconds(time_per_scan)
+        self.ui.total_duration_label.set_seconds(total_time)
 
     def plan(self):
         args = ()
         names = [det.name for det in self.ui.detectors_list.selected_detectors()]
         kwargs = {
             "detectors": names,
-            "num": self.ui.num_spinbox.value(),
+            "num": self.ui.num_events_spinbox.value(),
             "delay": self.ui.delay_spinbox.value(),
+            "livetime": self.ui.livetime_spinbox.value(),
             "md": self.plan_metadata(),
+            "collections_per_event": self.ui.collections_per_event_spinbox.value(),
         }
-        use_multiframe = self.ui.multiframe_checkbox.isChecked()
-        if use_multiframe:
-            kwargs["collections_per_event"] = self.ui.multiframe_spinbox.value()
-        plan_name = "count_multiple" if use_multiframe else "count"
-        return BPlan(plan_name, *args, **kwargs)
+        return BPlan("count", *args, **kwargs)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

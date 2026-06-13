@@ -17,7 +17,7 @@ from ._adaptive_xanes import adaptive_xanes as adaptive_xanes
 from ._align_monochromators import align_monochromators  # noqa: F401
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
-from ._count_multiple import count_multiple as count_multiple
+from ._count import count as count
 from ._emission_map_scan import emission_map_scan as emission_map_scan
 from ._fly import fly_scan, grid_fly_scan  # noqa: F401
 from ._record_dark_current import record_dark_current  # noqa: F401
@@ -53,14 +53,13 @@ all_decorators = chain(
 # Apply decorators to Haven plans
 auto_gain = open_shutters_decorator()(auto_gain)
 adaptive_xanes = all_decorators(adaptive_xanes)
-count_multiple = all_decorators(count_multiple)
+count = all_decorators(count)
 emission_map_scan = all_decorators(emission_map_scan)
 fly_scan = all_decorators(fly_scan)
 grid_fly_scan = all_decorators(grid_fly_scan)
 xafs_scan = all_decorators(xafs_scan)
 
 # Apply all_decorators to standard Bluesky plans
-count = all_decorators(bp.count)
 grid_scan = all_decorators(bp.grid_scan)
 list_scan = all_decorators(bp.list_scan)
 rel_grid_scan = all_decorators(bp.rel_grid_scan)

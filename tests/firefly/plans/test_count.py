@@ -19,62 +19,46 @@ async def display(qtbot, sim_registry, xspress, ion_chamber):
         await asyncio.sleep(0.1)
 
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber):
-    # Set up detector list
-    display.ui.detectors_list.acquire_times = mock.AsyncMock(return_value=[0.82])
-
-    # Set up num of repeat scans
+    # Set up scan parameters
+    display.ui.livetime_spinbox.setValue(0.82)
     display.ui.spinBox_repeat_scan_num.setValue(6)
-
-    # Set up scan num of readings
-    display.ui.num_spinbox.setValue(20)
-
+    display.ui.num_events_spinbox.setValue(20)
+    display.ui.delay_spinbox.setValue(0.5)
+    display.ui.collections_per_event_spinbox.setValue(2)
     # Run the time calculator
     await display.update_total_time()
-
-    # Check whether time is calculated correctly for a single scan
-    assert display.ui.scan_duration_label.text() == "0 h 0 m 16 s"
-
-    # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.total_duration_label.text() == "0 h 1 m 38 s"
+    # Check whether time is calculated correctly for the scans
+    assert display.ui.scan_duration_label.text() == "0 h 0 m 42 s"
+    assert display.ui.total_duration_label.text() == "0 h 4 m 13 s"
 
 
 def test_plan(display, qtbot, xspress):
     display.ui.run_button.setEnabled(True)
-    display.ui.num_spinbox.setValue(5)
+    display.ui.num_events_spinbox.setValue(5)
+    display.ui.livetime_spinbox.setValue(3.1)
     display.ui.delay_spinbox.setValue(0.5)
+    display.ui.collections_per_event_spinbox.setValue(47)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress]
     )
     plan = display.plan()
     assert plan.name == "count"
-    assert plan.kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
-
-
-def test_multiframe_plan(display, qtbot, xspress):
-    """Do we get count_multiple() if 'multi-frame' is checked?"""
-    display.ui.run_button.setEnabled(True)
-    display.ui.num_spinbox.setValue(5)
-    display.ui.delay_spinbox.setValue(0.5)
-    display.ui.multiframe_checkbox.setChecked(True)
-    display.ui.multiframe_spinbox.setValue(47)
-    # Set up detector list
-    display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=[xspress]
-    )
-    plan = display.plan()
-    assert plan.name == "count_multiple"
     assert plan.kwargs == dict(
-        num=5, detectors=["vortex_me4"], delay=0.5, collections_per_event=47, md={}
+        num=5,
+        detectors=["vortex_me4"],
+        delay=0.5,
+        md={},
+        collections_per_event=47,
+        livetime=3.1,
     )
 
 
 def test_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
-    display.ui.num_spinbox.setValue(5)
+    display.ui.num_events_spinbox.setValue(5)
     # set up meta data
     display.metadata_widget.sample_combo_box.setCurrentText("LMO")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
@@ -89,6 +73,8 @@ def test_plan_metadata(display, qtbot, xspress, ion_chamber):
         num=5,
         detectors=["vortex_me4", "I00"],
         delay=0.0,
+        livetime=0.0,
+        collections_per_event=1,
         md={
             "is_standard": True,
             "sample_name": "LMO",

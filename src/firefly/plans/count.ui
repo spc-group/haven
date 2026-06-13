@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>317</height>
+    <width>597</width>
+    <height>319</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,12 +19,12 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Readings:</string>
+        <string>Events:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="num_spinbox">
+      <widget class="QSpinBox" name="num_events_spinbox">
        <property name="toolTip">
         <string>Number of readings to take for this run.</string>
        </property>
@@ -37,9 +37,26 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Livetime:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="livetime_spinbox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long should each exposure be. 0 means whatever is currently set.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="suffix">
+        <string> s</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Delay (s):</string>
+        <string>Delay:</string>
        </property>
       </widget>
      </item>
@@ -47,6 +64,35 @@
       <widget class="QDoubleSpinBox" name="delay_spinbox">
        <property name="toolTip">
         <string>Time delay in seconds between successive readings</string>
+       </property>
+       <property name="suffix">
+        <string> s</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Collections per Event:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="collections_per_event_spinbox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>The number of frames to measure in each reading.</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>1000</number>
+       </property>
+       <property name="value">
+        <number>1</number>
        </property>
       </widget>
      </item>
@@ -62,32 +108,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="multiframe_checkbox">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If enabled, trigger multiple separate frames per bluesky reading. This is done through the haven.count_multiple() plan.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Multi-frame counting is not compatible with all detectors.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Multi-frame</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="multiframe_spinbox">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>The number of frames to measure in each reading.</string>
-       </property>
-       <property name="minimum">
-        <number>2</number>
-       </property>
-       <property name="maximum">
-        <number>1000</number>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
@@ -244,22 +264,5 @@
   <tabstop>detectors_list</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>multiframe_checkbox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>multiframe_spinbox</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>322</x>
-     <y>22</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>402</x>
-     <y>22</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

@@ -3,19 +3,16 @@
 import logging
 import operator
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from functools import partial, reduce
-from typing import Any
 
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from bluesky import preprocessors as bpp
 from bluesky.protocols import (
     Movable,
-    Preparable,
-    Readable,
 )
-from bluesky.utils import MsgGenerator, plan
+from bluesky.utils import MsgGenerator
 from cycler import Cycler, cycler
 from ophyd_async.core import TriggerInfo
 from scanspec.core import Path
@@ -26,6 +23,8 @@ from haven.constants import edge_energy
 from haven.devices.undulator import PlanarUndulator
 from haven.instrument import beamline
 from haven.protocols import DetectorList
+
+from ._prepare import prepare_per_event
 
 __all__ = ["energy_scan_from_scanspec"]
 
@@ -146,10 +145,12 @@ def energy_scan_from_scanspec(
     log.debug(f"Found registered detectors: {real_detectors}")
     # Make sure the detectors have the correct exposure time set
     exposures = spec.calculate()[0].duration
+    per_step = bps.one_nd_step
     if exposures is not None:
-        per_step = prepare_per_step(detectors, exposures=exposures)
-    else:
-        per_step = bps.one_nd_step
+        tinfos = (TriggerInfo(livetime=exposure) for exposure in exposures)
+        per_step = prepare_per_event(
+            detectors, trigger_infos=tinfos, per_event=per_step
+        )
     # Execute the plan, and slip in some prepare messages
     plan = bp.scan_nd(detectors, _as_cycler(spec, detectors), per_step=per_step, md=md_)
     undulators = [
@@ -183,71 +184,6 @@ def _as_cycler(spec: Spec[Movable], detectors) -> Cycler:
     # effectively: cycler(motor1, [...]) + cycler(motor2, [...]) + ...
     cycler_ = reduce(operator.add, cyclers)
     return cycler_
-
-
-def prepare_per_step(detectors: Sequence[Preparable], exposures: Sequence[int | float]):
-    """Closure for preparing detectors at each step."""
-
-    # Avoid name clashes
-    preparables = detectors
-    exposures_ = iter(exposures)
-    # past_exposures = []
-    past_trigger_infos = [None]
-
-    @plan
-    def _per_step(
-        detectors: Sequence[Readable],
-        step: Mapping[Movable, Any],
-        pos_cache: dict[Movable, Any],
-        take_reading: bps.TakeReading | None = None,
-    ) -> MsgGenerator[None]:
-        """
-        Inner loop of an N-dimensional step scan
-
-        This is the default function for ``per_step`` param`` in ND plans.
-
-        Parameters
-        ----------
-        detectors : list or tuple
-            devices to read
-        step : dict
-            mapping motors to positions in this step
-        pos_cache : dict
-            mapping motors to their last-set positions
-        take_reading : plan, optional
-            function to do the actual acquisition ::
-
-               def take_reading(dets, name='primary'):
-                    yield from ...
-
-            Callable[List[OphydObj], Optional[str]] -> Generator[Msg], optional
-
-            Defaults to `trigger_and_read`
-
-        Yields
-        ------
-        msg : Msg
-        """
-        # Prepare detectors so that the exposure time is set correctly.
-        # Doing it this way makes sure the timeout is correct when triggering.
-        exposure = next(exposures_)
-        tinfo = TriggerInfo(livetime=exposure)
-        prep_group = uuid.uuid4()
-        if tinfo != past_trigger_infos[-1]:
-            # This data point changes how the detector gets trigger,
-            # so we need to re-prepare
-            for det in preparables:
-                yield from bps.prepare(det, tinfo, group=prep_group, wait=False)
-            yield from bps.wait(group=prep_group)
-            past_trigger_infos.append(tinfo)
-        yield from bps.one_nd_step(
-            detectors=detectors,
-            step=step,
-            pos_cache=pos_cache,
-            take_reading=take_reading,
-        )
-
-    return _per_step
 
 
 # def energy_scan(
