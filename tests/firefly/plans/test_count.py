@@ -30,8 +30,8 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     # Run the time calculator
     await display.update_total_time()
     # Check whether time is calculated correctly for the scans
-    assert display.ui.scan_duration_label.text() == "0 h 0 m 42 s"
-    assert display.ui.total_duration_label.text() == "0 h 4 m 13 s"
+    assert display.ui.scan_duration_label.text() == "0 h 0 m 43 s (77 %)"
+    assert display.ui.total_duration_label.text() == "0 h 4 m 14 s (77 %)"
 
 
 def test_plan(display, qtbot, xspress):

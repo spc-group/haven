@@ -40,13 +40,10 @@ from haven.plans import (  # noqa: F401
     fly_scan,
     grid_fly_scan,
     grid_scan,
-    list_scan,
     record_dark_current,
     rel_grid_scan,
-    rel_list_scan,
     rel_scan,
     scan,
-    scan_nd,
     set_energy,
     xafs_scan,
 )
@@ -147,12 +144,9 @@ count = plan_decorator(count)
 fly_scan = plan_decorator(fly_scan)
 grid_scan = plan_decorator(grid_scan)
 grid_fly_scan = plan_decorator(grid_fly_scan)
-list_scan = plan_decorator(list_scan)
 rel_grid_scan = plan_decorator(rel_grid_scan)
-rel_list_scan = plan_decorator(rel_list_scan)
 rel_scan = plan_decorator(rel_scan)
 scan = plan_decorator(scan)
-scan_nd = plan_decorator(scan_nd)
 xafs_scan = plan_decorator(xafs_scan)
 
 

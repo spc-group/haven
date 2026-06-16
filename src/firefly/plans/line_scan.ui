@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>806</width>
-    <height>484</height>
+    <width>801</width>
+    <height>312</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,42 +17,85 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="num_motor_label">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="text">
-        <string>Num. Axes:</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="num_motor_label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Num. Axes:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="num_regions_spin_box">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="wrapping">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
+         </property>
+         <property name="correctionMode">
+          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
+         </property>
+         <property name="minimum">
+          <number>0</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="displayIntegerBase">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QSpinBox" name="num_regions_spin_box">
-       <property name="enabled">
-        <bool>true</bool>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="wrapping">
-        <bool>false</bool>
-       </property>
-       <property name="readOnly">
-        <bool>false</bool>
-       </property>
-       <property name="correctionMode">
-        <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
-       </property>
-       <property name="minimum">
-        <number>0</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="displayIntegerBase">
-        <number>10</number>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="num_pts_label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Scan Points:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="scan_pts_spin_box">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>2</number>
+         </property>
+         <property name="displayIntegerBase">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="Line" name="line_2">
@@ -75,6 +118,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="fly_checkbox">
+       <property name="text">
+        <string>Fly Scan</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="Line" name="line_3">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -82,25 +132,61 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="log_scan_checkbox">
-       <property name="text">
-        <string>Log</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <property name="spacing">
+        <number>3</number>
        </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Livetime:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="livetime_spinbox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long should each exposure be. 0 means whatever is currently set.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string> s</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="Line" name="line_4">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="spacing">
+        <number>3</number>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="fly_checkbox">
-       <property name="text">
-        <string>Fly Scan</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Collections per Event:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="collections_per_event_spinbox">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>The number of frames to measure in each reading.</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <spacer name="horizontalSpacer">
@@ -114,35 +200,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="num_pts_label">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Scan Points:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="scan_pts_spin_box">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>10000</number>
-       </property>
-       <property name="value">
-        <number>2</number>
-       </property>
-       <property name="displayIntegerBase">
-        <number>10</number>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
@@ -171,7 +228,7 @@
           <x>0</x>
           <y>0</y>
           <width>498</width>
-          <height>345</height>
+          <height>192</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -342,6 +399,9 @@
      </item>
      <item>
       <widget class="DurationLabel" name="scan_duration_label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows the expected duration &lt;span style=&quot; font-weight:600;&quot;&gt;for a single scan&lt;/span&gt; with these parameters.&lt;/p&gt;&lt;p&gt;The number in parentheses shows how much of that time is spent actually acquiring data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>N/A</string>
        </property>
@@ -365,6 +425,9 @@
      </item>
      <item>
       <widget class="DurationLabel" name="total_duration_label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows the expected duration &lt;span style=&quot; font-weight:600;&quot;&gt;for all repeitions of the scan&lt;/span&gt; with these parameters.&lt;/p&gt;&lt;p&gt;The number in parentheses shows how much of that time is spent actually acquiring data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>N/A</string>
        </property>
@@ -449,11 +512,8 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>num_regions_spin_box</tabstop>
   <tabstop>relative_scan_checkbox</tabstop>
-  <tabstop>log_scan_checkbox</tabstop>
   <tabstop>fly_checkbox</tabstop>
-  <tabstop>scan_pts_spin_box</tabstop>
   <tabstop>enable_all_checkbox</tabstop>
   <tabstop>scrollArea_2</tabstop>
   <tabstop>detectors_list</tabstop>

@@ -2,13 +2,15 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
-from functools import partial
+from functools import partial, reduce
 
+import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
+from scanspec.specs import Line, Spec
 
-from firefly.component_selector import ComponentSelector
+from firefly.component_selector import ComponentSelector, get_signal_value
 from firefly.plans import display
 from firefly.plans.regions import (
     RegionsManager,
@@ -53,12 +55,14 @@ class LineRegionsManager(RegionsManager):
         device_selector.device_selected.connect(
             partial(self.update_device_parameters, row=row)
         )
+        device_selector.device_selected.connect(self.regions_changed)
         # start point
         start_spin_box = QDoubleSpinBox()
         start_spin_box.lineEdit().setPlaceholderText("Start…")
         start_spin_box.setMinimum(float("-inf"))
         start_spin_box.setMaximum(float("inf"))
         start_spin_box.setMinimumWidth(100)
+        start_spin_box.valueChanged.connect(self.regions_changed)
 
         # Stop point
         stop_spin_box = QDoubleSpinBox()
@@ -66,6 +70,7 @@ class LineRegionsManager(RegionsManager):
         stop_spin_box.setMinimum(float("-inf"))
         stop_spin_box.setMaximum(float("inf"))
         stop_spin_box.setMinimumWidth(100)
+        stop_spin_box.valueChanged.connect(self.regions_changed)
 
         # Step size (non-editable)
         step_label = QLabel()
@@ -169,16 +174,16 @@ class LineScanDisplay(display.PlanDisplay):
         self.ui.fly_checkbox.stateChanged.connect(
             partial(self.update_scan_mode_checkboxes, source=self.ui.fly_checkbox)
         )
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.regions.set_num_points)
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(
+        self.ui.livetime_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.collections_per_event_spinbox.valueChanged.connect(
             self.update_total_time
         )
-        self.ui.scan_pts_spin_box.valueChanged.connect(self.regions.set_num_points)
-        self.regions.set_num_points(self.scan_pts_spin_box.value())
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
-        self.total_time_changed.connect(self.total_duration_label.set_seconds)
+        self.regions.regions_changed.connect(self.update_total_time)
+        self.regions.set_num_points(self.scan_pts_spin_box.value())
 
     def update_scan_mode_checkboxes(self, value, source: QCheckBox = None):
         if source is self.ui.fly_checkbox and value > 0:
@@ -198,13 +203,40 @@ class LineScanDisplay(display.PlanDisplay):
     @asyncSlot()
     async def update_total_time(self):
         """Update the total scan time and display it."""
-        log.warning("Predicted scan durations are currently not available.")
-        # acquire_times = await self.detectors_list.acquire_times()
-        # detector_time = max([*acquire_times, float("nan")])
-        # # Calculate time per scan
-        # time_per_scan, total_time = self.scan_durations(detector_time)
-        # self.scan_time_changed.emit(time_per_scan)
-        # self.total_time_changed.emit(total_time)
+        num_pts = self.ui.scan_pts_spin_box.value()
+        lines = [
+            Line(r.device or idx, r.start, r.stop, num_pts)
+            for idx, r in enumerate(self.regions)
+        ]
+        livetime = self.ui.livetime_spinbox.value()
+        coll_per_event = self.ui.collections_per_event_spinbox.value()
+        dwell_time = livetime * coll_per_event
+        spec = dwell_time @ reduce(Spec.zip, lines[1:], lines[0])
+        (dim,) = spec.calculate()  # Line-scans can only be 1-dimensionsal
+        # Calculate how long the detectors will count for
+        scan_livetime = sum(dim.duration)
+        # Calculate how long the motors will take to move
+        movers = [
+            self.regions.row_widgets(row).device_selector.current_component()
+            for row in self.regions.row_numbers
+        ]
+        movers = [mover for mover in movers if hasattr(mover, "velocity")]
+        velocity_vals = await asyncio.gather(
+            *[get_signal_value(mover.velocity) for mover in movers]
+        )
+        velocities = {mover.name: velo for mover, velo in zip(movers, velocity_vals)}
+        distances = {ax: abs(pts[1:] - pts[:-1]) for ax, pts in dim.midpoints.items()}
+        move_times = {
+            ax: dist / velocities.get(ax, float("inf"))
+            for ax, dist in distances.items()
+        }
+        move_time = np.sum(np.max(np.asarray([*move_times.values()]), axis=0))
+        # Total scan time is the detector time plus motor time
+        scan_time = scan_livetime + move_time
+        efficiency = scan_livetime / scan_time if scan_time != 0 else None
+        self.scan_duration_label.set_seconds(scan_time, efficiency)
+        total_time = scan_time * self.scan_repetitions
+        self.total_duration_label.set_seconds(total_time, efficiency)
 
     async def update_devices(self, registry):
         """Re-configure the display for a new set of ophyd devices."""
@@ -240,6 +272,13 @@ class LineScanDisplay(display.PlanDisplay):
             )
             controllers = [item.text() for item in selected_controllers]
             kwargs["flyer_controllers"] = controllers
+        else:
+            kwargs.update(
+                {
+                    "livetime": self.ui.livetime_spinbox.value(),
+                    "collections_per_event": self.ui.collections_per_event_spinbox.value(),
+                }
+            )
         return args, kwargs
 
     @property
@@ -247,18 +286,9 @@ class LineScanDisplay(display.PlanDisplay):
         """Determine what kind of scan we're running based on user input."""
         if self.ui.fly_checkbox.isChecked():
             return "fly_scan"
-        return {
-            # Rel, log
-            (True, True): "rel_log_scan",
-            (True, False): "rel_scan",
-            (False, True): "log_scan",
-            (False, False): "scan",
-        }[
-            (
-                self.ui.relative_scan_checkbox.isChecked(),
-                self.ui.log_scan_checkbox.isChecked(),
-            )
-        ]
+        if self.ui.relative_scan_checkbox.isChecked():
+            return "rel_scan"
+        return "scan"
 
     @plan_type.setter
     def plan_type(self, plan_type: str):

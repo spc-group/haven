@@ -1,4 +1,5 @@
 import uuid
+import warnings
 from collections.abc import Iterator, Sequence
 from functools import wraps
 
@@ -27,11 +28,10 @@ def prepare_per_event(
       The callable to use after the detectors are prepared.
 
     """
-
-    # Avoid name clashes
-    preparables = detectors
-    # past_exposures = []
     past_trigger_infos = [None]
+    preparables = [det for det in detectors if isinstance(det, Preparable)]
+    unpreparables = set(detectors) - set(preparables)
+    default_trigger_info = TriggerInfo()
 
     @wraps(per_event)
     def _per_step(*args, **kwargs) -> MsgGenerator[None]:
@@ -67,9 +67,14 @@ def prepare_per_event(
         tinfo = next(trigger_infos)
         prep_group = uuid.uuid4()
         if tinfo != past_trigger_infos[-1]:
+            if tinfo != default_trigger_info and len(unpreparables) > 0:
+                warnings.warn(
+                    f"Detectors {[det.name for det in unpreparables]} do not implement all preparable methods."
+                )
             # This data point changes how the detector gets trigger,
             # so we need to re-prepare
             for det in preparables:
+                print(det)
                 yield from bps.prepare(det, tinfo, group=prep_group, wait=False)
             yield from bps.wait(group=prep_group)
             past_trigger_infos.append(tinfo)

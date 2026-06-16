@@ -18,11 +18,8 @@ class CountDisplay(display.PlanDisplay):
     def customize_ui(self):
         super().customize_ui()
         # Connect signals for total time updates
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(
-            self.update_total_time
-        )
-
         self.ui.num_events_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.livetime_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.collections_per_event_spinbox.valueChanged.connect(
             self.update_total_time
         )
@@ -36,13 +33,14 @@ class CountDisplay(display.PlanDisplay):
         num_readings = self.ui.num_events_spinbox.value()
         delay = self.ui.delay_spinbox.value()
         coll_per_event = self.ui.collections_per_event_spinbox.value()
-        time_per_scan = livetime * num_readings * coll_per_event + (
-            delay * (num_readings - 1)
-        )
+        scan_livetime = livetime * num_readings * coll_per_event
+        scan_delay = delay * (num_readings - 1)
+        time_per_scan = scan_livetime + scan_delay
+        efficiency = scan_livetime / time_per_scan if time_per_scan != 0 else None
+        self.ui.scan_duration_label.set_seconds(time_per_scan, efficiency=efficiency)
         repetitions = self.ui.spinBox_repeat_scan_num.value()
         total_time = time_per_scan * repetitions
-        self.ui.scan_duration_label.set_seconds(time_per_scan)
-        self.ui.total_duration_label.set_seconds(total_time)
+        self.ui.total_duration_label.set_seconds(total_time, efficiency=efficiency)
 
     def plan(self):
         args = ()

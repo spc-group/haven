@@ -37,6 +37,14 @@ class Flavors(IntEnum):
     ASYNC_SIGNAL = 4
 
 
+async def get_signal_value(sig):
+    if hasattr(sig, "get_value"):
+        # Ophyd-async signal
+        return await sig.get_value()
+    # Ophyd signal
+    return sig.get()
+
+
 @lru_cache()
 def icons():
     """Produce a dictionary of icons for specific device classes.

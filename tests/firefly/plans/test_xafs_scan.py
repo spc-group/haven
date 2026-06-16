@@ -64,11 +64,11 @@ async def test_time_calculator(display, xspress, ion_chamber):
     await display.update_total_time()
     assert (
         display.ui.scan_duration_label.text()
-        == f"0{HALF_SPACE}h 0{HALF_SPACE}m 30{HALF_SPACE}s"
+        == f"0{HALF_SPACE}h 0{HALF_SPACE}m 31{HALF_SPACE}s"
     )
     assert (
         display.ui.total_duration_label.text()
-        == f"0{HALF_SPACE}h 1{HALF_SPACE}m 30{HALF_SPACE}s"
+        == f"0{HALF_SPACE}h 1{HALF_SPACE}m 31{HALF_SPACE}s"
     )
 
 

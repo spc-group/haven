@@ -57,9 +57,29 @@ async def display(
     return display
 
 
+@pytest.mark.asyncio
+async def test_step_time_calculator(display, motors, ion_chamber, qtbot, qapp):
+    display.ui.spinBox_repeat_scan_num.setValue(6)
+    display.ui.scan_pts_spin_box.setValue(1000)
+    # Set up widgets that determine the detector count time
+    livetime = 1.23
+    display.ui.livetime_spinbox.setValue(livetime)
+    # Set up widgets that determine the motor movement time
+    await display.regions.set_region_count(2)
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(99.9)
+    set_mock_value(motors[0].velocity, 0.5)
+    widgets.device_selector.combo_box.setCurrentText(motors[0].name)
+    # Check whether time is calculated correctly for the scans
+    await display.update_total_time()
+    assert display.ui.scan_duration_label.text() == "0 h 23 m 50 s (86 %)"
+    assert display.ui.total_duration_label.text() == "2 h 22 m 59 s (86 %)"
+
+
 @pytest.mark.xfail
 @pytest.mark.asyncio
-async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
+async def test_fly_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     # set up motor num
     await display.regions.set_region_count(2)
 
@@ -134,6 +154,8 @@ async def test_plan_args(display, qtbot, xspress, ion_chamber):
     widgets.stop_spin_box.setValue(222)
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
+    display.ui.livetime_spinbox.setValue(3.1)
+    display.ui.collections_per_event_spinbox.setValue(3)
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
@@ -155,6 +177,8 @@ async def test_plan_args(display, qtbot, xspress, ion_chamber):
     )
     assert kwargs == {
         "num": 10,
+        "livetime": 3.1,
+        "collections_per_event": 3,
         "md": {
             "sample_name": "sam",
             "purpose": "test",

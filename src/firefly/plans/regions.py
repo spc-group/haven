@@ -182,6 +182,7 @@ class RegionsManager[WidgetsType](QObject):
 
     # Qt signals
     regions_changed = Signal()
+    parameters_changed = Signal()
 
     # Over-ridable components
     # #######################
@@ -268,6 +269,7 @@ class RegionsManager[WidgetsType](QObject):
         for column, widget in enumerate(widgets):
             self.layout.addWidget(widget, row, column, alignment=Qt.AlignTop)
         await self.update_devices(None, rows=[row])
+        self.regions_changed.emit()
         return row
 
     async def update_devices(self, registry=None, *arg, **kwargs):

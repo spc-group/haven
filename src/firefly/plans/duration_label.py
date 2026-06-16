@@ -8,13 +8,22 @@ HALF_SPACE = "\u202f"
 class DurationLabel(QtWidgets.QLabel):
     """A label that shows individual hours, minutes, seconds, etc."""
 
-    def set_seconds(self, seconds: float):
+    def set_seconds(self, seconds: float | int, efficiency: float | None = None):
+        """Set the duraction, in seconds.
+
+        Will update the text to show the new duration. If *efficiency*
+        is provided, the number will be shown as a per cent (i.e. how
+        much of the time is spent collecting data vs moving motors).
+
+        """
         if math.isnan(seconds):
             text = f"–{HALF_SPACE}h –{HALF_SPACE}m –{HALF_SPACE}s"
         else:
             hours, more_seconds = divmod(seconds, 3600)
             minutes, more_seconds = divmod(more_seconds, 60)
-            text = f"{int(hours)}{HALF_SPACE}h {int(minutes)}{HALF_SPACE}m {int(more_seconds)}{HALF_SPACE}s"
+            text = f"{int(hours)}{HALF_SPACE}h {int(minutes)}{HALF_SPACE}m {math.ceil(more_seconds)}{HALF_SPACE}s"
+            if efficiency is not None and math.isfinite(efficiency):
+                text += f" ({int(efficiency*100)}{HALF_SPACE}%)"
         self.setText(text)
 
 
