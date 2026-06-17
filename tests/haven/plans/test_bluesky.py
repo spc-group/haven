@@ -6,7 +6,7 @@ from ophyd_async import sim
 from ophyd_async.core import TriggerInfo
 
 from haven.devices import IonChamber, Xspress3Detector
-from haven.plans._bluesky import count, rel_scan, scan
+from haven.plans._bluesky import count, grid_scan, rel_grid_scan, rel_scan, scan
 
 
 @pytest_asyncio.fixture()
@@ -70,6 +70,79 @@ def test_line_scan_metadata(devices, plan_func):
     msgs = list(
         plan_func(
             detectors, stage.x, -10, 10, num=3, collections_per_event=200, livetime=3.1
+        )
+    )
+    md = msgs[3].kwargs
+    assert md["plan_name"] == plan_func.__name__
+    assert md["plan_args"]["livetime"] == 3.1
+    assert md["plan_args"]["collections_per_event"] == 200
+
+
+@pytest.mark.parametrize("plan_func", [grid_scan, rel_grid_scan])
+def test_grid_scan_prepares_trigger_info(devices, plan_func):
+    stage, *detectors = devices
+    msgs = list(
+        plan_func(
+            detectors,
+            stage.y,
+            -10,
+            10,
+            3,
+            stage.x,
+            0,
+            20,
+            5,
+            collections_per_event=200,
+            livetime=3.1,
+        )
+    )
+    prepare_msg = msgs[4]
+    assert prepare_msg.command == "prepare"
+    assert prepare_msg.obj is detectors[0]
+    assert prepare_msg.args == (
+        TriggerInfo(
+            number_of_events=1,
+            collections_per_event=200,
+            livetime=3.1,
+        ),
+    )
+    group = prepare_msg.kwargs["group"]
+    prepare_msg = msgs[5]
+    assert prepare_msg.command == "prepare"
+    assert prepare_msg.obj is detectors[1]
+    assert prepare_msg.args == (
+        TriggerInfo(
+            number_of_events=1,
+            collections_per_event=200,
+            livetime=3.1,
+        ),
+    )
+    assert prepare_msg.kwargs == {"group": group}
+    # Make sure we wait for the prepares to be done
+    wait_msg = msgs[6]
+    assert wait_msg.command == "wait"
+    assert wait_msg.kwargs["group"] == group
+    # Ensure we only prepare each device once
+    all_prep_msgs = [msg for msg in msgs if msg.command == "prepare"]
+    assert len(all_prep_msgs) == len(detectors)
+
+
+@pytest.mark.parametrize("plan_func", [grid_scan, rel_grid_scan])
+def test_grid_scan_metadata(devices, plan_func):
+    stage, *detectors = devices
+    msgs = list(
+        plan_func(
+            detectors,
+            stage.y,
+            -10,
+            10,
+            3,
+            stage.x,
+            0,
+            20,
+            5,
+            collections_per_event=200,
+            livetime=3.1,
         )
     )
     md = msgs[3].kwargs

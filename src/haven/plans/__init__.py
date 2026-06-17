@@ -17,6 +17,8 @@ from ._adaptive_xanes import adaptive_xanes as adaptive_xanes
 from ._align_monochromators import align_monochromators  # noqa: F401
 from ._auto_gain import auto_gain
 from ._bluesky import count as count
+from ._bluesky import grid_scan as grid_scan
+from ._bluesky import rel_grid_scan as rel_grid_scan
 from ._bluesky import rel_scan as rel_scan
 from ._bluesky import scan as scan
 from ._calibrate import calibrate  # noqa: F401
@@ -60,10 +62,8 @@ emission_map_scan = all_decorators(emission_map_scan)
 fly_scan = all_decorators(fly_scan)
 grid_fly_scan = all_decorators(grid_fly_scan)
 xafs_scan = all_decorators(xafs_scan)
-
-# Apply all_decorators to standard Bluesky plans
-grid_scan = all_decorators(bp.grid_scan)
-rel_grid_scan = all_decorators(bp.rel_grid_scan)
+grid_scan = all_decorators(grid_scan)
+rel_grid_scan = all_decorators(rel_grid_scan)
 rel_scan = all_decorators(rel_scan)
 scan = all_decorators(scan)
 
@@ -77,7 +77,6 @@ __all__ = [
     "align_monochromators",
     "auto_gain",
     "calibrate",
-    "count_multiple",
     "grid_fly_scan",
     "focus_kb_mirrors",
     "record_dark_current",
