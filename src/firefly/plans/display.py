@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from typing import Any
 
 from bluesky_queueserver_api import BPlan
-from qtpy.QtCore import Signal
 
 from firefly import display
 from firefly.queue_button import QueueButton
@@ -17,8 +16,6 @@ class PlanStubDisplay(display.FireflyDisplay):
     """
 
     plan_type: str
-    scan_time_changed = Signal(float)
-    total_time_changed = Signal(float)
 
     # Common widgets
     run_button: QueueButton

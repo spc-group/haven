@@ -269,7 +269,6 @@ class RegionsManager[WidgetsType](QObject):
         for column, widget in enumerate(widgets):
             self.layout.addWidget(widget, row, column, alignment=Qt.AlignTop)
         await self.update_devices(None, rows=[row])
-        self.regions_changed.emit()
         return row
 
     async def update_devices(self, registry=None, *arg, **kwargs):
@@ -328,11 +327,14 @@ class RegionsManager[WidgetsType](QObject):
 
         """
         old_region_num = len(self)
-        # Only one of ``add`` or ``remove`` will have entries
+        # At most one of ``add`` or ``remove`` will have entries
         new_regions = [
             (await self.add_row()) for i in range(old_region_num, new_region_num)
         ]
         old_regions = [self.remove_row() for i in range(new_region_num, old_region_num)]
+
+        if old_region_num != new_region_num:
+            self.regions_changed.emit()
         return new_regions
 
 

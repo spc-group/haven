@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>597</width>
-    <height>319</height>
+    <width>593</width>
+    <height>323</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,84 +17,112 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Events:</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <property name="spacing">
+        <number>3</number>
        </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Events:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="num_events_spinbox">
+         <property name="toolTip">
+          <string>Number of readings to take for this run.</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QSpinBox" name="num_events_spinbox">
-       <property name="toolTip">
-        <string>Number of readings to take for this run.</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>1000</number>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Delay:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="delay_spinbox">
+         <property name="toolTip">
+          <string>Time delay in seconds between successive readings</string>
+         </property>
+         <property name="suffix">
+          <string> s</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Livetime:</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="spacing">
+        <number>3</number>
        </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Livetime:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="livetime_spinbox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long should each exposure be. 0 means whatever is currently set.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string> s</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="livetime_spinbox">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long should each exposure be. 0 means whatever is currently set.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="suffix">
-        <string> s</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Delay:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDoubleSpinBox" name="delay_spinbox">
-       <property name="toolTip">
-        <string>Time delay in seconds between successive readings</string>
-       </property>
-       <property name="suffix">
-        <string> s</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Collections per Event:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="collections_per_event_spinbox">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="toolTip">
-        <string>The number of frames to measure in each reading.</string>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>1000</number>
-       </property>
-       <property name="value">
-        <number>1</number>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Collections per Event:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="collections_per_event_spinbox">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>The number of frames to measure in each reading.</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <spacer name="horizontalSpacer_2">
@@ -204,27 +232,34 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_11">
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_7">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="text">
-        <string>Num. of scans:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBox_repeat_scan_num">
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>999</number>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_11">
+         <property name="toolTip">
+          <string>Do this scan by multiple times</string>
+         </property>
+         <property name="text">
+          <string>Num. of scans:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="spinBox_repeat_scan_num">
+         <property name="toolTip">
+          <string>Do this scan by multiple times</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>999</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="QueueButton" name="run_button">

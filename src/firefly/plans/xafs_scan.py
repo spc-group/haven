@@ -308,8 +308,6 @@ class XafsScanDisplay(display.PlanDisplay):
             combo_box.addItem(text, userData=edge)
         combo_box.setCurrentText("")
         # Connect signals for updates
-        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
-        self.total_time_changed.connect(self.total_duration_label.set_seconds)
         self.use_edge_checkbox.stateChanged.connect(self.use_edge)
         self.num_regions_spin_box.lineEdit().setReadOnly(True)
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
@@ -347,8 +345,8 @@ class XafsScanDisplay(display.PlanDisplay):
             time_per_scan, total_time = self.scan_durations()
         except ZeroDivisionError:
             time_per_scan, total_time = float("nan"), float("nan")
-        self.scan_time_changed.emit(time_per_scan)
-        self.total_time_changed.emit(total_time)
+        self.ui.scan_duration_label.set_seconds(time_per_scan)
+        self.ui.total_duration_label.set_seconds(total_time)
 
     @property
     def edge_name(self) -> str:

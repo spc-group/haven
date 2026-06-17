@@ -1,15 +1,18 @@
 import asyncio
 import logging
 import math
+import operator
 from collections.abc import Sequence
 from dataclasses import dataclass
-from functools import partial
+from functools import partial, reduce
 
 import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
+from scanspec.core import Path
+from scanspec.specs import Line
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import display
@@ -182,6 +185,10 @@ class GridScanDisplay(display.PlanDisplay):
         )
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
+        self.ui.livetime_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.collections_per_event_spinbox.valueChanged.connect(
+            self.update_total_time
+        )
         self.regions.regions_changed.connect(self.update_total_time)
         self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
         self.relative_scan_checkbox.stateChanged.connect(
@@ -202,8 +209,6 @@ class GridScanDisplay(display.PlanDisplay):
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
-        self.total_time_changed.connect(self.total_duration_label.set_seconds)
 
     def update_scan_mode_checkboxes(self, value, source: QCheckBox = None):
         if source is self.ui.fly_checkbox and value > 0:
@@ -224,12 +229,25 @@ class GridScanDisplay(display.PlanDisplay):
     async def update_total_time(self):
         """Update the total scan time and display it."""
         # Calculate time per scan
-        log.warning("Predicted scan durations are currently not available.")
+        livetime = self.ui.livetime_spinbox.value()
+        coll_per_event = self.ui.collections_per_event_spinbox.value()
+        dwell_time = livetime * coll_per_event
+        lines = [
+            Line(r.device or idx, r.start, r.stop, r.num_points)
+            for idx, r in enumerate(self.regions)
+            if r.is_active
+        ]
+        spec = reduce(operator.mul, lines[1:], dwell_time @ lines[0])
+        slc = Path(spec.calculate()).consume()
+        scan_livetime = sum(slc.duration)
         # acquire_times = await self.detectors_list.acquire_times()
         # detector_time = max([*acquire_times, float("nan")])
         # time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
-        # self.scan_time_changed.emit(time_per_scan)
-        # self.total_time_changed.emit(total_time)
+        efficiency = None
+        scan_time = scan_livetime
+        self.ui.scan_duration_label.set_seconds(scan_time, efficiency)
+        total_time = scan_time * self.scan_repetitions
+        self.total_duration_label.set_seconds(total_time, efficiency)
 
     def reset_default_regions(self):
         super().reset_default_regions()
@@ -307,6 +325,13 @@ class GridScanDisplay(display.PlanDisplay):
             )
             controllers = [item.text() for item in selected_controllers]
             kwargs["flyer_controllers"] = controllers
+        else:
+            kwargs.update(
+                {
+                    "livetime": self.ui.livetime_spinbox.value(),
+                    "collections_per_event": self.ui.collections_per_event_spinbox.value(),
+                }
+            )
         return args, kwargs
 
     def ui_filename(self):
@@ -314,7 +339,7 @@ class GridScanDisplay(display.PlanDisplay):
 
 
 # -----------------------------------------------------------------------------
-# :author:    Juanjuan Huang
+# :author:    Juanjuan Huang, Mark Wolfman
 # :email:     juanjuan.huang@anl.gov
 # :copyright: Copyright © 2024, UChicago Argonne, LLC
 #

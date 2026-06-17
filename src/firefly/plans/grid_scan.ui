@@ -64,10 +64,10 @@
         <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
        </property>
        <property name="minimum">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="value">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="displayIntegerBase">
         <number>10</number>
@@ -87,6 +87,70 @@
         <string>Fly Scan</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_4">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Livetime:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="livetime_spinbox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;How long should each exposure be. 0 means whatever is currently set.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string> s</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Collections per Event:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="collections_per_event_spinbox">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>The number of frames to measure in each reading.</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <spacer name="horizontalSpacer">
@@ -128,7 +192,7 @@
           <x>0</x>
           <y>0</y>
           <width>515</width>
-          <height>281</height>
+          <height>276</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_7">

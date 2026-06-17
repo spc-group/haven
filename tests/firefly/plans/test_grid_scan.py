@@ -46,9 +46,29 @@ async def display(
         await asyncio.sleep(0.1)
 
 
+@pytest.mark.asyncio
+async def test_step_time_calculator(display, sim_registry, ion_chamber):
+    await display.regions.set_region_count(3)
+    display.ui.spinBox_repeat_scan_num.setValue(6)
+    display.ui.livetime_spinbox.setValue(0.82)
+    # Set up scan num of points
+    display.regions_layout.itemAtPosition(1, 4).widget().setValue(4)
+    display.regions_layout.itemAtPosition(2, 4).widget().setValue(5)
+    # Disable the third region to make sure it doesn't get used
+    widgets = display.regions.row_widgets(3)
+    widgets.active_checkbox.setChecked(False)
+    widgets.num_points_spin_box.setValue(3)
+    # Run the time calculator
+    await display.update_total_time()
+    # Check whether time is calculated correctly for a single scan
+    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 17\u202fs"
+    # Check whether time is calculated correctly including the repeated scan
+    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 39\u202fs"
+
+
 @pytest.mark.xfail
 @pytest.mark.asyncio
-async def test_time_calculator(display, sim_registry, ion_chamber):
+async def test_fly_time_calculator(display, sim_registry, ion_chamber):
     # Set up motor num
     await display.regions.set_region_count(3)
     # Set up num of repeat scans
@@ -128,6 +148,8 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
     )
+    display.ui.livetime_spinbox.setValue(1.3)
+    display.ui.collections_per_event_spinbox.setValue(5)
     # Set up meta data
     display.metadata_widget.sample_combo_box.setCurrentText("sam")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
@@ -149,6 +171,8 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
         # Waiting on fix for https://github.com/bluesky/bluesky-queueserver/issues/340
         # snake_axes=["async_motor_2"],
         snake_axes=True,
+        livetime=1.3,
+        collections_per_event=5,
         md={
             "sample_name": "sam",
             "purpose": "test",
