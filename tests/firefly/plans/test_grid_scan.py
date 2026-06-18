@@ -191,7 +191,7 @@ async def test_plan_args(display, xspress, async_motors, ion_chamber, qtbot):
 async def test_fly_plan_args(display, xspress, ion_chamber, qtbot, soft_glue):
     # Set up fly-scan parameters
     display.ui.fly_checkbox.setChecked(True)
-    display.ui.fly_scan_widget.ui.dwell_time_spinbox.setValue(0.3)
+    display.ui.livetime_spinbox.setValue(0.3)
     list_widget = display.ui.fly_scan_widget.ui.controller_list
     list_widget.setCurrentItem(list_widget.item(0))
     display.ui.fly_scan_widget.ui.trigger_combobox.setCurrentText("EDGE_TRIGGER")

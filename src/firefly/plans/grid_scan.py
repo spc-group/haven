@@ -315,7 +315,6 @@ class GridScanDisplay(display.PlanDisplay):
             for region in self.regions
         ]
         device_args = [arg for region in region_args for arg in region]
-        print(device_args)
         # Decide whether and how to snake the axes
         # get snake axes, if all unchecked, set it None
         snake_axes = [region.device for region in self.regions if region.snake]
@@ -331,7 +330,7 @@ class GridScanDisplay(display.PlanDisplay):
         kwargs = {"snake_axes": snake_axes, "md": self.plan_metadata()}
         # Fly scans have some extra kwargs
         if self.ui.fly_checkbox.isChecked():
-            kwargs["dwell_time"] = self.ui.fly_scan_widget.ui.dwell_time_spinbox.value()
+            kwargs["dwell_time"] = self.ui.livetime_spinbox.value()
             kwargs["trigger"] = (
                 self.ui.fly_scan_widget.ui.trigger_combobox.currentText()
             )

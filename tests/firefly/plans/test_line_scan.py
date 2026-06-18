@@ -197,7 +197,7 @@ def test_flyer_controller_options(display, soft_glue):
 async def test_fly_plan_args(display, qtbot, xspress, ion_chamber, soft_glue):
     # Set up fly-scan parameters
     display.ui.fly_checkbox.setChecked(True)
-    display.ui.fly_scan_widget.ui.dwell_time_spinbox.setValue(0.3)
+    display.ui.livetime_spinbox.setValue(0.3)
     list_widget = display.ui.fly_scan_widget.ui.controller_list
     list_widget.setCurrentItem(list_widget.item(0))
     display.ui.fly_scan_widget.ui.trigger_combobox.setCurrentText("EDGE_TRIGGER")

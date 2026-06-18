@@ -253,7 +253,7 @@ class LineScanDisplay(display.PlanDisplay):
         }
         # Fly scans have some extra kwargs
         if self.ui.fly_checkbox.isChecked():
-            kwargs["dwell_time"] = self.ui.fly_scan_widget.ui.dwell_time_spinbox.value()
+            kwargs["dwell_time"] = self.ui.livetime_spinbox.value()
             kwargs["trigger"] = (
                 self.ui.fly_scan_widget.ui.trigger_combobox.currentText()
             )
