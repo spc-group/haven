@@ -3,6 +3,7 @@ from typing import Sequence
 
 from bluesky import Msg
 from bluesky import plan_stubs as bps
+from bluesky import preprocessors as bpp
 from ophyd import Device
 
 from ..devices import IonChamber
@@ -38,31 +39,38 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
 
     """
     detectors = beamline.devices.findall(detectors)
-    # Get previous shutter states
-    old_shutters = {}
-    for shutter in shutters:
-        old_shutters[shutter] = yield from bps.rd(shutter.readback)
-    # Close shutters
-    yield from close_shutters(shutters)
-    # Old-style ion chambers need to be handled differently
-    old_ion_chambers = [ic for ic in detectors if isinstance(ic, IonChamber)]
-    new_detectors = [ic for ic in detectors if not isinstance(ic, IonChamber)]
-    # Record dark currents
-    group = uuid.uuid4()
-    for ic in old_ion_chambers:
-        yield Msg("trigger", ic, group=group, record_dark_current=True)
-    for detector in new_detectors:
-        yield from bps.trigger(detector, group=group, wait=False)
-    # Wait for the devices to be done recording dark current
-    yield from bps.wait(group=group)
-    # Calibrate standard detectors to they read zero
-    for detector in new_detectors:
-        yield Msg("calibrate", detector, truth=0)
-    # Reset shutters to their original states
-    to_open = [
-        sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN
-    ]
-    yield from open_shutters(to_open)
+
+    @bpp.stage_decorator([*detectors, *shutters])
+    def inner():
+        # Get previous shutter states
+        old_shutters = {}
+        for shutter in shutters:
+            old_shutters[shutter] = yield from bps.rd(shutter.readback)
+        # Close shutters
+        yield from close_shutters(shutters)
+        # Old-style ion chambers need to be handled differently
+        old_ion_chambers = [ic for ic in detectors if isinstance(ic, IonChamber)]
+        new_detectors = [ic for ic in detectors if not isinstance(ic, IonChamber)]
+        # Record dark currents
+        group = uuid.uuid4()
+        for ic in old_ion_chambers:
+            yield Msg("trigger", ic, group=group, record_dark_current=True)
+        for detector in new_detectors:
+            yield from bps.trigger(detector, group=group, wait=False)
+        # Wait for the devices to be done recording dark current
+        yield from bps.wait(group=group)
+        # Calibrate standard detectors to they read zero
+        for detector in new_detectors:
+            yield Msg("calibrate", detector, truth=0)
+        # Reset shutters to their original states
+        to_open = [
+            sht
+            for sht, old_state in old_shutters.items()
+            if old_state == ShutterState.OPEN
+        ]
+        yield from open_shutters(to_open)
+
+    yield from inner()
 
 
 # -----------------------------------------------------------------------------
