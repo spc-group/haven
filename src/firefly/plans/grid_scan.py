@@ -11,11 +11,11 @@ from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
-from scanspec.core import Path
 from scanspec.specs import Line
 
-from firefly.component_selector import ComponentSelector
+from firefly.component_selector import ComponentSelector, get_signal_value
 from firefly.plans import display
+from firefly.plans.duration_label import duration_from_spec
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -41,7 +41,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
     @dataclass(frozen=True, eq=True)
     class Region(RegionsManager.Region):
         is_active: bool
-        device: str
+        device: Device
         start: float
         stop: float
         num_points: int
@@ -49,10 +49,13 @@ class GridRegionsManager[WidgetsType](RegionsManager):
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
         """Take a list of widgets in a row, and build a Region object."""
-        device_name = widgets.device_selector.current_device_name()
+        print(
+            widgets.device_selector.combo_box.currentText(),
+            widgets.device_selector.current_component(),
+        )
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
-            device=device_name,
+            device=widgets.device_selector.current_component(),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
             num_points=widgets.num_points_spin_box.value(),
@@ -62,7 +65,9 @@ class GridRegionsManager[WidgetsType](RegionsManager):
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         # ComponentSelector
         device_selector = ComponentSelector()
-        device_selector.device_selected.connect(self.update_device_parameters)
+        device_selector.device_selected.connect(
+            partial(self.update_device_parameters, row=row)
+        )
         # Start point
         start_spin_box = QDoubleSpinBox()
         start_spin_box.setMinimum(float("-inf"))
@@ -225,10 +230,7 @@ class GridScanDisplay(display.PlanDisplay):
         total_time = num_scan_repeat * time_per_scan
         return time_per_scan, total_time
 
-    @asyncSlot()
-    async def update_total_time(self):
-        """Update the total scan time and display it."""
-        # Calculate time per scan
+    def scan_spec(self):
         livetime = self.ui.livetime_spinbox.value()
         coll_per_event = self.ui.collections_per_event_spinbox.value()
         dwell_time = livetime * coll_per_event
@@ -238,16 +240,23 @@ class GridScanDisplay(display.PlanDisplay):
             if r.is_active
         ]
         spec = reduce(operator.mul, lines[1:], dwell_time @ lines[0])
-        slc = Path(spec.calculate()).consume()
-        scan_livetime = sum(slc.duration)
-        # acquire_times = await self.detectors_list.acquire_times()
-        # detector_time = max([*acquire_times, float("nan")])
-        # time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
-        efficiency = None
-        scan_time = scan_livetime
-        self.ui.scan_duration_label.set_seconds(scan_time, efficiency)
-        total_time = scan_time * self.scan_repetitions
-        self.total_duration_label.set_seconds(total_time, efficiency)
+        return spec
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Update the total scan time and display it."""
+        # Calculate time per scan
+        spec = self.scan_spec()
+        # Calculate how long the motors will take to move
+        movers = [r.device for r in self.regions if hasattr(r.device, "velocity")]
+        velocity_vals = await asyncio.gather(
+            *[get_signal_value(mover.velocity) for mover in movers]
+        )
+        velocities = {mover: velo for mover, velo in zip(movers, velocity_vals)}
+        duration = duration_from_spec(spec, velocities)
+        self.ui.scan_duration_label.set_seconds(duration.scantime, duration.efficiency)
+        total_time = duration.scantime * self.scan_repetitions
+        self.total_duration_label.set_seconds(total_time, duration.efficiency)
 
     def reset_default_regions(self):
         super().reset_default_regions()
@@ -297,10 +306,16 @@ class GridScanDisplay(display.PlanDisplay):
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions:
         region_args = [
-            (region.device, region.start, region.stop, region.num_points)
+            (
+                getattr(region.device, "name", None),
+                region.start,
+                region.stop,
+                region.num_points,
+            )
             for region in self.regions
         ]
         device_args = [arg for region in region_args for arg in region]
+        print(device_args)
         # Decide whether and how to snake the axes
         # get snake axes, if all unchecked, set it None
         snake_axes = [region.device for region in self.regions if region.snake]

@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial, reduce
 
-import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
@@ -12,6 +11,7 @@ from scanspec.specs import Line, Spec
 
 from firefly.component_selector import ComponentSelector, get_signal_value
 from firefly.plans import display
+from firefly.plans.duration_label import duration_from_spec
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -35,16 +35,15 @@ class LineRegionsManager(RegionsManager):
     @dataclass(frozen=True, eq=True)
     class Region:
         is_active: bool
-        device: str
+        device: Device
         start: float
         stop: float
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
         """Take a list of widgets in a row, and build a Region object."""
-        device_name = widgets.device_selector.current_device_name()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
-            device=device_name,
+            device=widgets.device_selector.current_component(),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
         )
@@ -200,9 +199,7 @@ class LineScanDisplay(display.PlanDisplay):
         total_time = num_scan_repeat * time_per_scan
         return time_per_scan, total_time
 
-    @asyncSlot()
-    async def update_total_time(self):
-        """Update the total scan time and display it."""
+    def scan_spec(self):
         num_pts = self.ui.scan_pts_spin_box.value()
         lines = [
             Line(r.device or idx, r.start, r.stop, num_pts)
@@ -212,31 +209,23 @@ class LineScanDisplay(display.PlanDisplay):
         coll_per_event = self.ui.collections_per_event_spinbox.value()
         dwell_time = livetime * coll_per_event
         spec = dwell_time @ reduce(Spec.zip, lines[1:], lines[0])
-        (dim,) = spec.calculate()  # Line-scans can only be 1-dimensionsal
-        # Calculate how long the detectors will count for
-        scan_livetime = sum(dim.duration)
+        return spec
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Update the total scan time and display it."""
+        spec = self.scan_spec()
         # Calculate how long the motors will take to move
-        movers = [
-            self.regions.row_widgets(row).device_selector.current_component()
-            for row in self.regions.row_numbers
-        ]
-        movers = [mover for mover in movers if hasattr(mover, "velocity")]
+        movers = [r.device for r in self.regions if hasattr(r.device, "velocity")]
         velocity_vals = await asyncio.gather(
             *[get_signal_value(mover.velocity) for mover in movers]
         )
-        velocities = {mover.name: velo for mover, velo in zip(movers, velocity_vals)}
-        distances = {ax: abs(pts[1:] - pts[:-1]) for ax, pts in dim.midpoints.items()}
-        move_times = {
-            ax: dist / velocities.get(ax, float("inf"))
-            for ax, dist in distances.items()
-        }
-        move_time = np.sum(np.max(np.asarray([*move_times.values()]), axis=0))
+        velocities = {mover: velo for mover, velo in zip(movers, velocity_vals)}
+        duration = duration_from_spec(spec, velocities)
         # Total scan time is the detector time plus motor time
-        scan_time = scan_livetime + move_time
-        efficiency = scan_livetime / scan_time if scan_time != 0 else None
-        self.scan_duration_label.set_seconds(scan_time, efficiency)
-        total_time = scan_time * self.scan_repetitions
-        self.total_duration_label.set_seconds(total_time, efficiency)
+        self.scan_duration_label.set_seconds(duration.scantime, duration.efficiency)
+        total_time = duration.scantime * self.scan_repetitions
+        self.total_duration_label.set_seconds(total_time, duration.efficiency)
 
     async def update_devices(self, registry):
         """Re-configure the display for a new set of ophyd devices."""
@@ -253,7 +242,8 @@ class LineScanDisplay(display.PlanDisplay):
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions
         region_args = [
-            (region.device, region.start, region.stop) for region in self.regions
+            (getattr(region.device, "name", None), region.start, region.stop)
+            for region in self.regions
         ]
         device_args = [arg for region in region_args for arg in region]
         args = (detector_names, *device_args)

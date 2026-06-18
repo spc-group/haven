@@ -47,23 +47,33 @@ async def display(
 
 
 @pytest.mark.asyncio
-async def test_step_time_calculator(display, sim_registry, ion_chamber):
-    await display.regions.set_region_count(3)
+async def test_step_time_calculator(display, async_motors, sim_registry, ion_chamber):
     display.ui.spinBox_repeat_scan_num.setValue(6)
     display.ui.livetime_spinbox.setValue(0.82)
-    # Set up scan num of points
-    display.regions_layout.itemAtPosition(1, 4).widget().setValue(4)
-    display.regions_layout.itemAtPosition(2, 4).widget().setValue(5)
+    await display.regions.set_region_count(3)
+    # Set up scan parameters
+    widgets = display.regions.row_widgets(1)
+    widgets.num_points_spin_box.setValue(4)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(9)
+    set_mock_value(async_motors[0].velocity, 0.5)
+    widgets.device_selector.combo_box.setCurrentText(async_motors[0].name)
+    widgets = display.regions.row_widgets(2)
+    widgets.num_points_spin_box.setValue(5)
     # Disable the third region to make sure it doesn't get used
     widgets = display.regions.row_widgets(3)
     widgets.active_checkbox.setChecked(False)
     widgets.num_points_spin_box.setValue(3)
     # Run the time calculator
     await display.update_total_time()
-    # Check whether time is calculated correctly for a single scan
-    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 17\u202fs"
-    # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 39\u202fs"
+    assert (
+        display.ui.scan_duration_label.text()
+        == "0\u202fh 0\u202fm 35\u202fs (47\u202f%)"
+    )
+    assert (
+        display.ui.total_duration_label.text()
+        == "0\u202fh 3\u202fm 27\u202fs (47\u202f%)"
+    )
 
 
 @pytest.mark.xfail
@@ -125,21 +135,17 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_plan_args(display, xspress, ion_chamber, qtbot):
+async def test_plan_args(display, xspress, async_motors, ion_chamber, qtbot):
     await display.regions.set_region_count(2)
-    widgets = display.regions.row_widgets(row=1)
     # Set up a test motor 1
-    widgets.device_selector.current_device_name = mock.MagicMock(
-        return_value="async_motor_1"
-    )
+    widgets = display.regions.row_widgets(row=1)
+    widgets.device_selector.combo_box.setCurrentText("async_motor_1")
     widgets.start_spin_box.setValue(1.0)
     widgets.stop_spin_box.setValue(111.0)
     widgets.num_points_spin_box.setValue(5)
     # Set up a test motor 2
     widgets = display.regions.row_widgets(row=2)
-    widgets.device_selector.current_device_name = mock.MagicMock(
-        return_value="async_motor_2"
-    )
+    widgets.device_selector.combo_box.setCurrentText("async_motor_2")
     widgets.start_spin_box.setValue(2.0)
     widgets.stop_spin_box.setValue(222.0)
     widgets.num_points_spin_box.setValue(10)
@@ -189,21 +195,16 @@ async def test_fly_plan_args(display, xspress, ion_chamber, qtbot, soft_glue):
     list_widget = display.ui.fly_scan_widget.ui.controller_list
     list_widget.setCurrentItem(list_widget.item(0))
     display.ui.fly_scan_widget.ui.trigger_combobox.setCurrentText("EDGE_TRIGGER")
-    # Set up other widgets
     await display.regions.set_region_count(2)
-    widgets = display.regions.row_widgets(row=1)
     # Set up a test motor 1
-    widgets.device_selector.current_device_name = mock.MagicMock(
-        return_value="async_motor_1"
-    )
+    widgets = display.regions.row_widgets(row=1)
+    widgets.device_selector.combo_box.setCurrentText("async_motor_1")
     widgets.start_spin_box.setValue(1.0)
     widgets.stop_spin_box.setValue(111.0)
     widgets.num_points_spin_box.setValue(5)
     # Set up a test motor 2
     widgets = display.regions.row_widgets(row=2)
-    widgets.device_selector.current_device_name = mock.MagicMock(
-        return_value="async_motor_2"
-    )
+    widgets.device_selector.combo_box.setCurrentText("async_motor_2")
     widgets.start_spin_box.setValue(2.0)
     widgets.stop_spin_box.setValue(222.0)
     widgets.num_points_spin_box.setValue(10)

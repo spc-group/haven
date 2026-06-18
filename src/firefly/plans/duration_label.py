@@ -1,8 +1,52 @@
 import math
+from collections.abc import Mapping
 
+import numpy as np
+from pydantic import BaseModel, computed_field
 from qtpy import QtWidgets
+from scanspec.core import Axis, Path
+from scanspec.specs import Spec
 
 HALF_SPACE = "\u202f"
+
+
+class Duration(BaseModel):
+    livetime: float
+    """The time during which the detectors are live."""
+
+    movetime: float
+    """The time during which the motors are moving from one point to
+    another."""
+
+    @computed_field
+    def scantime(self) -> float:
+        return self.livetime + self.movetime
+
+    @computed_field
+    def efficiency(self) -> float:
+        """What portion of the total scan time is actual detector live time."""
+        return self.livetime / self.scantime if self.scantime != 0 else float("nan")
+
+
+def duration_from_spec(spec: Spec, velocities: Mapping[Axis, float]) -> Duration:
+    """Calculate the duration a scan will take given it's scanspec."""
+    slc = Path(spec.calculate()).consume()
+    # Livetime is just the sum of all durations
+    live_time = sum(slc.duration)
+    # Movetime is how long it takes motors to move between points
+    distances = {
+        ax: slc.lower[ax][1:] - slc.upper[ax][:-1] for ax in slc.midpoints.keys()
+    }
+    move_times = {
+        ax: abs(distances[ax]) / velocities.get(ax, float("inf"))
+        for ax in distances.keys()
+    }
+    move_time: float = np.sum(np.max(np.asarray([*move_times.values()]), axis=0))
+    scan_time = live_time + move_time
+    return Duration(
+        livetime=live_time,
+        movetime=move_time,
+    )
 
 
 class DurationLabel(QtWidgets.QLabel):
