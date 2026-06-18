@@ -28,7 +28,11 @@ from .srs570 import SRS570PreAmplifier
 log = logging.getLogger(__name__)
 
 
-__all__ = ["IonChamber"]
+__all__ = ["IonChamber", "load_ion_chambers"]
+
+
+def load_ion_chambers(scalers, labjacks, ion_chambers):
+    pass
 
 
 class IonChamber(StandardReadable, Triggerable):

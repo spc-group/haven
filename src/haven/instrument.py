@@ -46,6 +46,7 @@ beamline = Instrument(
         "ion_chamber": devices.IonChamber,
         "sim_detector": devices.SimDetector,
         "xspress3": devices.Xspress3Detector,
+        "split_ion_chambers": devices.SplitIonChamberSet,
         # Other ophyd-async devices
         "aerotech_stage": devices.AerotechStage,
         "analyzer": devices.Analyzer,
@@ -65,7 +66,6 @@ beamline = Instrument(
         "robot": devices.Robot,
         "scaler": devices.MultiChannelScaler,
         "soft_glue_flyer_controller": devices.SoftGlueFlyerController,
-        "split_ion_chambers": devices.SplitIonChamberSet,
         "synchrotron": devices.ApsMachine,
         "table": devices.Table,
         "undulator": devices.PlanarUndulator,

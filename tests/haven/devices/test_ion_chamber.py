@@ -8,7 +8,75 @@ from numpy.testing import assert_allclose
 from ophyd_async.core import DetectorTrigger, TriggerInfo, get_mock_put, set_mock_value
 from ophyd_async.testing import assert_value
 
-from haven.devices.ion_chamber import IonChamber
+from haven.devices.ion_chamber import IonChamber, load_ion_chambers
+
+
+@pytest.mark.xfail
+def test_load_ion_chambers():
+    devices = load_ion_chambers(
+        scalers=[
+            {
+                "name": "upstream_scaler",
+                "prefix": "25idcVME:3820",
+            }
+        ],
+        labjacks=[
+            {
+                "name": "upstream_voltmeters",
+                "prefix": "25idc:LJT7Voltmeter_0:",
+            },
+        ],
+        ion_chambers=[
+            {
+                "name": "IpreKB",
+                "scaler": "upstream_scaler",
+                "scaler_channel": 2,
+                "labjack": "updateam_voltmeters",
+                "labjack_channel": 1,
+                "preamp_prefix": "25idc:SR03:",
+                "hertz_per_volt": 1e7,
+            },
+        ],
+    )
+
+    assert len(devices) == 3
+    ############
+    {
+        "name": "IpreKB",
+        "scaler_prefix": "25idcVME:3820:",
+        "scaler_channel": 2,
+        "preamp_prefix": "25idc:SR03:",
+        "voltmeter_prefix": "25idc:LJT7Voltmeter_0:",
+        "voltmeter_channel": 1,
+        "counts_per_volt_second": 10000000.0,
+    },
+    {
+        "name": "I0",
+        "scaler_prefix": "25idcVME:3820:",
+        "scaler_channel": 3,
+        "preamp_prefix": "25idc:SR04:",
+        "voltmeter_prefix": "25idc:LJT7Voltmeter_0:",
+        "voltmeter_channel": 2,
+        "counts_per_volt_second": 10000000.0,
+    },
+    {
+        "name": "It",
+        "scaler_prefix": "25idcVME:3820:",
+        "scaler_channel": 4,
+        "preamp_prefix": "25idc:SR05:",
+        "voltmeter_prefix": "25idc:LJT7Voltmeter_0:",
+        "voltmeter_channel": 3,
+        "counts_per_volt_second": 10000000.0,
+    },
+    {
+        "name": "Iref",
+        "scaler_prefix": "25idcVME:3820:",
+        "scaler_channel": 5,
+        "preamp_prefix": "25idc:SR06:",
+        "voltmeter_prefix": "25idc:LJT7Voltmeter_0:",
+        "voltmeter_channel": 4,
+        "counts_per_volt_second": 10000000.0,
+    },
 
 
 @pytest.fixture()
