@@ -121,7 +121,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Check which ion chambers to run the plan with
         ic_names = []
         for row in self._ion_chamber_rows:
-            if row.auto_gain_checkbox.isChecked():
+            if (
+                hasattr(row, "auto_gain_checkbox")
+                and row.auto_gain_checkbox.isChecked()
+            ):
                 ic_names.append(row.device.name)
         # Construct the plan
         item = BPlan("auto_gain", ic_names, **kw)
