@@ -3,6 +3,7 @@ from typing import Sequence
 
 from bluesky import Msg
 from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 from bluesky import preprocessors as bpp
 from ophyd import Device
 
@@ -39,6 +40,17 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
 
     """
     detectors = beamline.devices.findall(detectors)
+    _md = {
+        "detectors": [det.name for det in detectors],
+        "num_points": 1,
+        "num_intervals": 0,
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "shutters": list(map(repr, shutters)),
+        },
+        "plan_name": "record_dark_current",
+        "hints": {},
+    }
 
     @bpp.stage_decorator([*detectors, *shutters])
     def inner():
@@ -55,8 +67,9 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
         group = uuid.uuid4()
         for ic in old_ion_chambers:
             yield Msg("trigger", ic, group=group, record_dark_current=True)
-        for detector in new_detectors:
-            yield from bps.trigger(detector, group=group, wait=False)
+        yield from bpp.run_wrapper(
+            bpp.stub_wrapper(bp.count([*new_detectors, *shutters])), md=_md
+        )
         # Wait for the devices to be done recording dark current
         yield from bps.wait(group=group)
         # Calibrate standard detectors to they read zero
