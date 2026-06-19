@@ -11,7 +11,7 @@ from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
-from scanspec.specs import Line
+from scanspec.specs import Fly, Line
 
 from firefly.component_selector import ComponentSelector, get_signal_value
 from firefly.plans import display
@@ -49,10 +49,6 @@ class GridRegionsManager[WidgetsType](RegionsManager):
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
         """Take a list of widgets in a row, and build a Region object."""
-        print(
-            widgets.device_selector.combo_box.currentText(),
-            widgets.device_selector.current_component(),
-        )
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             device=widgets.device_selector.current_component(),
@@ -99,6 +95,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         start_spin_box.valueChanged.connect(self.regions_changed)
         stop_spin_box.valueChanged.connect(self.regions_changed)
         scan_pts_spin_box.valueChanged.connect(self.regions_changed)
+        snake_checkbox.stateChanged.connect(self.regions_changed)
         # Add all widgets to the layout
         return [
             device_selector,
@@ -188,6 +185,7 @@ class GridScanDisplay(display.PlanDisplay):
         self.regions = GridRegionsManager[GridRegionsManager.WidgetSet](
             layout=self.regions_layout
         )
+        self.ui.fly_checkbox.stateChanged.connect(self.update_total_time)
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
         self.ui.livetime_spinbox.valueChanged.connect(self.update_total_time)
@@ -239,7 +237,12 @@ class GridScanDisplay(display.PlanDisplay):
             for idx, r in enumerate(self.regions)
             if r.is_active
         ]
-        spec = reduce(operator.mul, lines[1:], dwell_time @ lines[0])
+        # Apply snaking
+        lines = [~line if r.snake else line for r, line in zip(self.regions, lines)]
+        lines[-1] = dwell_time @ lines[-1]
+        if self.ui.fly_checkbox.isChecked():
+            lines[-1] = Fly(lines[-1])
+        spec = reduce(operator.mul, lines[1:], lines[0])
         return spec
 
     @asyncSlot()

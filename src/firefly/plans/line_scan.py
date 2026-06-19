@@ -7,7 +7,7 @@ from functools import partial, reduce
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
-from scanspec.specs import Line, Spec
+from scanspec.specs import Fly, Line, Spec
 
 from firefly.component_selector import ComponentSelector, get_signal_value
 from firefly.plans import display
@@ -175,6 +175,7 @@ class LineScanDisplay(display.PlanDisplay):
         )
         self.ui.scan_pts_spin_box.valueChanged.connect(self.regions.set_num_points)
         # Connect signals for total time updates
+        self.ui.fly_checkbox.stateChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.livetime_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.collections_per_event_spinbox.valueChanged.connect(
@@ -209,6 +210,8 @@ class LineScanDisplay(display.PlanDisplay):
         coll_per_event = self.ui.collections_per_event_spinbox.value()
         dwell_time = livetime * coll_per_event
         spec = dwell_time @ reduce(Spec.zip, lines[1:], lines[0])
+        if self.fly_checkbox.isChecked():
+            spec = Fly(spec)
         return spec
 
     @asyncSlot()

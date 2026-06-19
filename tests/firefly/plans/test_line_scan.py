@@ -77,36 +77,27 @@ async def test_step_time_calculator(display, motors, ion_chamber, qtbot, qapp):
     assert display.ui.total_duration_label.text() == "2 h 22 m 59 s (86 %)"
 
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
-async def test_fly_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
-    # set up motor num
-    await display.regions.set_region_count(2)
-
-    # set up num of repeat scans
+async def test_fly_time_calculator(
+    display, sim_registry, motors, ion_chamber, qtbot, qapp
+):
+    display.fly_checkbox.setChecked(True)
     display.ui.spinBox_repeat_scan_num.setValue(6)
-
-    # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(1000)
-
-    # set up detectors
-    display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", ion_chamber.name]
-    )
-
-    # set up default timing for the detector
-    detectors = display.ui.detectors_list.selected_detectors()
-    detectors = {name: sim_registry[name] for name in detectors}
-    set_mock_value(ion_chamber.default_time_signal, 0.6255)
-    await detectors["vortex_me4"].default_time_signal.set(0.5)
-
-    # Trigger an update of the time calculator
-    display.detectors_list.acquire_times = mock.AsyncMock(return_value=[1.0])
-    await display.update_total_time()
-
+    # Set up widgets that determine the detector count time
+    livetime = 1.23
+    display.ui.livetime_spinbox.setValue(livetime)
+    # Set up widgets that determine the motor movement time
+    await display.regions.set_region_count(2)
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(99.9)
+    set_mock_value(motors[0].velocity, 0.5)
+    widgets.device_selector.combo_box.setCurrentText(motors[0].name)
     # Check whether time is calculated correctly for the scans
-    assert display.ui.scan_duration_label.text() == "0 h 16 m 40 s"
-    assert display.ui.total_duration_label.text() == "1 h 40 m 0 s"
+    await display.update_total_time()
+    assert display.ui.scan_duration_label.text() == "0 h 20 m 31 s (100 %)"
+    assert display.ui.total_duration_label.text() == "2 h 3 m 1 s (100 %)"
 
 
 async def test_regions_in_layout(display):

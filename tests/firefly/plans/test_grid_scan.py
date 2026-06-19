@@ -76,28 +76,40 @@ async def test_step_time_calculator(display, async_motors, sim_registry, ion_cha
     )
 
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
-async def test_fly_time_calculator(display, sim_registry, ion_chamber):
-    # Set up motor num
-    await display.regions.set_region_count(3)
-    # Set up num of repeat scans
+async def test_fly_time_calculator(display, sim_registry, async_motors, ion_chamber):
+    display.ui.fly_checkbox.setChecked(True)
     display.ui.spinBox_repeat_scan_num.setValue(6)
-    # Set up scan num of points
-    display.regions_layout.itemAtPosition(1, 4).widget().setValue(4)
-    display.regions_layout.itemAtPosition(2, 4).widget().setValue(5)
-    # set up detectors
-    display.ui.detectors_list.acquire_times = mock.AsyncMock(return_value=[0.82])
+    display.ui.livetime_spinbox.setValue(0.82)
+    await display.regions.set_region_count(3)
+    # Set up scan parameters
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(2)
+    widgets.num_points_spin_box.setValue(3)
+    set_mock_value(async_motors[0].velocity, 0.5)
+    widgets.device_selector.combo_box.setCurrentText(async_motors[0].name)
+    widgets = display.regions.row_widgets(2)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(9)
+    widgets.num_points_spin_box.setValue(4)
+    widgets.snake_checkbox.setChecked(True)
+    set_mock_value(async_motors[1].velocity, 0.5)
+    widgets.device_selector.combo_box.setCurrentText(async_motors[1].name)
     # Disable the third region to make sure it doesn't get used
     widgets = display.regions.row_widgets(3)
     widgets.active_checkbox.setChecked(False)
     widgets.num_points_spin_box.setValue(3)
     # Run the time calculator
     await display.update_total_time()
-    # Check whether time is calculated correctly for a single scan
-    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 16\u202fs"
-    # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 38\u202fs"
+    assert (
+        display.ui.scan_duration_label.text()
+        == "0\u202fh 0\u202fm 14\u202fs (71\u202f%)"
+    )
+    assert (
+        display.ui.total_duration_label.text()
+        == "0\u202fh 1\u202fm 24\u202fs (71\u202f%)"
+    )
 
 
 async def test_regions_in_layout(display):
