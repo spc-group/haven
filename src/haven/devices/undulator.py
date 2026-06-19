@@ -99,6 +99,8 @@ class TrajectoryMotorInfo(ConfinedModel):
 
 class BasePositioner(Positioner):
     done_value: int = BusyStatus.DONE
+    # Measured by moving the undulator a bunch and measure the time taken
+    gap_velocity = 0.3
 
     def __init__(
         self,
@@ -133,6 +135,25 @@ class BasePositioner(Positioner):
         """
         return done
 
+    async def calculate_timeout(self, value: float):
+        """Estimate how long it will take to move to the given energy.
+
+        This is not a simple calculation because we need to know how
+        far the gap will need to move. So instead of the doing the
+        calculation, we just set the positioner setpoint and see where
+        the gap will go, even though we won't move it.
+
+        """
+        current_gap, current_setpoint = await asyncio.gather(
+            self.parent.gap.setpoint.get_value(), self.setpoint.get_value()
+        )
+        await self.setpoint.set(value)
+        new_gap = await self.parent.gap.setpoint.get_value()
+        move_time = abs(new_gap - current_gap) / self.gap_velocity
+        # Go back to where we started
+        await self.setpoint.set(current_setpoint)
+        return move_time + DEFAULT_TIMEOUT
+
     async def _set(
         self,
         value: float,
@@ -142,6 +163,8 @@ class BasePositioner(Positioner):
         if gap_deadband != 0:
             msg = f"This device cannot be set properly if the gap deadband is not zero: {gap_deadband}"
             raise exceptions.InvalidUndulatorDeadband(msg)
+        if timeout == "CALCULATE_TIMEOUT":
+            timeout = await self.calculate_timeout(value)
         async for update in super()._set(value=value, timeout=timeout):
             yield update
 

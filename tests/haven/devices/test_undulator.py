@@ -66,6 +66,30 @@ async def test_stop_energy(undulator):
     assert stop_mock.called
 
 
+# Work-around to make a mocker async iterable
+class AsyncIterator:
+    def __init__(self, seq):
+        self.iter = iter(seq)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self.iter)
+        except StopIteration:
+            raise StopAsyncIteration
+
+
+async def test_set_energy_timeout(undulator, mocker):
+    """Check that the energy setpoint depends on the distance being moved."""
+    setter = mocker.MagicMock(return_value=AsyncIterator([]))
+    mocker.patch("haven.devices.undulator.Positioner._set", setter)
+    await undulator.energy.set(20)
+    # Winds up being only 10 seconds since the mocked gap doesn't really move
+    setter.assert_called_once_with(value=20, timeout=10)
+
+
 async def test_energy_unit_conversion(undulator):
     # Check setpoint
     await undulator.energy.setpoint.set(8333)
