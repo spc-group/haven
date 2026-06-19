@@ -208,7 +208,9 @@ class DmStationUi(FireflyMainWindow):
         self.beamlineName = config.beamline
         self.esafSector = config.beamline.split("-")[0]
         self.beamlineManagers = []
-        self.username, self.password = (config.username, config.password)
+        self.username = config.username
+        password = config.password
+        self.password = None if password is None else password.get_secret_value()
         self.dmAdminEmail = ""
         self.allowedExperimentTypes = ["25IDC", "25IDD", "TEST"]
         self.useEsaf = True

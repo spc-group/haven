@@ -74,6 +74,10 @@ def _inject_md(msg):
     md = version_md()
     # Add in metadata from configuration file dynamically
     config = load_config()
+    from pprint import pprint
+
+    pprint(config.run_engine.default_metadata.model_dump())
+
     md.update(config.run_engine.default_metadata.model_dump())
     if config.data_management is not None:
         md["dm_station_name"] = config.data_management.station_name

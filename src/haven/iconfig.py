@@ -15,7 +15,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import tomli
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, SecretStr
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class DataManagementConfig(ConfigModel):
     beamline: str  # DM_BEAMLINE_NAME
     station_name: str  # DM_STATION_NAME
     username: str | None = None
-    password: str | None = None
+    password: SecretStr | None = None
     admin_account: str | None = None
 
 

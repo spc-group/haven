@@ -9,6 +9,7 @@ from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import register_transform
 
 from haven import load_config
+from haven.iconfig import HavenConfig
 
 log = logging.getLogger(__name__)
 
@@ -32,20 +33,26 @@ async def _calibrate(msg: Msg):
 def run_engine(
     *,
     tiled_writer: TiledWriter | None = None,
+    config: HavenConfig | None = None,
     **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
 
     Parameters
     ==========
-    connect_tiled
-      The run engine will have a callback for writing to the default
-      tiled client.
+    tiled_writer
+      A Tiled writer callback to use for saving data. If omitted, no
+      data will be saved by this run engine until explicitly set up.
+    config
+      An instrument configuration to use. If omitted, the default for
+      this environment will be used.
 
     """
-    config = load_config().model_dump(by_alias=True)
+    if config is None:
+        config = load_config()
+    config_ = config.model_dump(by_alias=True, mode="json")
     # Create the run engine
-    RE, *_ = init_RE(config, **kwargs)
+    RE, *_ = init_RE(config_, **kwargs)
     # Add custom verbs
     RE.register_command("calibrate", _calibrate)
     # Add a shortcut for using the run engine more efficiently

@@ -4,6 +4,12 @@ from bluesky import Msg, RunEngine
 from bluesky import plan_stubs as bps
 
 from haven import load_config, run_engine
+from haven.iconfig import (
+    DataManagementConfig,
+    HavenConfig,
+    RunEngineConfig,
+    RunEngineMetadata,
+)
 
 
 def test_run_engine_created():
@@ -35,6 +41,42 @@ def test_default_metadata():
     assert start_doc["facility"] == default_md.facility
     assert start_doc["beamline_id"] == default_md.beamline_id
     assert start_doc["xray_source"] == default_md.xray_source
+
+
+def test_config_metadata():
+    docs = []
+
+    def stash_docs(name, doc):
+        docs.append((name, doc))
+
+    config = HavenConfig(
+        data_management=DataManagementConfig(
+            scheduling_uri="",
+            data_transfer_uri="",
+            workflow_uri="",
+            data_storage_uri="",
+            catalog_uri="",
+            beamline="255-ID-Z",
+            station_name="255IDZ",
+            username="s255idzuser",
+            password="password1",
+        ),
+        run_engine=RunEngineConfig(
+            default_metadata=RunEngineMetadata(
+                facility="deathstar",
+                beamline_id="255-ID-Z",
+                xray_source="super laser",
+            ),
+        ),
+    )
+
+    RE = run_engine(config=config)
+    RE.subscribe(stash_docs)
+
+    RE(bps.open_run())
+    start_doc = docs[0][1]
+    # Make sure that secret passwords don't get stored in plain text
+    assert start_doc["iconfig"]["data_management"]["password"] == "**********"
 
 
 def test_subscribe_tiled_writer(mocker):

@@ -12,7 +12,9 @@ class ApiFactory(Singleton):
 
     def __configure(self):
         config = load_config().data_management
-        self.username, self.password = (config.username, config.password)
+        self.username = config.username
+        password = config.password
+        self.password = None if password is None else password.get_secret_value()
         self.dsUrl = config.data_storage_uri
         self.daqUrl = config.data_transfer_uri
         self.catUrl = config.catalog_uri

@@ -83,6 +83,8 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
             catalog_uri="",
             beamline="255-ID-Z",
             station_name="255IDZ",
+            username="s255idzuser",
+            password="password1",
         ),
         run_engine=RunEngineConfig(
             default_metadata=RunEngineMetadata(
