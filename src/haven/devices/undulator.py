@@ -239,9 +239,8 @@ class EnergyPositioner(BasePositioner, Preparable):
         value: float,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
-        is_scanning = (
-            await self.parent.scan_mode.get_value() != UndulatorScanMode.NORMAL
-        )
+        scan_mode = await self.parent.scan_mode.get_value()
+        is_scanning = scan_mode != UndulatorScanMode.NORMAL
         if not is_scanning:
             # No scan array is active, so just move as normal
             async for update in super()._set(value, timeout=timeout):
@@ -298,13 +297,16 @@ class EnergyPositioner(BasePositioner, Preparable):
                     unit=units,
                     precision=int(precision),
                 )
-                # Check if the move has finished
+                # Check if the move has finished.  Use less precision
+                # than normal since sometimes the ID doesn't quite hit
+                # the target
+                tolerance = 10 ** (-(precision - 0.4))
                 is_done[signal] = bool(
                     value is not None
                     and np.isclose(
                         value,
                         target,
-                        atol=10 ** (-precision),
+                        atol=tolerance,
                     )
                 )
             elif signal is self.parent.done:
