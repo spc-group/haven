@@ -262,16 +262,14 @@ class EnergyPositioner(BasePositioner, Preparable):
             self.scan_has_moved = True
             return
         # Use the scanning mode controls
-        old_position, current_position, units, precision, velocity = (
-            await asyncio.gather(
-                self.setpoint.get_value(),
-                self.readback.get_value(),
-                self.units.get_value(),
-                self.precision.get_value(),
-                self.velocity.get_value(),
-            )
+        axis = self.parent.gap
+        old_position, units, precision, velocity = await asyncio.gather(
+            axis.readback.get_value(),
+            axis.units.get_value(),
+            axis.precision.get_value(),
+            axis.velocity.get_value(),
         )
-        target = next_energy
+        target = next_gap
         next_scan_task = asyncio.ensure_future(self._advance_scan_point())
         # Decide how long we should wait
         timeout_: float
@@ -282,13 +280,15 @@ class EnergyPositioner(BasePositioner, Preparable):
             timeout_ = cast(float, timeout)
         # Monitor the scanning PVs to see when the move is done
         is_done = {
-            self.readback: False,
+            axis.readback: False,
             self.parent.done: False,
         }
+        # Track the gap for completion since the energy precision is
+        # not linear
         async for signal, value in observe_signals_value(
-            self.readback, self.parent.done, timeout=timeout_
+            axis.readback, self.parent.done, timeout=timeout_
         ):
-            if signal is self.readback:
+            if signal is axis.readback:
                 yield WatcherUpdate(
                     current=value,
                     initial=old_position,
@@ -300,7 +300,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                 # Check if the move has finished.  Use less precision
                 # than normal since sometimes the ID doesn't quite hit
                 # the target
-                tolerance = 10 ** (-(precision - 0.4))
+                tolerance = 10 ** (-precision)
                 is_done[signal] = bool(
                     value is not None
                     and np.isclose(

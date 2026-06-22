@@ -187,6 +187,8 @@ async def test_move_next_energy_scan(undulator):
     part of a pre-determined energy scan?
 
     """
+    set_mock_value(undulator.energy.dial_precision, 3)
+    set_mock_value(undulator.gap.precision, 3)
     # Pretend we already prepared it
     undulator._energy_iter = iter([1000, 1100, 1200])
     undulator._gap_iter = iter([35.8, 36, 37.1])
@@ -198,7 +200,8 @@ async def test_move_next_energy_scan(undulator):
     set_status = undulator.energy.set(1000)
     await asyncio.sleep(0.05)
     assert await undulator.scan_next_point.get_value() == 1
-    set_mock_value(undulator.energy.dial_readback, 1.0)
+    # set_mock_value(undulator.energy.dial_readback, 1.0)
+    set_mock_value(undulator.gap.readback, 35.8)
     set_mock_value(undulator.done, DoneStatus.DONE)
     await asyncio.sleep(0.1)
     await set_status
