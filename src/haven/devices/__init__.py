@@ -17,6 +17,10 @@ from .detectors.split_ion_chamber import SplitIonChamber as SplitIonChamber
 from .detectors.split_ion_chamber import SplitIonChamberSet as SplitIonChamberSet
 from .detectors.xspress import Xspress3Detector as Xspress3Detector
 from .ion_chamber import IonChamber  # noqa: F401
+from .labjack import LabJackT4 as LabJackT4
+from .labjack import LabJackT7 as LabJackT7
+from .labjack import LabJackT7Pro as LabJackT7Pro
+from .labjack import LabJackT8 as LabJackT8
 from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401
 from .ptc10 import PTC10Controller as PTC10Controller
@@ -27,11 +31,12 @@ from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter as PssShutter
 from .shutter import ShutterState as ShutterState
-from .soft_glue import SoftGlueZynq  # noqa: F401
+from .soft_glue import SoftGlueZynq as SoftGlueZynq
 from .soft_glue_flyer_controller import SoftGlueFlyerController  # noqa: F401
+from .srs570 import SRS570PreAmplifier as SRS570PreAmplifier
 from .stage import XYStage as XYStage
-from .table import Table  # noqa: F401
-from .undulator import PlanarUndulator  # noqa: F401
+from .table import Table as Table
+from .undulator import PlanarUndulator as PlanarUndulator
 from .vacuum import PumpController, TelevacIonGauge  # noqa: F401
 from .xia_pfcu import PFCUFilter as PFCUFilter
 from .xia_pfcu import PFCUFilterBank as PFCUFilterBank

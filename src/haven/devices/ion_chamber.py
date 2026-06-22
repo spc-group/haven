@@ -32,7 +32,31 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 
 
 def load_ion_chambers(scalers, labjacks, ion_chambers):
-    pass
+    preamps = {
+        cfg["name"]: SRS570PreAmplifier(
+            prefix=cfg["preamp_prefix"], name=f"{cfg['name']}_preamp"
+        )
+        for cfg in ion_chambers
+    }
+    # Build labjack devices with only the analog inputs we need for the ion chambers
+    _labjacks = {}
+    for cfg in labjacks:
+        name = cfg["name"]
+        aios = [ic["labjack_channel"] for ic in ion_chambers if ic["labjack"] == name]
+        _labjacks[name] = LabJackT7(
+            prefix=cfg["prefix"],
+            name=cfg["name"],
+            digital_ios=[],
+            analog_outputs=[],
+            analog_inputs=aios,
+        )
+    # Rename the labjack voltmeter inputs to match their ion chamber
+    # so they make sense when reading
+    for ic in ion_chambers:
+        labjack = _labjacks[ic["labjack"]]
+        labjack_channel = ic["labjack_channel"]
+        labjack.analog_inputs[labjack_channel].set_name(f"{ic['name']}_voltmeter")
+    return [*preamps.values(), *_labjacks.values()]
 
 
 class IonChamber(StandardReadable, Triggerable):
