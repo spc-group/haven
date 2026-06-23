@@ -389,6 +389,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/3d/ce19993849668bdfabf5d473e84bc9b1a2e78d20ab4147a19402a169a7e5/suitcase_msgpack-0.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7a/ee/97047f4cc2d7b1d46670d08d8ad01a96e7a748cc01c0b4b351ad8eddbc7a/fastmcp_slim-3.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/91/984aca2ec129e2757d1e4e3c81c3fcda9d0f85b74670a094cc443d9ee949/joblib-1.5.3-py3-none-any.whl
@@ -560,7 +561,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e1/32/95cfa1833316ca2b6b2e58150a4900bc1ad256043cdd36198f1887618ccc/burner_redis-0.1.7-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/50/ecf4f70d65bdb7519b28a33d1b2fee8a4b4ba1ae1a92f15d97e877c5de21/jupyter_server-2.18.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/ca/6bd186338cf4abb318825d9e8d2d2cf069432f9217d17f78f61204eaba70/pydocket-0.21.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/e2/c2e3abf398f80732e58b03be77bde9022550d221dd8781bf586bd4d97cc1/async_lru-2.3.0-py3-none-any.whl
@@ -941,6 +941,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/3d/ce19993849668bdfabf5d473e84bc9b1a2e78d20ab4147a19402a169a7e5/suitcase_msgpack-0.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/aa/3b0faa7eea6a2957af7ee116f08b5edd99eff7e7461e22ac613b0a8d38ea/epicscorelibs-7.0.10.99.0.1-cp313-cp313-manylinux2014_x86_64.whl
@@ -1059,7 +1060,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e1/32/95cfa1833316ca2b6b2e58150a4900bc1ad256043cdd36198f1887618ccc/burner_redis-0.1.7-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/50/ecf4f70d65bdb7519b28a33d1b2fee8a4b4ba1ae1a92f15d97e877c5de21/jupyter_server-2.18.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/ca/6bd186338cf4abb318825d9e8d2d2cf069432f9217d17f78f61204eaba70/pydocket-0.21.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/e2/c2e3abf398f80732e58b03be77bde9022550d221dd8781bf586bd4d97cc1/async_lru-2.3.0-py3-none-any.whl
@@ -1426,6 +1426,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/3d/ce19993849668bdfabf5d473e84bc9b1a2e78d20ab4147a19402a169a7e5/suitcase_msgpack-0.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/aa/3b0faa7eea6a2957af7ee116f08b5edd99eff7e7461e22ac613b0a8d38ea/epicscorelibs-7.0.10.99.0.1-cp313-cp313-manylinux2014_x86_64.whl
@@ -1544,7 +1545,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e1/32/95cfa1833316ca2b6b2e58150a4900bc1ad256043cdd36198f1887618ccc/burner_redis-0.1.7-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/50/ecf4f70d65bdb7519b28a33d1b2fee8a4b4ba1ae1a92f15d97e877c5de21/jupyter_server-2.18.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/ca/6bd186338cf4abb318825d9e8d2d2cf069432f9217d17f78f61204eaba70/pydocket-0.21.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/e2/c2e3abf398f80732e58b03be77bde9022550d221dd8781bf586bd4d97cc1/async_lru-2.3.0-py3-none-any.whl
@@ -2031,6 +2031,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/3d/ce19993849668bdfabf5d473e84bc9b1a2e78d20ab4147a19402a169a7e5/suitcase_msgpack-0.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7a/ee/97047f4cc2d7b1d46670d08d8ad01a96e7a748cc01c0b4b351ad8eddbc7a/fastmcp_slim-3.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/91/984aca2ec129e2757d1e4e3c81c3fcda9d0f85b74670a094cc443d9ee949/joblib-1.5.3-py3-none-any.whl
@@ -2210,7 +2211,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e1/67/921ec3024056483db83953ae8e48079ad62b92db7880013ca77632921dd0/readme_renderer-44.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e2/50/ecf4f70d65bdb7519b28a33d1b2fee8a4b4ba1ae1a92f15d97e877c5de21/jupyter_server-2.18.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/ca/6bd186338cf4abb318825d9e8d2d2cf069432f9217d17f78f61204eaba70/pydocket-0.21.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/e2/c2e3abf398f80732e58b03be77bde9022550d221dd8781bf586bd4d97cc1/async_lru-2.3.0-py3-none-any.whl
@@ -2596,6 +2596,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/3d/ce19993849668bdfabf5d473e84bc9b1a2e78d20ab4147a19402a169a7e5/suitcase_msgpack-0.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/5d/5562ca37c8f1b08d5eb0166886feb2f60b66a332ca026753acb8c259d727/area_detector_handlers-0.0.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/aa/3b0faa7eea6a2957af7ee116f08b5edd99eff7e7461e22ac613b0a8d38ea/epicscorelibs-7.0.10.99.0.1-cp313-cp313-manylinux2014_x86_64.whl
@@ -2714,7 +2715,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e1/32/95cfa1833316ca2b6b2e58150a4900bc1ad256043cdd36198f1887618ccc/burner_redis-0.1.7-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e2/50/ecf4f70d65bdb7519b28a33d1b2fee8a4b4ba1ae1a92f15d97e877c5de21/jupyter_server-2.18.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/ca/6bd186338cf4abb318825d9e8d2d2cf069432f9217d17f78f61204eaba70/pydocket-0.21.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/e2/c2e3abf398f80732e58b03be77bde9022550d221dd8781bf586bd4d97cc1/async_lru-2.3.0-py3-none-any.whl
@@ -6461,7 +6461,7 @@ packages:
   requires_python: '>=3.11'
 - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
   name: apsbits
-  version: 2.0.2.dev21+g08b27fbaf
+  version: 2.0.2
   requires_dist:
   - apstools
   - bluesky-queueserver>=0.0.22
@@ -9846,6 +9846,18 @@ packages:
   version: 1.1.0
   sha256: 1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/79/b7/78129e95be6e19fa59776b613fc1709ffcd892bbea8291f92a3bae2c2a6a/bluesky_tiled_plugins-2.0.6-py3-none-any.whl
+  name: bluesky-tiled-plugins
+  version: 2.0.6
+  sha256: c07e60b5e79db7fa6a2c0438c6533cb4a07b9ad8fd1127b1e49cf490e1c0259f
+  requires_dist:
+  - dask
+  - event-model
+  - mongoquery
+  - pytz
+  - tiled[client]>=0.2.9
+  - tzlocal
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/7a/60/aba9f3c3f1f48c7fbdf03bed45b576a916cd09c08242939b5294b85e37b4/qtconsole-5.7.2-py3-none-any.whl
   name: qtconsole
   version: 5.7.2
@@ -13573,18 +13585,6 @@ packages:
   - paramiko>=2.4.3 ; extra == 'ssh'
   - websocket-client>=1.3.0 ; extra == 'websockets'
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/e4/39/aba66d3a9d7b22bdf7a718dfe72b082fc042fda89146e1615f420e50eb3f/bluesky_tiled_plugins-2.0.2-py3-none-any.whl
-  name: bluesky-tiled-plugins
-  version: 2.0.2
-  sha256: a306ac9bc6445410f9e9b5144d33cda4578abb9113a5c20eba26126dd0c1d1f1
-  requires_dist:
-  - dask
-  - event-model
-  - mongoquery
-  - pytz
-  - tiled[client]>=0.2.0
-  - tzlocal
-  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/e5/54/346f681c24a9c3a08e2e74dcee2555ccd1081705b46f791f7b228e177d06/canonicaljson-2.0.0-py3-none-any.whl
   name: canonicaljson
   version: 2.0.0
