@@ -4,8 +4,12 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from bluesky import RunEngine
+from bluesky import preprocessors as bpp
 from bluesky_adaptive.recommendations import NoRecommendation
+from ophyd_async.core import init_devices
+from ophyd_async.epics.motor import Motor
 
+from haven.devices import ApsMachine
 from haven.plans import _auto_gain, auto_gain
 
 
@@ -244,5 +248,15 @@ def test_recommender_no_change(recommender):
 @pytest.mark.slow
 def test_plan_in_run_engine(ion_chamber):
     RE = RunEngine()
+    with init_devices(mock=True):
+        aps = ApsMachine()
+        motor = Motor("")
+    sd = bpp.SupplementalData(
+        baseline=[],
+        monitors=[],
+        flyers=[],
+    )
+    sd.monitors.append(motor.user_readback)
+    RE.preprocessors.append(sd)
     plan = auto_gain(ion_chambers=[ion_chamber])
     RE(plan)
