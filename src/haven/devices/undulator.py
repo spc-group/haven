@@ -300,7 +300,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                 # Check if the move has finished.  Use less precision
                 # than normal since sometimes the ID doesn't quite hit
                 # the target
-                tolerance = 10 ** (-precision)
+                tolerance = 3 * 10 ** (-precision)
                 is_done[signal] = bool(
                     value is not None
                     and np.isclose(
@@ -309,6 +309,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                         atol=tolerance,
                     )
                 )
+                print(f"{axis.readback.name} at {value=}, {target=}, {precision=}, {tolerance=}, {is_done[signal]=}")
             elif signal is self.parent.done:
                 is_done[signal] = bool(value)
             # Check if we're done with the move now
