@@ -51,11 +51,7 @@ from haven.preprocessors import fixed_offset_wrapper  # noqa: F401
 
 # Configure logging
 config = haven.load_config()
-if config.logging is None:
-    logging.basicConfig(level=logging.WARNING)
-else:
-    logging.config.dictConfig(config.logging.model_dump(by_alias=True))
-
+haven.setup_logging(config.logging)
 log = logging.getLogger("haven")
 
 

@@ -82,35 +82,57 @@ class RunEngineConfig(ConfigModel):
 class FormatterConfig(ConfigModel):
     format: str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     datefmt: str = "%Y-%m-%d %H:%M:%S"
+    class_: str = Field(
+        alias="class", default=None
+    )  # Since "class" is a reserved keyword
 
 
 class HandlerConfig(ConfigModel):
+    model_config = ConfigDict(extra="allow")
+
     level: str = "WARNING"
     formatter: str = "standard"
-    class_: str = Field(
-        alias="class", default="logging.StreamHandler"
-    )  # Since "class" is a reserved keyword
-    stream: str = "ext://sys.stderr"  # Default is stderr
+    class_: str = Field(alias="class")  # Since "class" is a reserved keyword
+    # stream: str = MISSING# "ext://sys.stderr"  # Default is stderr
+    # filename: str = MISSING
 
 
 class LoggerConfig(ConfigModel):
     handlers: Sequence[str] = []
-    level: str
+    level: str = "DEBUG"
     propagate: bool = False
 
 
 class LoggingConfig(ConfigModel):
     version: int = 1
     incremental: bool = False
-    disable_existing_loggers: bool = True
-    formatters: Mapping[str, FormatterConfig] = {"standard": FormatterConfig()}
+    disable_existing_loggers: bool = False
+    formatters: Mapping[str, FormatterConfig] = {
+        "standard": FormatterConfig(),
+        "colorful": FormatterConfig.model_validate(
+            {"class": "haven.logging.ColorfulFormatter"}
+        ),
+    }
     handlers: Mapping[str, HandlerConfig] = {
-        "default": HandlerConfig(level="INFO", formatter="standard")
+        "stderr": HandlerConfig.model_validate(
+            {
+                "level": "WARNING",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stderr",
+                "formatter": "colorful",
+            }
+        ),
+        # These file handlers should be set up in the TOML file
+        "error_file": HandlerConfig.model_validate({"class": "logging.NullHandler"}),
+        "haven_file": HandlerConfig.model_validate({"class": "logging.NullHandler"}),
+        "firefly_file": HandlerConfig.model_validate({"class": "logging.NullHandler"}),
     }
     loggers: Mapping[str, LoggerConfig] = {
-        "": LoggerConfig(handlers=["default"], level="WARNING"),
-        "haven": LoggerConfig(handlers=["default"], level="INFO"),
+        "haven": LoggerConfig(handlers=["stderr", "error_file", "haven_file"]),
+        "firefly": LoggerConfig(handlers=["stderr", "error_file", "firefly_file"]),
+        "exceptions": LoggerConfig(handlers=["error_file"]),
     }
+    root: LoggerConfig = LoggerConfig(handlers=["stderr", "error_file"], propagate=True)
 
 
 class HavenConfig(ConfigModel):
@@ -125,7 +147,7 @@ class HavenConfig(ConfigModel):
     device_files: Sequence[str] = []
     ptz_cameras: Mapping[str, str] = {}
     feature_flags: FeatureFlagConfig = FeatureFlagConfig()  # type: ignore
-    logging: LoggingConfig | None = None
+    logging: LoggingConfig = LoggingConfig()
 
     def device_parameters(self):
         """Return the parameters for the devices from "device_files" key."""

@@ -15,17 +15,13 @@ from qtpy import QtCore
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen, QStyleFactory
 
+import haven
 from firefly.controller import FireflyController
 
 
 def main(default_fullscreen=False, default_display="status"):
-    log = logging.getLogger("")
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("[%(asctime)s] [%(levelname)-8s] - %(message)s")
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
-    log.setLevel("INFO")
-    handler.setLevel("INFO")
+    haven.setup_logging(haven.load_config().logging)
+    log = logging.getLogger(__name__)
 
     try:
         """
@@ -161,10 +157,6 @@ def main(default_fullscreen=False, default_display="status"):
     if pydm_args.profile:
         profile = cProfile.Profile()
         profile.enable()
-
-    if pydm_args.log_level:
-        log.setLevel(pydm_args.log_level)
-        handler.setLevel(pydm_args.log_level)
 
     controller = FireflyController(
         display=pydm_args.display,

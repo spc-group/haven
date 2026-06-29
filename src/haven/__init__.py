@@ -29,6 +29,7 @@ from .energy_ranges import (  # noqa: F401
 )
 from .iconfig import load_config  # noqa: F401
 from .instrument import beamline  # noqa: F401
+from .logging import setup_logging as setup_logging
 from .preprocessors import (  # noqa: F401
     aps_suspenders_decorator,
     aps_suspenders_wrapper,
