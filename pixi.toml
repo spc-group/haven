@@ -59,7 +59,7 @@ ophyd = ">=1.11.0"
 ophyd-async = { version = "==0.17a3", extras = ["ca"] }
 scanspec = "==1.0a2"
 # bluesky-adaptive = ">=0.3.2"
-bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="7ba37839da69148504e3dcc0087f7b60866e833b" }
+bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"

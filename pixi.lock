@@ -209,7 +209,7 @@ environments:
       - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
-      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
@@ -809,7 +809,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: .
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
-      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
@@ -1294,7 +1294,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: .
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
-      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
@@ -1842,7 +1842,7 @@ environments:
       - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/advancedphotonsource/eaa?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
-      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
@@ -2464,7 +2464,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: .
       - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
-      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+      - pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/79/702b8757fe9b9aa67ba820f607a083ce265fdd2b8e7d18dbe4252d21204c/pysumreg-1.0.7-py3-none-any.whl
@@ -6509,7 +6509,7 @@ packages:
   - tomli-w ; extra == 'doc'
   - apsbits[dev,doc] ; extra == 'all'
   requires_python: '>=3.11'
-- pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=7ba37839da69148504e3dcc0087f7b60866e833b#7ba37839da69148504e3dcc0087f7b60866e833b
+- pypi: git+https://github.com/spc-group/bluesky-adaptive?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
   name: bluesky-adaptive
   version: 0.0.0
   requires_dist:
