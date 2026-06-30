@@ -309,7 +309,9 @@ class EnergyPositioner(BasePositioner, Preparable):
                         atol=tolerance,
                     )
                 )
-                print(f"{axis.readback.name} at {value=}, {target=}, {precision=}, {tolerance=}, {is_done[signal]=}")
+                print(
+                    f"{axis.readback.name} at {value=}, {target=}, {precision=}, {tolerance=}, {is_done[signal]=}"
+                )
             elif signal is self.parent.done:
                 is_done[signal] = bool(value)
             # Check if we're done with the move now

@@ -10,7 +10,12 @@ from haven.devices.detectors.ion_chamber_scaler import IonChamberScaler
 
 @pytest.fixture()
 def scaler(sim_registry):
-    ion_chambers = {"I0": {"channel": 2}}
+    ion_chambers = {
+        "I0": {
+            "channel": 2,
+            "preamp_prefix": "255idc:SR01:",
+        }
+    }
     scaler = IonChamberScaler(
         prefix="255idc:USBCTR0:",
         name="midstream_ion_chambers",
@@ -75,6 +80,7 @@ async def test_reading_applies_dark_current(scaler):
     assert reading["I0-counts"]["value"] == 1337 * 100 / 2578
 
 
+# Upstream changes needed to make the scaler EventPageCollectable
 @pytest.mark.xfail
 async def test_collection(scaler):
     await scaler.connect(mock=True)

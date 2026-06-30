@@ -21,6 +21,7 @@ from ophyd_async.core import (
     wait_for_value,
 )
 
+from . import IonChamberScaler
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
 from .srs570 import SRS570PreAmplifier
@@ -32,12 +33,6 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 
 
 def load_ion_chambers(scalers, labjacks, ion_chambers):
-    preamps = {
-        cfg["name"]: SRS570PreAmplifier(
-            prefix=cfg["preamp_prefix"], name=f"{cfg['name']}_preamp"
-        )
-        for cfg in ion_chambers
-    }
     # Build labjack devices with only the analog inputs we need for the ion chambers
     _labjacks = {}
     for cfg in labjacks:
@@ -56,7 +51,22 @@ def load_ion_chambers(scalers, labjacks, ion_chambers):
         labjack = _labjacks[ic["labjack"]]
         labjack_channel = ic["labjack_channel"]
         labjack.analog_inputs[labjack_channel].set_name(f"{ic['name']}_voltmeter")
-    return [*preamps.values(), *_labjacks.values()]
+    # Finally, create the scaler objects now that we have the preamps, labjacks, etc
+    _scalers = {}
+    for cfg in scalers:
+        ic_configs = {
+            ic_cfg["name"]: {
+                "channel": ic_cfg["scaler_channel"],
+                "preamp_prefix": ic_cfg["preamp_prefix"],
+            }
+            for ic_cfg in ion_chambers
+            if ic_cfg["scaler"] == cfg["name"]
+        }
+        print(ic_configs, cfg["name"])
+        _scalers[cfg["name"]] = IonChamberScaler(
+            name=cfg["name"], prefix=cfg["prefix"], ion_chambers=ic_configs
+        )
+    return [*_labjacks.values(), *_scalers.values()]
 
 
 class IonChamber(StandardReadable, Triggerable):

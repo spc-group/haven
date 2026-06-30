@@ -38,6 +38,7 @@ from ophyd_async.epics.core import (
     epics_signal_rw,
 )
 
+from ..srs570 import SRS570PreAmplifier
 from .usb_counter import SignalsProvider, USBCounter, USBCounterDriverIO, _reduce_array
 
 log = logging.getLogger("haven")
@@ -55,10 +56,12 @@ class IonChamber(Device):
         self,
         prefix: str,
         channel: int,
+        preamp_prefix: str,
         *,
         name: str = "",
     ):
         self.channel = channel
+        self.preamp = SRS570PreAmplifier(preamp_prefix)
         self.raw_counts_array = epics_signal_r(
             Array1D[np.int32], f"{prefix}MCS:mca{channel}.VAL"
         )

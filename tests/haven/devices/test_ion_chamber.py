@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 from ophyd_async.core import DetectorTrigger, TriggerInfo, get_mock_put, set_mock_value
 from ophyd_async.testing import assert_value
 
-from haven.devices import IonChamberScaler, SRS570PreAmplifier
+from haven.devices import IonChamberScaler
 from haven.devices.ion_chamber import IonChamber, load_ion_chambers
 from haven.devices.labjack import LabJackBase
 
@@ -74,12 +74,12 @@ ion_chamber_kwargs = dict(
 )
 
 
-def test_load_preamps():
-    devices = load_ion_chambers(**ion_chamber_kwargs)
-    preamps = [device for device in devices if isinstance(device, SRS570PreAmplifier)]
-    assert len(preamps) == 4
-    device_names = {device.name for device in preamps}
-    assert device_names == {"IpreKB_preamp", "I0_preamp", "It_preamp", "Iref_preamp"}
+# def test_load_preamps():
+#     devices = load_ion_chambers(**ion_chamber_kwargs)
+#     preamps = [device for device in devices if isinstance(device, SRS570PreAmplifier)]
+#     assert len(preamps) == 4
+#     device_names = {device.name for device in preamps}
+#     assert device_names == {"IpreKB_preamp", "I0_preamp", "It_preamp", "Iref_preamp"}
 
 
 def test_load_labjacks():
@@ -92,11 +92,17 @@ def test_load_labjacks():
     assert labjacks[0].analog_inputs[2].name == "I0_voltmeter"
 
 
-@pytest.mark.xfail
 def test_load_scalers():
     devices = load_ion_chambers(**ion_chamber_kwargs)
     scalers = [device for device in devices if isinstance(device, IonChamberScaler)]
     assert len(scalers) == 2
+    ion_chambers = scalers[0].driver.ion_chambers
+    assert list(ion_chambers.keys()) == [2, 3]
+    IpreKB = ion_chambers[2]
+    assert IpreKB.name == "IpreKB"
+    assert IpreKB.preamp.name == "IpreKB-preamp"
+    # print(IpreKB)
+    # assert False
 
 
 ##################

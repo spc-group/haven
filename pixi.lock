@@ -6461,7 +6461,7 @@ packages:
   requires_python: '>=3.11'
 - pypi: git+https://github.com/bcda-aps/bits#08b27fbafa868b18205d149cc3e697dcf5b3a532
   name: apsbits
-  version: 2.0.2.dev21+g08b27fbaf
+  version: 2.0.2
   requires_dist:
   - apstools
   - bluesky-queueserver>=0.0.22
