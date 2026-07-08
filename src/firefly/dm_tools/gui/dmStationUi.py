@@ -207,7 +207,8 @@ class DmStationUi(FireflyMainWindow):
         self.stationName = config.station_name
         self.beamlineName = config.beamline
         self.esafSector = config.beamline.split("-")[0]
-        self.beamlineManagers = []
+        self.beamlineManagers = config.beamline_managers
+        print(self.beamlineManagers)
         self.username = config.username
         password = config.password
         self.password = None if password is None else password.get_secret_value()
@@ -219,9 +220,6 @@ class DmStationUi(FireflyMainWindow):
         # if not self.beamlineName:
         #     if self.esafSector:
         #         self.onlyEsaf = 1
-        # if self.beamlineManagers:
-        #     self.beamlineManagers = list(set(self.beamlineManagers.split(',')))
-
         # Hack to make sure the other client code has the right info
         # Eventually, we should roll our own version of this with
         # explicit parameters.

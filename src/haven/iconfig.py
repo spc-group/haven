@@ -52,6 +52,7 @@ class DataManagementConfig(ConfigModel):
     username: str | None = None
     password: SecretStr | None = None
     admin_account: str | None = None
+    beamline_managers: Sequence[str] = []  # DM_BEAMLINE_MANAGERS
 
 
 class RunEngineMetadata(ConfigModel):
