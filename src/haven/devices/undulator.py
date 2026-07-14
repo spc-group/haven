@@ -285,6 +285,9 @@ class EnergyPositioner(BasePositioner, Preparable):
         }
         # Track the gap for completion since the energy precision is
         # not linear
+        log.debug(
+            f"Waiting for {axis.readback.name} to move from {old_position} to {target}"
+        )
         async for signal, value in observe_signals_value(
             axis.readback, self.parent.done, timeout=timeout_
         ):
@@ -309,7 +312,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                         atol=tolerance,
                     )
                 )
-                print(
+                log.debug(
                     f"{axis.readback.name} at {value=}, {target=}, {precision=}, {tolerance=}, {is_done[signal]=}"
                 )
             elif signal is self.parent.done:
@@ -317,6 +320,13 @@ class EnergyPositioner(BasePositioner, Preparable):
             # Check if we're done with the move now
             if all(is_done.values()):
                 break
+            else:
+                # Log which signals we're still waiting on so we can
+                # troubleshoot timeout errors
+                still_moving_signals = {
+                    sig.name for sig, done in is_done.items() if not done
+                }
+                log.debug(f"Waiting for {still_moving_signals}")
         # Make sure the next_scan_point PV has had time to reset
         await next_scan_task
 
