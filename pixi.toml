@@ -209,13 +209,9 @@ tiled-server = "tiled serve config"
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
 aps-ai-beamline-controller = "==0.0.82"
-# Temporary to check a missing dependency
-shadow4 = "*"
-shadow4-advanced = "*"
-# aps-ai-beamline-controller = { path = "/home/beams/S25IDCUSER/Downloads/aps_ai_beamline_controller-0.0.81.tar.gz" }
 # This package will eventually be available on PyPI, but for now it
-# breaks CI so it being removed
-aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
+# breaks CI so is being removed
+# aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
 
 # (Installing these xrf tools breaks haven with an error about missing
 # xcb plugin)

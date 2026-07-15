@@ -39,13 +39,18 @@ def test_messages_for_ion_chamber(shutters, ion_chamber):
 def test_messages(shutters, scaler):
     shutter = shutters[0]
     msgs = list(record_dark_current(detectors=[scaler], shutters=[shutter]))
+    calibrate_msg = msgs[5]
+    assert calibrate_msg.command == "calibrate"
+    assert calibrate_msg.obj is scaler
+    assert calibrate_msg.kwargs["truth"] == 0
+    assert calibrate_msg.kwargs["dial"] == 0
     # Check the shutters get closed
-    trigger_msg = msgs[8]
+    trigger_msg = msgs[9]
     assert trigger_msg.obj is scaler
     assert "record_dark_current" not in trigger_msg.kwargs
-    wait_msg = msgs[9]
+    wait_msg = msgs[10]
     assert wait_msg.command == "wait"
-    calibrate_msg = msgs[16]
+    calibrate_msg = msgs[17]
     assert calibrate_msg.command == "calibrate"
     assert calibrate_msg.obj is scaler
     assert calibrate_msg.kwargs["truth"] == 0
