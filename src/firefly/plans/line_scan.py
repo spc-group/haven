@@ -36,6 +36,7 @@ class LineRegionsManager(RegionsManager):
     class Region:
         is_active: bool
         device: Device
+        device_path: str
         start: float
         stop: float
 
@@ -44,6 +45,7 @@ class LineRegionsManager(RegionsManager):
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             device=widgets.device_selector.current_component(),
+            device_path=widgets.device_selector.selected_device_path(),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
         )
@@ -245,8 +247,7 @@ class LineScanDisplay(display.PlanDisplay):
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions
         region_args = [
-            (getattr(region.device, "name", None), region.start, region.stop)
-            for region in self.regions
+            (region.device_path, region.start, region.stop) for region in self.regions
         ]
         device_args = [arg for region in region_args for arg in region]
         args = (detector_names, *device_args)

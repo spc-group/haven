@@ -151,7 +151,7 @@ async def test_plan_args(display, xspress, async_motors, ion_chamber, qtbot):
     await display.regions.set_region_count(2)
     # Set up a test motor 1
     widgets = display.regions.row_widgets(row=1)
-    widgets.device_selector.combo_box.setCurrentText("async_motor_1")
+    widgets.device_selector.combo_box.setCurrentText("async_motor_1.user_setpoint")
     widgets.start_spin_box.setValue(1.0)
     widgets.stop_spin_box.setValue(111.0)
     widgets.num_points_spin_box.setValue(5)
@@ -176,7 +176,7 @@ async def test_plan_args(display, xspress, async_motors, ion_chamber, qtbot):
     args, kwargs = display.plan_args()
     assert args == (
         ["vortex_me4", "I00"],
-        "async_motor_1",
+        "async_motor_1.user_setpoint",
         1.0,
         111.0,
         5,

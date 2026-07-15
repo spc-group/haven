@@ -42,6 +42,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
     class Region(RegionsManager.Region):
         is_active: bool
         device: Device
+        device_path: str
         start: float
         stop: float
         num_points: int
@@ -52,6 +53,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             device=widgets.device_selector.current_component(),
+            device_path=widgets.device_selector.selected_device_path(),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
             num_points=widgets.num_points_spin_box.value(),
@@ -310,7 +312,7 @@ class GridScanDisplay(display.PlanDisplay):
         # Get parameters from each row of line regions:
         region_args = [
             (
-                getattr(region.device, "name", None),
+                region.device_path,
                 region.start,
                 region.stop,
                 region.num_points,
