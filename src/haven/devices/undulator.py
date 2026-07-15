@@ -269,7 +269,7 @@ class EnergyPositioner(BasePositioner, Preparable):
             axis.precision.get_value(),
             axis.velocity.get_value(),
         )
-        target = next_gap
+        target = float(next_gap)
         next_scan_task = asyncio.ensure_future(self._advance_scan_point())
         # Decide how long we should wait
         timeout_: float
@@ -319,6 +319,7 @@ class EnergyPositioner(BasePositioner, Preparable):
                 is_done[signal] = bool(value)
             # Check if we're done with the move now
             if all(is_done.values()):
+                log.debug("Undulator has arrived.")
                 break
             else:
                 # Log which signals we're still waiting on so we can

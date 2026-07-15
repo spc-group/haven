@@ -174,7 +174,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         Stashes them for later recall.
 
         """
-        log.debug(f"Reveived updating reading for {signal}: {reading}")
+        log.debug(f"Received updated reading for {signal.name}: {reading}")
         # Stash this reading
         self._cached_readings.update({signal: reading[signal.name]})
         # Update interested parties if we have a full set of readings

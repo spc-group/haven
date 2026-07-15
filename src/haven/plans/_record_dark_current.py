@@ -63,6 +63,9 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
         # Old-style ion chambers need to be handled differently
         old_ion_chambers = [ic for ic in detectors if isinstance(ic, IonChamber)]
         new_detectors = [ic for ic in detectors if not isinstance(ic, IonChamber)]
+        # Remove previous calibrations so we get a fresh starting point
+        for detector in new_detectors:
+            yield Msg("calibrate", detector, truth=0, dial=0)
         # Record dark currents
         group = uuid.uuid4()
         for ic in old_ion_chambers:
