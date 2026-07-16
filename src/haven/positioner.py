@@ -134,6 +134,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             # Wait for the value to set, but don't wait for put completion callback
             set_status = self.setpoint.set(new_position, timeout=timeout)
         # Decide on how we will wait for completion
+        watch_done = None
         if self.put_complete:
             # await the set call directly
             done_status = set_status
@@ -142,11 +143,10 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             log.debug(
                 f"Monitoring progress via ``done`` signal: {self.done.name}, {self.done.source}."
             )
-            self.done.subscribe_reading(
-                partial(
-                    self.watch_done, done_event=done_event, started_event=started_event
-                )
+            watch_done = partial(
+                self.watch_done, done_event=done_event, started_event=started_event
             )
+            self.done.subscribe_reading(watch_done)
             aws = asyncio.gather(done_event.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         else:
@@ -154,9 +154,16 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         # Monitor the position of the readback value
+        log.debug(
+            f"Waiting for {self.readback.name} to move from {old_position} to {new_position}"
+        )
         async for current_position in observe_value(
             self.readback, done_status=done_status
         ):
+            tolerance = 10 ** (-precision)
+            log.debug(
+                f"{self.readback.name} at {current_position}, target={new_position}, {precision=}, {tolerance=}."
+            )
             yield WatcherUpdate(
                 current=current_position,
                 initial=old_position,
@@ -169,13 +176,19 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             target_reached = current_position is not None and np.isclose(
                 current_position,
                 new_position,
-                atol=10 ** (-precision),
+                atol=tolerance,
             )
             if target_reached:
+                log.debug(
+                    f"{self.readback.name} arrived at {current_position} (target={new_position})."
+                )
                 reached_setpoint.set()
                 break
         # Make sure the done point was actually reached
         await done_status
+        if watch_done is not None:
+            log.debug("Clearing sub of {self.done.name}")
+            self.done.clear_sub(watch_done)
         # Handle failed moves
         if not self._set_success:
             raise RuntimeError("Motor was stopped")
