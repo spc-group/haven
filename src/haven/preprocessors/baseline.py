@@ -18,6 +18,7 @@ def baseline_wrapper(
         "APS",
         "vacuum",
         "baseline",
+        "slits",
     ],
     name: str = "baseline",
 ):
