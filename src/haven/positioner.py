@@ -112,6 +112,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         # Check for trivially small moves
         is_small_move = abs(new_position - current_position) < self.minimum_move
         if is_small_move:
+            log.debug(
+                f"Moving from {current_position} to {value} is < {self.minimum_move=}. Skipping"
+            )
             return
         # Decide how long we should wait
         timeout_: float
@@ -151,6 +154,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         else:
             # Monitor based on readback position
+            log.debug("Monitoring progress via ``readback`` signal.")
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         # Monitor the position of the readback value
@@ -187,7 +191,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         # Make sure the done point was actually reached
         await done_status
         if watch_done is not None:
-            log.debug("Clearing sub of {self.done.name}")
+            log.debug(f"Clearing sub of {self.done.name}")
             self.done.clear_sub(watch_done)
         # Handle failed moves
         if not self._set_success:

@@ -253,6 +253,7 @@ class EnergyPositioner(BasePositioner, Preparable):
             self.parent.scan_mode.get_value(),
         )
         is_first_point = current_index == 0 and not self.scan_has_moved
+        log.debug(f"Moving to scan point {current_index} ({is_first_point=}).")
         if is_first_point:
             # The scan controls don't actually move the gap to the first position
             # so we have to do it manually
@@ -286,7 +287,7 @@ class EnergyPositioner(BasePositioner, Preparable):
         # Track the gap for completion since the energy precision is
         # not linear
         log.debug(
-            f"Waiting for {axis.readback.name} to move from {old_position} to {target}"
+            f"Waiting for {axis.readback.name} to move from {old_position} to {target} ({timeout=})."
         )
         async for signal, value in observe_signals_value(
             axis.readback, self.parent.done, timeout=timeout_
