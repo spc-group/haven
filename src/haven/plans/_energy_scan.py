@@ -11,6 +11,7 @@ from bluesky import plans as bp
 from bluesky import preprocessors as bpp
 from bluesky.protocols import (
     Movable,
+    Readable,
 )
 from bluesky.utils import MsgGenerator
 from cycler import Cycler, cycler
@@ -151,8 +152,22 @@ def energy_scan_from_scanspec(
         per_step = prepare_per_event(
             detectors, trigger_infos=tinfos, per_event=per_step
         )
+
+    # We want the energy devices to be included as detectors so we can record ID gap, etc.
+    def device_root(dev):
+        return dev if dev.parent is None else device_root(dev.parent)
+
+    root_devices = [device_root(axis) for axis in spec.axes()]
+    extra_detectors = [
+        device for device in root_devices if isinstance(device, Readable)
+    ]
     # Execute the plan, and slip in some prepare messages
-    plan = bp.scan_nd(detectors, _as_cycler(spec, detectors), per_step=per_step, md=md_)
+    plan = bp.scan_nd(
+        [*detectors, *extra_detectors],
+        _as_cycler(spec, detectors),
+        per_step=per_step,
+        md=md_,
+    )
     undulators = [
         axis for axis in spec.axes() if isinstance(axis.parent, PlanarUndulator)
     ]

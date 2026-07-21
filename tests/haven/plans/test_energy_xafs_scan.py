@@ -190,7 +190,6 @@ def test_exafs_k_range(mono, ion_chamber):
         for i in scan_list
         if i[0] == "prepare" and i.obj is ion_chamber
     ]
-    print(real_exposures)
     np.testing.assert_almost_equal(real_exposures, expected_exposures)
 
 
@@ -240,6 +239,27 @@ def test_prepares_detectors(xspress, ion_chamber, mono):
     time_msg = prepare_msgs[0]
     assert time_msg.obj is xspress
     assert time_msg.args[0].livetime == 0.5
+
+
+def test_include_axes_as_detectors(xspress, ion_chamber, mono):
+    """Make sure we include e.g. the whole mono or ID as a detector.
+
+    That way we record things like the ID gap and mono pitch2 as well as energy.
+
+    """
+    plan = xafs_scan(
+        [ion_chamber],
+        XAFSRegion("E", -4, 6, 2),
+        XAFSRegion("E", 6, 40, 34),
+        E0=8333,
+        energy_devices=[mono.energy],
+    )
+    msgs = list(plan)
+    read_msgs = [
+        m for m in msgs if m.command == "read" and m.obj in [ion_chamber, mono]
+    ]
+    read_devices = {m.obj for m in read_msgs}
+    assert read_devices == {ion_chamber, mono}
 
 
 def test_remove_duplicate_energies(mono, ion_chamber):
@@ -396,9 +416,6 @@ async def test_document_plan_args(mono):
     (start_doc,) = [doc for name, doc in documents if name == "start"]
     # Make sure there are no numpy arrays in the plan args
     # (causes problems for the Tiled writer)
-    from pprint import pprint
-
-    pprint(start_doc)
     ranges = start_doc["plan_args"]["energy_ranges"]
     assert not any([isinstance(arg, np.ndarray) for arg in ranges])
 
