@@ -4,8 +4,6 @@ Includes some standard bluesky plans with decorators.
 
 """
 
-import bluesky.plans as bp
-
 from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
@@ -71,7 +69,6 @@ scan = all_decorators(scan)
 del beamline
 del open_shutters_decorator
 del baseline_decorator
-del bp
 
 __all__ = [
     "align_monochromators",

@@ -15,7 +15,10 @@ import rich.theme
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
 from bluesky import preprocessors as bpp  # noqa: F401
+from bluesky.plan_stubs import abs_set as abs_set
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
+from bluesky.plan_stubs import rel_set as rel_set
+from bluesky.plan_stubs import sleep as sleep
 from bluesky.run_engine import (  # noqa: F401
     RunEngine,
     autoawait_in_bluesky_event_loop,
@@ -160,48 +163,51 @@ else:
     RE.preprocessors.append(wrapper)
 
 # Print helpful information to the console
-custom_theme = rich.theme.Theme(
-    {
-        "code": "white on grey27",
-    }
-)
-console = rich.console.Console(theme=custom_theme)
-motd = (
-    "[bold]Devices[/bold] are available directly by name or though the [italic]devices[/italic].\n"
-    " ┣━ [code]m2 = sim_motor_2[/]\n"
-    " ┃    —or—\n"
-    " ┗━ [code]m2 = devices['sim_motor_2'][/]\n"
-    "\n"
-    "[bold]Haven plans and plan-stubs[/bold] are available as "
-    "[italic]plans[/].\n"
-    " ┗━ [code]plan = plans.xafs_scan(ion_chambers, -50, 100, 1, E0=8333)[/]\n"
-    "\n"
-    "The [bold]RunEngine[/bold] is available as [italic]RE[/italic].\n"
-    " ┗━ [code]RE(bps.mv(m2, 2))[/code]\n"
-    "\n"
-    "The run engine is also registered as the transform [italic]<[/].\n"
-    " ┣━ [code]<mv(m, 2)[/code] (absolute move)\n"
-    " ┣━ [code]<mvr(m, 2)[/code] (relative move)\n"
-    " ┗━ [code]<rd(m)[/code] (read)\n"
-    "\n"
-    "Run [code]help(haven)[/code] for more information."
-)
-rich.print("")  # Blank line for separation
-console.print(
-    rich.panel.Panel(
-        motd,
-        title="Welcome to the [bold purple]Haven[/] beamline control system.",
-        subtitle="[link=https://haven-spc.readthedocs.io/en/latest/]haven-spc.readthedocs.io[/]",
-        expand=False,
+if is_re_worker_active:
+    custom_theme = rich.theme.Theme(
+        {
+            "code": "white on grey27",
+        }
     )
-)
-
-# Make an alert in case devices did not connect properly
-if loader_exception is not None:
-    msg = "Some devices did not connect properly! See logs for details."
+    console = rich.console.Console(theme=custom_theme)
+    motd = (
+        "[bold]Devices[/bold] are available directly by name or though the [italic]devices[/italic].\n"
+        " ┣━ [code]m2 = sim_motor_2[/]\n"
+        " ┃    —or—\n"
+        " ┗━ [code]m2 = devices['sim_motor_2'][/]\n"
+        "\n"
+        "[bold]Haven plans and plan-stubs[/bold] are available as "
+        "[italic]plans[/].\n"
+        " ┗━ [code]plan = plans.xafs_scan(ion_chambers, -50, 100, 1, E0=8333)[/]\n"
+        "\n"
+        "The [bold]RunEngine[/bold] is available as [italic]RE[/italic].\n"
+        " ┗━ [code]RE(bps.mv(m2, 2))[/code]\n"
+        "\n"
+        "The run engine is also registered as the transform [italic]<[/].\n"
+        " ┣━ [code]<mv(m, 2)[/code] (absolute move)\n"
+        " ┣━ [code]<mvr(m, 2)[/code] (relative move)\n"
+        " ┗━ [code]<rd(m)[/code] (read)\n"
+        "\n"
+        "Run [code]help(haven)[/code] for more information."
+    )
+    rich.print("")  # Blank line for separation
     console.print(
-        rich.align.Align.center(f"\n[bold red][blink]:fire:[/]{msg}[blink]:fire:[/][/]")
+        rich.panel.Panel(
+            motd,
+            title="Welcome to the [bold purple]Haven[/] beamline control system.",
+            subtitle="[link=https://haven-spc.readthedocs.io/en/latest/]haven-spc.readthedocs.io[/]",
+            expand=False,
+        )
     )
+
+    # Make an alert in case devices did not connect properly
+    if loader_exception is not None:
+        msg = "Some devices did not connect properly! See logs for details."
+        console.print(
+            rich.align.Align.center(
+                f"\n[bold red][blink]:fire:[/]{msg}[blink]:fire:[/][/]"
+            )
+        )
 
 # Clean up the namespace by removing tokens that are only useful
 # inside this script
@@ -213,3 +219,6 @@ del call_in_bluesky_event_loop
 del NotConnectedError
 del ComponentNotFound
 del rich
+del fixed_offset_wrapper
+if is_re_worker_active:
+    del rd
