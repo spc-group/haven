@@ -20,6 +20,13 @@ def writer(tiled_server):
 
 
 @pytest.mark.slow
+# This warning gets raised when running with github actions
+@pytest.mark.filterwarnings(
+    'ignore:.*"/home/runner/work/haven/haven" is shallow and may cause errors:UserWarning'
+)
+@pytest.mark.filterwarnings(
+    "ignore:.*does not correspond to a valid versioning date:UserWarning"
+)
 def test_streams(tiled_server, writer):
     RE = run_engine(tiled_writer=writer, call_returns_result=True)
     # Prepare ophyd-async devices

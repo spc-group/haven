@@ -69,6 +69,13 @@ def test_baseline_decorator(sim_registry, aps, RE):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
+# This warning gets raised when running with github actions
+@pytest.mark.filterwarnings(
+    'ignore:.*"/home/runner/work/haven/haven" is shallow and may cause errors:UserWarning'
+)
+@pytest.mark.filterwarnings(
+    "ignore:.*does not correspond to a valid versioning date:UserWarning"
+)
 async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     """Check that a basic, minial start document is createD with defaults."""
     monkeypatch.setenv("EPICS_HOST_ARCH", "PDP11", prepend=False)
