@@ -1,45 +1,78 @@
+import time
+
 import pytest
 from bluesky_queueserver_api import BPlan
+from bluesky_queueserver_api.zmq import REManagerAPI
 
 from .qserver import QserverInfo
 
+TICK = 0.5
+
+
+def open_environment(api, timeout: int | float = 60) -> None:
+    environment_is_open = None
+    result = api.environment_open()
+    assert result["success"]
+    # Poll the qserver until the environment is successfully opened
+    t0 = time.monotonic()
+    while (time.monotonic() - t0) < timeout:
+        if api.status()["worker_environment_exists"]:
+            break
+        time.sleep(TICK)
+    else:
+        raise TimeoutError(
+            f"Qserver environment at did not open with {timeout} seconds."
+        )
+
+
+def run_queue(api):
+    result = api.queue_start()
+    assert result["success"]
+    is_idle = False
+    while not is_idle:
+        is_idle = api.status()["manager_state"] == "idle"
+        time.sleep(TICK)
+
+
+@pytest.fixture()
+def api(qserver: QserverInfo):
+    api = REManagerAPI(
+        zmq_control_addr=qserver.control_addr, zmq_info_addr=qserver.info_addr
+    )
+    open_environment(api)
+    return api
+
 
 @pytest.mark.slow
-def test_open_environment(qserver):
-    status = qserver.api.status()
+def test_open_environment(api):
+    status = api.status()
     assert status["worker_environment_exists"]
 
 
 @pytest.mark.slow
-def test_mv_plan(qserver: QserverInfo):
+def test_mv_plan(api):
     item = BPlan("mv", "sim_async_motor", 5)
-    if qserver.api is None:
-        raise TypeError("Qserver API not available")
-    result = qserver.api.item_add(item)
+    result = api.item_add(item)
     assert result["success"]
-    qserver.run_queue()
+    run_queue(api)
     # Check that the mv plan worked
-    (history_item,) = qserver.api.history_get()["items"]
+    (history_item,) = api.history_get()["items"]
     assert history_item["result"]["exit_status"] == "completed"
 
 
 @pytest.mark.slow
-def test_xafs_scan_plan(qserver: QserverInfo):
+def test_xafs_scan_plan(api):
     item = BPlan("xafs_scan", [], ["E", -10, 30, 5], E0=8333)
-    if qserver.api is None:
-        raise TypeError("Qserver API not available")
-    result = qserver.api.item_add(item)
+    result = api.item_add(item)
     assert result["success"]
-    qserver.run_queue()
+    run_queue(api)
     # Check that the mv plan worked
-    (history_item,) = qserver.api.history_get()["items"]
+    (history_item,) = api.history_get()["items"]
     assert history_item["result"]["exit_status"] == "completed"
 
 
 @pytest.mark.slow
-def test_plans_available(qserver: QserverInfo):
-    if qserver.api is None:
-        raise TypeError("Qserver API not available")
+def test_plans_available(api):
     expected_plans = {
         "abs_set",
         "rel_set",
@@ -61,7 +94,7 @@ def test_plans_available(qserver: QserverInfo):
         "calibrate",
         "count",
     }
-    plans_allowed = set(qserver.api.plans_allowed()["plans_allowed"].keys())
+    plans_allowed = set(api.plans_allowed()["plans_allowed"].keys())
     assert plans_allowed == expected_plans
 
 

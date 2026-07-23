@@ -1,14 +1,13 @@
 import shutil
+import signal
 import subprocess
-import time
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from bluesky_queueserver_api.comm_base import RequestTimeoutError
-from bluesky_queueserver_api.zmq import REManagerAPI
 from mirakuru import TCPExecutor
+from mirakuru.exceptions import TimeoutExpired
 
 TICK = 0.2  # Seconds between check-ins with the server
 
@@ -17,10 +16,9 @@ TICK = 0.2  # Seconds between check-ins with the server
 class QserverInfo:
     bluesky_dir: Path
     host: str = "127.0.0.1"
-    control_port: str = "8719"
-    info_port: str = ""
+    control_port: str = "60715"
+    info_port: str = "60725"
     Popen: subprocess.Popen | None = None
-    api: REManagerAPI | None = None
     executor: TCPExecutor | None = None
 
     @property
@@ -53,67 +51,31 @@ class QserverInfo:
             "qserver_tests",
         ]
         cmd = " ".join(cmds)
-        print(cmd)
-        # process = OutputExecutor(cmd, banner='ZeroMQ server is waiting', timeout=20)
-        # process.start()
-        # self.executor = TCPExecutor(cmd, host=self.host, port=int(self.control_port))
-        # self.executor.start()
-        self.Popen = subprocess.Popen(cmds)
-
-    def connect(self, timeout: int | float = 30) -> REManagerAPI:
-        if self.api is None:
-            self.api = REManagerAPI()
-        t0 = time.monotonic()
-        while (time.monotonic() - t0) < timeout:
-            try:
-                response = self.api.ping()
-            except RequestTimeoutError:
-                time.sleep(TICK)
-                continue
-            break
-        else:
-            raise RuntimeError(
-                f"queue server at {self.control_addr} ({self.info_addr}) did not start with {timeout} seconds."
-            )
-        return self.api
-
-    def open_environment(self, timeout: int | float = 20) -> None:
-        environment_is_open = None
-        api = self.connect()
-        result = api.environment_open()
-        assert result["success"]
-        # Poll the qserver until the environment is successfully opened
-        t0 = time.monotonic()
-        while (time.monotonic() - t0) < timeout:
-            if api.status()["worker_environment_exists"]:
-                break
-            time.sleep(TICK)
-        else:
-            raise RuntimeError(
-                f"Qserver environment at {self.control_addr} ({self.info_addr}) did not open with {timeout} seconds."
-            )
+        self.executor = TCPExecutor(
+            cmd,
+            host=self.host,
+            port=int(self.control_port),
+            timeout=60,
+            stdout=1,  # For debugging
+            stderr=2,  # For debugging
+            stop_signal=signal.SIGINT,
+            envvars={
+                "QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER": self.control_addr,
+                "QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER": self.info_addr,
+            },
+        )
+        try:
+            self.executor.start()
+        except TimeoutExpired as exc:
+            raise exc
 
     def stop(self) -> None:
         """End a Tiled server started with *start_server()*."""
-        qserver_process = self.Popen
+        qserver_process = self.executor
         if qserver_process is None:
             warnings.warn("Cannot stop server that was not started.")
             return
-        qserver_process.terminate()
-        try:
-            qserver_process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            # Something went wrong, kill it the hard way
-            qserver_process.kill()
-
-    def run_queue(self):
-        result = self.api.queue_start()
-        assert result["success"]
-        is_idle = False
-        tick = 0.1
-        while not is_idle:
-            is_idle = self.api.status()["manager_state"] == "idle"
-            time.sleep(tick)
+        qserver_process.stop()
 
 
 # -----------------------------------------------------------------------------
