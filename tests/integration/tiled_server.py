@@ -78,7 +78,7 @@ class TiledServerInfo:
         assert tiled_exe is not None
         tiled_cmd = [tiled_exe, "serve", "config"]
         cmd = " ".join(tiled_cmd)
-        self.executor = HTTPExecutor(cmd, self.uri, "(405|200)")
+        self.executor = HTTPExecutor(cmd, self.uri, "(405|200)", stdout=1, stderr=2)
         self.executor.start()
 
     def stop(self):

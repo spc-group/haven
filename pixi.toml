@@ -189,7 +189,7 @@ qserver = "python -m haven_qserver.launch_queueserver"
 httpserver = "start-bluesky-httpserver"
 
 [feature.qserver.pypi-dependencies]
-bluesky-queueserver = ">=0.0.24"
+bluesky-queueserver = ">=0.0.25"
 bluesky-httpserver = ">=0.0.14, <0.0.15"
 
 [feature.tiled.pypi-dependencies]

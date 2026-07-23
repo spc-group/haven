@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 
 from .qserver import QserverInfo
 from .tiled_server import TiledServerInfo
@@ -114,8 +113,8 @@ def tiled_server(tmp_path, mocker, redisdb, monkeypatch):
         server_info.stop()
 
 
-@pytest_asyncio.fixture(scope="function")
-async def qserver(tmp_path_factory, monkeypatch, redisdb, iconfig_simple):
+@pytest.fixture(scope="function")
+def qserver(tmp_path_factory, monkeypatch, redisdb, iconfig_simple):
     tmp_path = tmp_path_factory.mktemp("qserver")
     monkeypatch.setenv("BLUESKY_DIR", str(tmp_path))
 
@@ -124,7 +123,7 @@ async def qserver(tmp_path_factory, monkeypatch, redisdb, iconfig_simple):
     try:
         # Start the tiled server
         server_info.start()
-        server_info.open_environment()
+        # server_info.open_environment()
         yield server_info
     finally:
         server_info.stop()
