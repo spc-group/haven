@@ -4,14 +4,13 @@ import asyncio
 import logging
 import warnings
 from enum import IntEnum, unique
-from typing import Literal, Mapping
+from typing import Literal
 
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import derived_signal_r, soft_signal_rw
-from ophyd_async.epics.core import epics_signal_r
+from ophyd_async.core import derived_signal_r, derived_signal_rw, soft_signal_rw
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from ..positioner import Positioner
-from .signal import derived_signal_rw, epics_signal_xval
 
 __all__ = ["PssShutter", "ShutterState"]
 
@@ -58,8 +57,8 @@ class PssShutter(Positioner):
         self._allow_open = allow_open
         self._allow_close = allow_close
         # Actuators for opening/closing the shutter
-        self.open_signal = epics_signal_xval(f"{prefix}OpenEPICSC")
-        self.close_signal = epics_signal_xval(f"{prefix}CloseEPICSC")
+        self.open_signal = epics_signal_rw(int, f"{prefix}OpenEPICSC")
+        self.close_signal = epics_signal_rw(int, f"{prefix}CloseEPICSC")
         # Just use convenient values for these since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")
@@ -68,13 +67,10 @@ class PssShutter(Positioner):
         with self.add_children_as_readables():
             self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
         self.setpoint = derived_signal_rw(
-            int,
-            derived_from={
-                "open_signal": self.open_signal,
-                "close_signal": self.close_signal,
-            },
-            forward=self._actuate_shutter,
-            inverse=self._shutter_setpoint,
+            raw_to_derived=self._shutter_setpoint,
+            set_derived=self._actuate_shutter,
+            open_signal=self.open_signal,
+            close_signal=self.close_signal,
         )
         # Extra signals for checking open/close permissions
         # C-hutch searched: S25ID-PSS:StaC:SecureM
@@ -97,7 +93,7 @@ class PssShutter(Positioner):
         )
         super().__init__(name=name, **kwargs)
 
-    async def check_permissions(self, value: ShutterState) -> ShutterState:
+    async def check_permissions(self, value: int) -> ShutterState:
         """Check that the shutter has the right permissions to reach *value*."""
         # Get current permit values from the PSS system, etc
         async with asyncio.TaskGroup() as tg:
@@ -114,7 +110,7 @@ class PssShutter(Positioner):
                 f"Shutter {self.name} is not permitted to be opened "
                 "per iconfig.toml. Set `allow_open` for this shutter."
             )
-        return value
+        return ShutterState(value)
 
     def _open_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
         return all([self._allow_open, searched, aps_key, user_key])
@@ -122,23 +118,20 @@ class PssShutter(Positioner):
     def _close_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
         return all([self._allow_close, searched, aps_key, user_key])
 
-    async def _actuate_shutter(
-        self, value: ShutterState, open_signal, close_signal
-    ) -> Mapping:
+    async def _actuate_shutter(self, setpoint: int) -> None:
         """Open/close the shutter using derived-from signals."""
-        await self.check_permissions(value)
-        if value == ShutterState.OPEN:
-            items = {open_signal: 1}
-        elif value == ShutterState.CLOSED:
-            items = {close_signal: 1}
+        await self.check_permissions(setpoint)
+        if setpoint == ShutterState.OPEN:
+            await self.open_signal.set(1)
+        elif setpoint == ShutterState.CLOSED:
+            await self.close_signal.set(1)
         else:
             raise ValueError(f"Invalid shutter state for {self}")
-        return items
 
-    def _shutter_setpoint(self, values: Mapping, open_signal, close_signal) -> int:
+    def _shutter_setpoint(self, open_signal: int, close_signal: int) -> int:
         """Determine whether the shutter was last opened or closed."""
-        do_open = values[open_signal]
-        do_close = values[close_signal]
+        do_open = open_signal
+        do_close = close_signal
         if do_open and do_close:
             # Shutter is both opening and closing??
             warnings.warn("Unknown shutter setpoint")

@@ -13,7 +13,7 @@ from typing import Annotated as A
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
-    DetectorArmLogic,
+    DetectorAcquireLogic,
     DetectorTriggerLogic,
     SignalR,
     SignalRW,
@@ -22,7 +22,7 @@ from ophyd_async.core import (
     non_zero,
     set_and_wait_for_other_value,
 )
-from ophyd_async.epics.adcore import ADArmLogic, ADImageMode, NDPluginBaseIO
+from ophyd_async.epics.adcore import ADAcquireLogic, ADImageMode, NDPluginBaseIO
 from ophyd_async.epics.core import (
     EpicsDevice,
     EpicsOptions,
@@ -120,7 +120,7 @@ class TetrAmmTriggerLogic(DetectorTriggerLogic):
         )
 
 
-class TetrAmmArmLogic(ADArmLogic):
+class TetrAmmAcquireLogic(ADAcquireLogic):
     async def wait_for_idle(self):
         if self.acquire_status:
             await self.acquire_status
@@ -137,7 +137,7 @@ class BaseTetrAmmDetector(StandardDetector):
 
     def __init__(
         self,
-        arm_logic: DetectorArmLogic | None = None,
+        arm_logic: DetectorAcquireLogic | None = None,
         prefix: str = "",
         plugins: Mapping[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
@@ -149,7 +149,7 @@ class BaseTetrAmmDetector(StandardDetector):
                 setattr(self, plugin_name, plugin)
         trigger_logic = TetrAmmTriggerLogic(driver=self.driver)
         self.add_detector_logics(trigger_logic)
-        arm_logic = TetrAmmArmLogic(self.driver)
+        arm_logic = TetrAmmAcquireLogic(self.driver)
         self.add_detector_logics(arm_logic)
         self.add_config_signals(
             self.driver.model,

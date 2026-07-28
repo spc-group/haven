@@ -2,7 +2,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.core import set_mock_value
+from ophyd_async.core import set_mock_attr, set_mock_value
 
 from firefly.plans.grid_scan import GridScanDisplay
 from haven.devices import SoftGlueFlyerController
@@ -36,7 +36,7 @@ async def display(
             },
         }
     }
-    motor1.describe = mock.AsyncMock(return_value=description)
+    set_mock_attr(motor1, "describe", mock.AsyncMock(return_value=description))
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)

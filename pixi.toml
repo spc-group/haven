@@ -56,7 +56,7 @@ apsbits = { git = "https://github.com/bcda-aps/bits" }
 apstools = ">=1.7.8"
 guarneri = ">=0.5.0"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.17a3", extras = ["ca"] }
+ophyd-async = { version = "==0.20.1", extras = ["ca"] }
 scanspec = "==1.0a2"
 # bluesky-adaptive = ">=0.3.2"
 bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }

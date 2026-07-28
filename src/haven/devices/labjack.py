@@ -49,7 +49,11 @@ from ophyd_async.core import (
     SubsetEnum,
     observe_value,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 
 from .synApps import EpicsRecordInputFields, EpicsRecordOutputFields
 
@@ -79,7 +83,7 @@ class Input(EpicsRecordInputFields):
     """
 
     def __init__(self, prefix: str, name: str = ""):
-        self.process_record = epics_signal_x(f"{prefix}.PROC")
+        self.process_record = epics_triggerable_command(f"{prefix}.PROC")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -306,7 +310,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
             self.TriggerSource, f"{prefix}WaveDigExtTrigger"
         )
         self.ext_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtClock")
-        self.auto_restart = epics_signal_x(f"{prefix}WaveDigAutoRestart")
+        self.auto_restart = epics_triggerable_command(f"{prefix}WaveDigAutoRestart")
         self.run = epics_signal_rw(bool, f"{prefix}WaveDigRun")
         self.read_waveform = epics_signal_rw(
             self.ReadWaveform, f"{prefix}WaveDigReadWF"
@@ -367,7 +371,7 @@ class WaveformGenerator(StandardReadable):
             self.continuous = epics_signal_rw(
                 self.TriggerMode, f"{prefix}WaveGenContinuous"
             )
-        self.run = epics_signal_x(f"{prefix}WaveGenRun")
+        self.run = epics_triggerable_command(f"{prefix}WaveGenRun")
 
         # These signals give a readback based on whether user-defined or
         # internal waves are used
@@ -508,7 +512,7 @@ class LabJackBase(StandardReadable):
                 read_pv=f"{prefix}AiSamplingRate_RBV",
             )
         self.poll_time_ms = epics_signal_r(float, f"{prefix}PollTimeMS")
-        self.device_reset = epics_signal_x(f"{prefix}DeviceReset")
+        self.device_reset = epics_triggerable_command(f"{prefix}DeviceReset")
 
         # Common sub-devices (all labjacks have 2 analog outputs)
         # NB: Analog inputs/digital I/Os are on a per-model basis

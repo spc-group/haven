@@ -15,7 +15,11 @@ from ophyd_async.core import (
     error_if_none,
     observe_value,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 from scanspec.core import Path
 
 from haven import exceptions
@@ -376,10 +380,10 @@ class ProfileMove(StandardReadable):
             Array1D[np.float64], f"{prefix}PulsePositions"
         )
         self.pulse_times = epics_signal_rw(Array1D[np.float64], f"{prefix}Times")
-        self.build = epics_signal_x(f"{prefix}Build")
+        self.build = epics_triggerable_command(f"{prefix}Build")
         self.build_state = epics_signal_r(BuildState, f"{prefix}BuildState")
         self.build_status = epics_signal_r(str, f"{prefix}BuildStatus")
-        self.execute = epics_signal_x(f"{prefix}Execute")
+        self.execute = epics_triggerable_command(f"{prefix}Execute")
         self.execute_state = epics_signal_r(ExecuteState, f"{prefix}ExecuteState")
         self.execute_status = epics_signal_r(str, f"{prefix}ExecuteStatus")
         super().__init__(name=name)

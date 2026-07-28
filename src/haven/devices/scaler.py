@@ -9,7 +9,11 @@ from ophyd_async.core import (
     StrictEnum,
     SubsetEnum,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 
 
 def num_to_char(num):
@@ -115,11 +119,11 @@ class MultiChannelScaler(StandardReadable):
 
     def __init__(self, prefix, channels: Sequence[int], name=""):
         # Controls
-        self.start_all = epics_signal_x(f"{prefix}StartAll")
-        self.stop_all = epics_signal_x(f"{prefix}StopAll")
-        self.erase_all = epics_signal_x(f"{prefix}EraseAll")
-        self.erase_start = epics_signal_x(f"{prefix}EraseStart")
-        self.software_channel_advance = epics_signal_x(
+        self.start_all = epics_triggerable_command(f"{prefix}StartAll")
+        self.stop_all = epics_triggerable_command(f"{prefix}StopAll")
+        self.erase_all = epics_triggerable_command(f"{prefix}EraseAll")
+        self.erase_start = epics_triggerable_command(f"{prefix}EraseStart")
+        self.software_channel_advance = epics_triggerable_command(
             f"{prefix}SoftwareChannelAdvance"
         )
         # Transient states
@@ -198,7 +202,9 @@ class Scaler(StandardReadable):
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
         self.auto_count = epics_signal_rw(bool, f"{prefix}.CONT")
         self.count = epics_signal_rw(bool, f"{prefix}.CNT")
-        self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
+        self.record_dark_current = epics_triggerable_command(
+            f"{prefix}_offset_start.PROC"
+        )
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")
         self.dark_current_time = epics_signal_rw(float, f"{prefix}_offset_time.VAL")

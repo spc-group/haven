@@ -50,6 +50,22 @@ async def test_readable(slits):
     assert "whitebeam_slits-vertical-size" in reading.keys()
     config = await slits.read_configuration()
     expected_config_signals = [
+        "whitebeam_slits-horizontal-center-encoder_resolution",
+        "whitebeam_slits-horizontal-center-motor_resolution",
+        "whitebeam_slits-horizontal-center-steps_per_revolution",
+        "whitebeam_slits-horizontal-center-units_per_revolution",
+        "whitebeam_slits-horizontal-size-encoder_resolution",
+        "whitebeam_slits-horizontal-size-motor_resolution",
+        "whitebeam_slits-horizontal-size-steps_per_revolution",
+        "whitebeam_slits-horizontal-size-units_per_revolution",
+        "whitebeam_slits-vertical-center-encoder_resolution",
+        "whitebeam_slits-vertical-center-motor_resolution",
+        "whitebeam_slits-vertical-center-steps_per_revolution",
+        "whitebeam_slits-vertical-center-units_per_revolution",
+        "whitebeam_slits-vertical-size-encoder_resolution",
+        "whitebeam_slits-vertical-size-motor_resolution",
+        "whitebeam_slits-vertical-size-steps_per_revolution",
+        "whitebeam_slits-vertical-size-units_per_revolution",
         "whitebeam_slits-vertical-size-offset_dir",
         "whitebeam_slits-vertical-size-description",
         "whitebeam_slits-vertical-size-offset",

@@ -2,22 +2,21 @@ import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from ophyd_async.core import DetectorTriggerLogic, PathProvider, SignalR
-from ophyd_async.epics import adcore
+from ophyd_async.core import DetectorTriggerLogic, SignalR
 from ophyd_async.epics.adcore import (
+    ADAcquireLogic,
     ADBaseIO,
-    ADWriterType,
+    ADWriterFactory,
     AreaDetector,
+    NDPluginBaseIO,
     prepare_exposures,
 )
-
-# from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
 
 
-class EigerDriverIO(adcore.ADBaseIO):
+class EigerDriverIO(ADBaseIO):
     def __init__(self, prefix, name=""):
         # Detector information
         self.description = epics_signal_r(str, f"{prefix}Description_RBV")
@@ -58,16 +57,17 @@ class EigerDetector(AreaDetector):
     def __init__(
         self,
         prefix: str,
-        path_provider: PathProvider | None = None,
+        *writer_factories: ADWriterFactory,
         driver_suffix="cam1:",
-        writer_type: ADWriterType | None = ADWriterType.HDF,
-        writer_suffix="HDF1:",
-        plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
+        override_deadtime: float | None = None,
+        plugins: dict[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
         name: str = "",
-    ):
-        if path_provider is None:
-            path_provider = default_path_provider()
+    ) -> None:
+        if len(writer_factories) == 0:
+            writer_factories = (
+                ADWriterFactory.hdf(default_path_provider(), writer_suffix="HDF1:"),
+            )
         # Area detector IO devices
         driver = EigerDriverIO(f"{prefix}{driver_suffix}")
         config_sigs = (
@@ -80,13 +80,11 @@ class EigerDetector(AreaDetector):
             *config_sigs,
         )
         super().__init__(
-            prefix=prefix,
-            driver=driver,
-            arm_logic=adcore.ADArmLogic(driver),
+            driver,
+            prefix,
+            *writer_factories,
+            acquire_logic=ADAcquireLogic(driver),
             trigger_logic=EigerTriggerLogic(driver),
-            path_provider=path_provider,
-            writer_type=writer_type,
-            writer_suffix=writer_suffix,
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,

@@ -21,6 +21,14 @@ async def test_signals():
     # Now for the configuration
     config = await mono.read_configuration()
     assert set(config.keys()) == {
+        "secondary_mono-bragg-encoder_resolution",
+        "secondary_mono-bragg-motor_resolution",
+        "secondary_mono-bragg-steps_per_revolution",
+        "secondary_mono-bragg-units_per_revolution",
+        "secondary_mono-energy-encoder_resolution",
+        "secondary_mono-energy-motor_resolution",
+        "secondary_mono-energy-steps_per_revolution",
+        "secondary_mono-energy-units_per_revolution",
         "secondary_mono-bragg-description",
         "secondary_mono-bragg-motor_egu",
         "secondary_mono-bragg-offset",

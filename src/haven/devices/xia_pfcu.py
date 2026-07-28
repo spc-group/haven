@@ -15,12 +15,13 @@ from ophyd_async.core import (
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
+    derived_signal_r,
+    derived_signal_rw,
     soft_signal_rw,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from haven.devices.shutter import ShutterState
-from haven.devices.signal import derived_signal_r, derived_signal_rw
 from haven.positioner import Positioner
 
 __all__ = ["PFCUFilterBank", "PFCUFilter", "PFCUShutter"]
@@ -74,13 +75,13 @@ class Material(SubsetEnum):
     OTHER = "Other"
 
 
-def normalize_readback(values, readback):
+def normalize_readback(readback: FilterPosition) -> int:
     return {
         FilterPosition.OUT: FilterState.OUT,
         FilterPosition.IN: FilterState.IN,
         FilterPosition.SHORT_CIRCUIT: FilterState.FAULT,
         FilterPosition.OPEN_CIRCUIT: FilterState.FAULT,
-    }.get(values[readback], FilterState.UNKNOWN)
+    }.get(readback, FilterState.UNKNOWN)
 
 
 class PFCUFilter(Positioner):
@@ -100,9 +101,8 @@ class PFCUFilter(Positioner):
         self._readback = epics_signal_r(FilterPosition, f"{prefix}_RBV")
         with self.add_children_as_readables():
             self.readback = derived_signal_r(
-                int,
-                derived_from={"readback": self._readback},
-                inverse=normalize_readback,
+                raw_to_derived=normalize_readback,
+                readback=self._readback,
             )
         self.setpoint = epics_signal_rw(FilterSetpoint, prefix)
         # Just use convenient values for positioner signals since there's no real position
@@ -114,10 +114,10 @@ class PFCUFilter(Positioner):
 
 shutter_state_map = {
     # (top filter, bottom filter): state
-    (ShutterState.OPEN, ShutterState.CLOSED): ShutterState.OPEN,
-    (ShutterState.CLOSED, ShutterState.OPEN): ShutterState.CLOSED,
-    (ShutterState.OPEN, ShutterState.OPEN): ShutterState.FAULT,
-    (ShutterState.CLOSED, ShutterState.CLOSED): ShutterState.FAULT,
+    (FilterState.OUT, FilterState.IN): ShutterState.OPEN,
+    (FilterState.IN, FilterState.OUT): ShutterState.CLOSED,
+    (FilterState.OUT, FilterState.OUT): ShutterState.FAULT,
+    (FilterState.IN, FilterState.IN): ShutterState.FAULT,
 }
 
 
@@ -226,11 +226,14 @@ class PFCUShutter(Positioner):
             "readback": filter_bank.readback,
         }
         self.setpoint = derived_signal_rw(
-            int, derived_from=parent_signals, forward=self.forward, inverse=self.inverse
+            raw_to_derived=self.inverse,
+            set_derived=self.forward,
+            **parent_signals,
         )
         with self.add_children_as_readables():
             self.readback = derived_signal_r(
-                int, derived_from=parent_signals, inverse=self.inverse
+                raw_to_derived=self.inverse,
+                **parent_signals,
             )
         # Just use convenient values for positioner signals since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
@@ -242,30 +245,30 @@ class PFCUShutter(Positioner):
             **kwargs,
         )
 
-    async def forward(self, value, setpoint, readback):
+    async def forward(self, setpoint: int) -> None:
         """Convert shutter state to filter bank state."""
         # Bit masking to set both blades together
-        readback_value = await readback.get_value()
-        num_bits = len(readback_value)
-        old_bits = int(readback_value, 2)
-        if value == ShutterState.OPEN:
+        readback = await self.parent.parent.readback.get_value()
+        num_bits = len(readback)
+        old_bits = int(readback, 2)
+        if setpoint == ShutterState.OPEN:
             open_bits = self.bottom_mask()
             close_bits = self.top_mask()
-        elif value == ShutterState.CLOSED:
+        elif setpoint == ShutterState.CLOSED:
             close_bits = self.bottom_mask()
             open_bits = self.top_mask()
         else:
-            raise ValueError(bin(value))
+            raise ValueError(bin(setpoint))
         new_bits = (old_bits | open_bits) & (0b1111 - close_bits)
         log.debug(f"{old_bits=:b}, {open_bits=:b}, {close_bits=:b}, {new_bits=:b}")
-        return {setpoint: f"{new_bits:0b}".zfill(num_bits)}
+        await self.parent.parent.setpoint.set(f"{new_bits:0b}".zfill(num_bits))
 
-    def inverse(self, values, readback, **kwargs):
+    def inverse(self, readback: ConfigBits, setpoint: ConfigBits) -> int:
         """Convert filter bank state to shutter state."""
-        bits = int(values[readback], 2)
+        bits = int(readback, base=2)
         # Determine which filters are open and closed
-        top_position = int(bool(bits & self.top_mask()))
-        bottom_position = int(bool(bits & self.bottom_mask()))
+        top_position = FilterState(int(bool(bits & self.top_mask())))
+        bottom_position = FilterState(int(bool(bits & self.bottom_mask())))
         result = shutter_state_map[(top_position, bottom_position)]
         return result
 

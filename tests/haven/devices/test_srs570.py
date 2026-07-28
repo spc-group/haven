@@ -9,7 +9,7 @@ from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
 @pytest.fixture()
 async def preamp():
-    preamp = SRS570PreAmplifier("255idcVEM:SR02:", name="")
+    preamp = SRS570PreAmplifier("255idcVEM:SR02:", name="preamp")
     # Derived signals should not be mocked
     await preamp.connect(mock=True)
     await asyncio.gather(

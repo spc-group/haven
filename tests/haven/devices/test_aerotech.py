@@ -39,14 +39,22 @@ async def test_aerotech_signals(aerotech):
     config = await aerotech.read_configuration()
     assert set(config.keys()) == {
         "aerotech-horizontal-description",
+        "aerotech-horizontal-encoder_resolution",
         "aerotech-horizontal-motor_egu",
+        "aerotech-horizontal-motor_resolution",
         "aerotech-horizontal-offset",
         "aerotech-horizontal-offset_dir",
+        "aerotech-horizontal-steps_per_revolution",
+        "aerotech-horizontal-units_per_revolution",
         "aerotech-horizontal-velocity",
         "aerotech-vertical-description",
+        "aerotech-vertical-encoder_resolution",
         "aerotech-vertical-motor_egu",
+        "aerotech-vertical-motor_resolution",
         "aerotech-vertical-offset",
         "aerotech-vertical-offset_dir",
+        "aerotech-vertical-steps_per_revolution",
+        "aerotech-vertical-units_per_revolution",
         "aerotech-vertical-velocity",
         # Profile move parameters
         "aerotech-profile_move-point_count",

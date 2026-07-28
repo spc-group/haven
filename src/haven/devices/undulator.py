@@ -46,13 +46,12 @@ from ophyd_async.epics.core import PvSuffix as PV
 from ophyd_async.epics.core import (
     epics_signal_r,
     epics_signal_rw,
-    epics_signal_x,
+    epics_triggerable_command,
 )
 from pydantic import Field
 from scanspec.core import Path as ScanPath
 
 from haven import exceptions
-from haven.devices.signal import derived_signal_x
 from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
@@ -106,8 +105,6 @@ class BasePositioner(Positioner):
         self,
         *,
         prefix: str,
-        actuate_signal: Signal,
-        stop_signal: Signal,
         done_signal: Signal,
         name: str = "",
         **kwargs,
@@ -118,14 +115,21 @@ class BasePositioner(Positioner):
             float, initial_value=1
         )  # Need to figure out what this value is
         # Add control signals that depend on the parent
-        if actuate_signal is not None:
-            self.actuate = derived_signal_x(
-                derived_from={"parent_signal": actuate_signal}
-            )
-        self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
+        # if actuate_signal is not None:
+        #     self.actuate = derived_triggerable_command(
+        #         derived_from={"parent_signal": actuate_signal}
+        #     )
         if done_signal is not None:
             self.done = derived_signal_r(self._done_to_done, done=done_signal)
         super().__init__(name=name, **kwargs)
+
+    @property
+    def actuate(self):
+        return self.parent.start_button
+
+    @property
+    def stop_signal(self):
+        return self.parent.stop_button
 
     @staticmethod
     def _done_to_done(done: bool) -> bool:
@@ -463,8 +467,8 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
     ):
         self._offset_table = offset_table
         # Signals for moving the undulator
-        self.start_button = epics_signal_x(f"{prefix}StartC.VAL")
-        self.stop_button = epics_signal_x(f"{prefix}StopC.VAL")
+        self.start_button = epics_triggerable_command(f"{prefix}StartC.VAL")
+        self.stop_button = epics_triggerable_command(f"{prefix}StopC.VAL")
         self.busy = epics_signal_r(bool, f"{prefix}BusyM.VAL")
         self.done = epics_signal_r(bool, f"{prefix}BusyDeviceM.VAL")
         self.motor_drive_status = epics_signal_r(int, f"{prefix}MotorDriveStatusM.VAL")
@@ -484,28 +488,20 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
         with self.add_children_as_readables():
             self.energy = EnergyPositioner(
                 prefix=f"{prefix}Energy",
-                actuate_signal=self.start_button,
-                stop_signal=self.stop_button,
                 done_signal=self.busy,
                 offset_pv=offset_pv,
                 minimum_move=minimum_move,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",
-                actuate_signal=self.start_button,
-                stop_signal=self.stop_button,
                 done_signal=self.busy,
             )
             self.gap = UndulatorPositioner(
                 prefix=f"{prefix}Gap",
-                actuate_signal=self.start_button,
-                stop_signal=self.stop_button,
                 done_signal=self.busy,
             )
             self.gap_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperGap",
-                actuate_signal=self.start_button,
-                stop_signal=self.stop_button,
                 done_signal=self.busy,
             )
         # Miscellaneous control signals

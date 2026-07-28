@@ -1,9 +1,10 @@
 import asyncio
 from io import StringIO
+from unittest import mock
 
 import numpy as np
 import pytest
-from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.core import set_mock_attr, set_mock_value
 from ophyd_async.testing import assert_value
 from scanspec.core import Path
 from scanspec.specs import Line
@@ -60,10 +61,19 @@ async def test_data_keys(undulator):
 
 
 async def test_stop_energy(undulator):
-    stop_mock = get_mock_put(undulator.stop_button)
-    assert not stop_mock.called
+    stop_mock = set_mock_attr(undulator, "stop_button", mock.AsyncMock())
+    assert not stop_mock.trigger.called
     await undulator.energy.stop()
-    assert stop_mock.called
+    assert stop_mock.trigger.called
+
+
+async def test_actuate_signal(undulator):
+    start_mock = set_mock_attr(undulator, "start_button", mock.AsyncMock())
+    assert not start_mock.trigger.called
+    aw = undulator.energy.set(1000)
+    await asyncio.sleep(0.05)  # Sleep to let the move start
+    set_mock_value(undulator.busy, 0)
+    assert start_mock.trigger.called
 
 
 # Work-around to make a mocker async iterable

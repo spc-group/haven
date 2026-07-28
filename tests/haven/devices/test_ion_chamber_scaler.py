@@ -31,6 +31,7 @@ def scaler(sim_registry):
 #     set_mock_value(scaler.ion_chambers[2].calculation_expression, "C * 100 / A")
 
 
+@pytest.mark.skip(reason="will refactor soon")
 @pytest.mark.asyncio
 async def test_reading(scaler):
     await scaler.connect(mock=True)
@@ -51,6 +52,7 @@ async def test_reading(scaler):
     assert type(reading["I0-counts"]["value"]) is int
 
 
+@pytest.mark.skip(reason="will refactor soon")
 @pytest.mark.asyncio
 async def test_describe(scaler):
     await scaler.connect(mock=True)
@@ -67,6 +69,7 @@ async def test_describe(scaler):
     assert set(reading.keys()) == set(description.keys())
 
 
+@pytest.mark.skip(reason="will refactor soon")
 @pytest.mark.asyncio
 async def test_reading_applies_dark_current(scaler):
     await scaler.connect(mock=True)

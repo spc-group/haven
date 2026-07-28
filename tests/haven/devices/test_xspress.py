@@ -1,9 +1,16 @@
 import asyncio
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
-from ophyd_async.core import DetectorTrigger, TriggerInfo, get_mock_put, set_mock_value
+from ophyd_async.core import (
+    DetectorTrigger,
+    TriggerInfo,
+    get_mock_put,
+    set_mock_attr,
+    set_mock_value,
+)
 from ophyd_async.epics.adcore import ADBaseDataType
 from ophyd_async.testing import assert_value
 
@@ -22,7 +29,7 @@ async def detector():
         sensor_thickness_mm=1,
     )
     await det.connect(mock=True)
-    set_mock_value(det.writer.file_path_exists, True)
+    set_mock_value(det.hdf.file_path_exists, True)
     return det
 
 
@@ -51,6 +58,8 @@ async def test_configuration(detector):
     assert f"{detector.name}-ev_per_bin" in config
     assert f"{detector.name}-sensor_material" in config
     assert f"{detector.name}-sensor_thickness" in config
+    assert f"{detector.name}-driver-acquire_period" in config
+    assert f"{detector.name}-driver-acquire_time" in config
     desc = await detector.describe_configuration()
     assert desc["vortex_me4-sensor_thickness"]["units"] == "mm"
 
@@ -59,17 +68,20 @@ async def test_configuration(detector):
 async def test_trigger(detector):
     status = detector.trigger()
     await asyncio.sleep(0.2)  # Let the event loop turn
-    set_mock_value(detector.writer.num_captured, 1)
+    set_mock_value(detector.hdf.num_captured, 1)
     await status
     # Check that signals were set
     get_mock_put(detector.driver.num_images).assert_called_once_with(1)
 
 
 async def test_stage(detector):
-    assert not get_mock_put(detector.driver.erase).called
+    erase_mock = set_mock_attr(detector.driver, "erase", AsyncMock())
+    erase_on_start_mock = set_mock_attr(detector.driver, "erase_on_start", AsyncMock())
+    assert not erase_mock.trigger.called
     await detector.stage()
-    get_mock_put(detector.driver.erase_on_start).assert_called_once_with(False)
-    assert get_mock_put(detector.driver.erase).called
+    erase_on_start_mock.set.assert_called_once_with(False)
+    assert erase_mock.trigger.called
+    assert erase_mock.trigger.called
 
 
 async def test_data_type(detector):

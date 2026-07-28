@@ -15,7 +15,6 @@ https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/i
 import asyncio
 import logging
 import math
-from collections import OrderedDict
 from typing import Optional, Type, TypeVar
 
 from ophyd_async.core import (
@@ -25,13 +24,14 @@ from ophyd_async.core import (
     Device,
     SignalRW,
     StrictEnum,
+    derived_signal_r,
+    derived_signal_rw,
 )
-from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import epics_signal_rw, epics_triggerable_command
 from ophyd_async.epics.core._signal import _epics_signal_backend
 from ophyd_async.epics.core._util import EpicsOptions
 
 from .. import exceptions
-from .signal import derived_signal_r, derived_signal_rw
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +345,7 @@ class SRS570PreAmplifier(Device):
         self.offset_fine = epics_signal_rw(int, f"{prefix}off_u_put")
         self.offset_cal = epics_signal_rw(Cal, f"{prefix}offset_cal")
 
-        self.set_all = epics_signal_x(f"{prefix}init.PROC")
+        self.set_all = epics_triggerable_command(f"{prefix}init.PROC")
 
         self.bias_value = epics_signal_rw(int, f"{prefix}bias_put")
         self.bias_on = epics_signal_rw(bool, f"{prefix}bias_on")
@@ -354,7 +354,7 @@ class SRS570PreAmplifier(Device):
             self.FilterType,
             f"{prefix}filter_type",
         )
-        self.filter_reset = epics_signal_x(f"{prefix}filter_reset.PROC")
+        self.filter_reset = epics_triggerable_command(f"{prefix}filter_reset.PROC")
         self.filter_lowpass = epics_signal_rw(self.FilterLowPass, f"{prefix}low_freq")
         self.filter_highpass = epics_signal_rw(
             self.FilterHighPass, f"{prefix}high_freq"
@@ -369,31 +369,31 @@ class SRS570PreAmplifier(Device):
             "sens_unit": self.sensitivity_unit,
         }
         self.gain = derived_signal_r(
-            float,
-            derived_from=sens_signals,
-            inverse=self._gain_from_sensitivity,
-            units="V A⁻",
+            raw_to_derived=self._gain_from_sensitivity,
+            derived_units="V A⁻",
+            **sens_signals,
         )
         self.gain_db = derived_signal_r(
-            float, derived_from={"gain": self.gain}, inverse=self._dB, units="dB"
+            raw_to_derived=self._dB, derived_units="dB", gain=self.gain
         )
         level_signals = dict(
             offset_value=self.offset_value, offset_unit=self.offset_unit, **sens_signals
         )
         self.gain_level = derived_signal_rw(
-            int,
-            derived_from=level_signals,
-            forward=self._from_gain_level,
-            inverse=self._to_gain_level,
+            raw_to_derived=self._to_gain_level,
+            set_derived=self._from_gain_level,
+            **level_signals,
         )
         super().__init__(name=name)
 
-    def _gain_from_sensitivity(self, values, *, sens_value, sens_unit):
+    def _gain_from_sensitivity(
+        self, sens_value: SensValue, sens_unit: SensUnit
+    ) -> float:
         """
         Amplifier gain (V/A), as floating-point number.
         """
         # Convert the sensitivity to a proper number
-        val = float(values[sens_value])
+        val = float(sens_value)
         # Determine multiplier based on the gain unit
         amps = {
             "pA": 1e-12,
@@ -401,23 +401,21 @@ class SRS570PreAmplifier(Device):
             "uA": 1e-6,
             "mA": 1e-3,
         }
-        multiplier = amps[values[sens_unit].split("/")[0]]
+        multiplier = amps[sens_unit.split("/")[0]]
         inverse_gain = val * multiplier
         return 1 / inverse_gain
 
-    def _dB(self, values, *, gain):
+    def _dB(self, gain: float) -> float:
         """Convert a gain to be in decibels."""
         try:
-            return 10 * math.log10(values[gain])
+            return 10 * math.log10(gain)
         except ValueError:
             return float("nan")
 
-    async def _from_gain_level(
-        self, value, *, sens_value, sens_unit, offset_value, offset_unit
-    ):
+    async def _from_gain_level(self, gain_level: int) -> None:
         """Compute the sensitivity settings for a given level of gain."""
         # Determine new values
-        new_level = 27 - value
+        new_level = 27 - gain_level
         new_offset = max(new_level + self.offset_difference, 0)
         # Check for out of bounds
         lmin, lmax = (0, 27)
@@ -430,12 +428,12 @@ class SRS570PreAmplifier(Device):
         elif new_level > lmax:
             raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
-        result = OrderedDict()
-        result[sens_unit] = self._level_to_unit(new_level)
-        result[sens_value] = self._level_to_value(new_level)
-        result[offset_value] = self._level_to_value(new_offset)
-        result[offset_unit] = self._level_to_unit(new_offset).split("/")[0]
-        return result
+        await asyncio.gather(
+            self.sensitivity_unit.set(self._level_to_unit(new_level)),
+            self.sensitivity_value.set(self._level_to_value(new_level)),
+            self.offset_value.set(self._level_to_value(new_offset)),
+            self.offset_unit.set(self._level_to_unit(new_offset).split("/")[0]),
+        )
 
     def _level_to_value(self, level):
         """Convert a gain index level to its string value."""
@@ -461,10 +459,14 @@ class SRS570PreAmplifier(Device):
         return new_level
 
     def _to_gain_level(
-        self, values, *, sens_value, sens_unit, offset_value=None, offset_unit=None
-    ):
+        self,
+        sens_value: SensValue,
+        sens_unit: SensUnit,
+        offset_value: SensValue = None,
+        offset_unit: OffsetUnit = None,
+    ) -> int:
         """Compute the level of gain for given sensitivity settings."""
-        return self._sensitivity_to_level(values[sens_value], values[sens_unit])
+        return self._sensitivity_to_level(sens_value, sens_unit)
 
 
 # -----------------------------------------------------------------------------

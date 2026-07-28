@@ -2,7 +2,11 @@ import asyncio
 
 import pytest
 from ophyd_async.core import get_mock_put, set_mock_value
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 
 from haven.positioner import Positioner
 
@@ -13,7 +17,7 @@ class MyPositioner(Positioner):
     def __init__(self, name: str = "", put_complete=False):
         self.setpoint = epics_signal_rw(float, ".VAL")
         self.readback = epics_signal_r(float, ".RBV")
-        self.actuate = epics_signal_x("StartC.VAL")
+        self.actuate = epics_triggerable_command("StartC.VAL")
         self.done = epics_signal_r(int, "BusyDeviceM.VAL")
         self.stop_signal = epics_signal_rw(int, "StopC.VAL")
         self.precision = epics_signal_rw(int, ".PREC")

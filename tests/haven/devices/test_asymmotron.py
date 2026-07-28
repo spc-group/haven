@@ -219,6 +219,14 @@ async def test_readings(xtal):
     assert xtal.hints == {"fields": ["analyzer-energy"]}
     config = await xtal.read_configuration()
     assert set(config.keys()) == {
+        "analyzer-chord-encoder_resolution",
+        "analyzer-chord-motor_resolution",
+        "analyzer-chord-steps_per_revolution",
+        "analyzer-chord-units_per_revolution",
+        "analyzer-crystal_pitch-encoder_resolution",
+        "analyzer-crystal_pitch-motor_resolution",
+        "analyzer-crystal_pitch-steps_per_revolution",
+        "analyzer-crystal_pitch-units_per_revolution",
         "analyzer-asymmetry_angle",
         "analyzer-bragg_offset",
         "analyzer-crystal_yaw",

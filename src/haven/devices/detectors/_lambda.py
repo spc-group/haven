@@ -5,16 +5,15 @@ from dataclasses import dataclass
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     DetectorTriggerLogic,
-    PathProvider,
     SignalR,
     StrictEnum,
     SubsetEnum,
     observe_value,
 )
 from ophyd_async.epics.adcore import (
-    ADArmLogic,
+    ADAcquireLogic,
     ADBaseIO,
-    ADWriterType,
+    ADWriterFactory,
     AreaDetector,
     NDPluginBaseIO,
     prepare_exposures,
@@ -105,18 +104,19 @@ class LambdaDetector(AreaDetector):
     def __init__(
         self,
         prefix: str,
-        path_provider: PathProvider | None = None,
-        drv_suffix="cam1:",
-        writer_type: ADWriterType = ADWriterType.HDF,
-        writer_suffix="HDF1:",
-        name: str = "",
-        config_sigs: Sequence[SignalR] = (),
+        *writer_factories: ADWriterFactory,
+        driver_suffix="cam1:",
+        override_deadtime: float | None = None,
         plugins: dict[str, NDPluginBaseIO] | None = None,
-    ):
-        if path_provider is None:
-            path_provider = default_path_provider()
+        config_sigs: Sequence[SignalR] = (),
+        name: str = "",
+    ) -> None:
+        if len(writer_factories) == 0:
+            writer_factories = (
+                ADWriterFactory.hdf(default_path_provider(), writer_suffix="HDF1:"),
+            )
         # Area detector IO devices
-        driver = LambdaDriverIO(f"{prefix}{drv_suffix}")
+        driver = LambdaDriverIO(f"{prefix}{driver_suffix}")
         config_sigs = (
             driver.operating_mode,
             driver.dual_mode,
@@ -127,13 +127,11 @@ class LambdaDetector(AreaDetector):
             *config_sigs,
         )
         super().__init__(
-            prefix=prefix,
-            driver=driver,
-            arm_logic=ADArmLogic(driver),
+            driver,
+            prefix,
+            *writer_factories,
+            acquire_logic=ADAcquireLogic(driver),
             trigger_logic=LambdaTriggerLogic(driver),
-            path_provider=path_provider,
-            writer_type=writer_type,
-            writer_suffix=writer_suffix,
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,

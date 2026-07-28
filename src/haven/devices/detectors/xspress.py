@@ -29,7 +29,6 @@ from ophyd_async.core import (
     DetectorTriggerLogic,
     Device,
     DeviceVector,
-    PathProvider,
     SignalR,
     StrictEnum,
     TriggerInfo,
@@ -37,10 +36,10 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics.adcore import (
-    ADArmLogic,
+    ADAcquireLogic,
     ADBaseDataType,
     ADBaseIO,
-    ADWriterType,
+    ADWriterFactory,
     AreaDetector,
     NDAttributeDataType,
     NDAttributeParam,
@@ -48,7 +47,11 @@ from ophyd_async.epics.adcore import (
     ndattributes_to_xml,
     prepare_exposures,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 
 from .area_detectors import default_path_provider
 
@@ -70,7 +73,7 @@ class XspressDriverIO(ADBaseIO):
     def __init__(self, prefix, *, name=""):
         self.trigger_mode = epics_signal_rw(XspressTriggerMode, f"{prefix}TriggerMode")
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
-        self.erase = epics_signal_x(f"{prefix}ERASE")
+        self.erase = epics_triggerable_command(f"{prefix}ERASE")
         self.deadtime_correction = epics_signal_rw(bool, f"{prefix}CTRL_DTC")
         self.number_of_elements = epics_signal_r(int, f"{prefix}MaxSizeY_RBV")
         self.data_type = derived_signal_r(
@@ -180,12 +183,10 @@ class Xspress3Detector(AreaDetector):
     def __init__(
         self,
         prefix: str,
+        *writer_factories: ADWriterFactory,
         sensor_material: str,
         sensor_thickness_mm: int | float,
-        path_provider: PathProvider | None = None,
         driver_suffix="det1:",
-        writer_type: ADWriterType | None = ADWriterType.HDF,
-        writer_suffix: str | None = None,
         plugins: dict[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
         name: str = "",
@@ -208,11 +209,11 @@ class Xspress3Detector(AreaDetector):
         )
         # Area detector IO and control
         driver = XspressDriverIO(f"{prefix}{driver_suffix}")
-        if path_provider is None:
-            path_provider = default_path_provider()
+        if len(writer_factories) == 0:
+            writer_factories = (
+                ADWriterFactory.hdf(default_path_provider(), writer_suffix="HDF1:"),
+            )
         config_sigs = (
-            driver.acquire_period,
-            driver.acquire_time,
             self.ev_per_bin,
             self.sensor_material,
             self.sensor_thickness,
@@ -223,13 +224,11 @@ class Xspress3Detector(AreaDetector):
         # https://github.com/bluesky/ophyd-async/issues/821
         # writer._plugins["camera"] = driver
         super().__init__(
-            prefix=prefix,
-            driver=driver,
-            arm_logic=ADArmLogic(driver),
+            driver,
+            prefix,
+            *writer_factories,
+            acquire_logic=ADAcquireLogic(driver),
             trigger_logic=XspressTriggerLogic(driver),
-            path_provider=path_provider,
-            writer_type=writer_type,
-            writer_suffix=writer_suffix,
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,

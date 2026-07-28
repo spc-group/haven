@@ -7,7 +7,11 @@ from ophyd_async.core import (
     StrictEnum,
     SubsetEnum,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_triggerable_command,
+)
 
 
 class AlarmStatus(SubsetEnum):
@@ -84,7 +88,7 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
         self.new_alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.NSEV")
         self.disable_alarm_severity = epics_signal_rw(AlarmSeverity, f"{prefix}.DISS")
         self.processing_active = epics_signal_r(int, f"{prefix}.PACT")
-        self.process_record = epics_signal_x(f"{prefix}.PROC")
+        self.process_record = epics_triggerable_command(f"{prefix}.PROC")
         self.trace_processing = epics_signal_rw(int, f"{prefix}.TPRO")
 
         super().__init__(name=name)

@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from ophyd_async.core import set_mock_value
+from ophyd_async.core import set_mock_attr, set_mock_value
 
 from firefly.devices.robot import RobotDisplay
 from haven.devices import Motor
@@ -25,7 +25,7 @@ async def motor(sim_registry):
             },
         }
     }
-    m1.describe = mock.AsyncMock(return_value=description)
+    set_mock_attr(m1, "describe", mock.AsyncMock(return_value=description))
     sim_registry.register(m1)
     return m1
 
@@ -84,6 +84,6 @@ async def test_nonnumeric_motor_parameters(display, motor):
             "source": "ca://25idc:simMotor:m2.RBV",
         }
     }
-    motor.describe = mock.AsyncMock(return_value=description)
+    set_mock_attr(motor, "describe", mock.AsyncMock(return_value=description))
     await display.regions.update_device_parameters(motor, row=1)
     assert not spin_box.isEnabled()

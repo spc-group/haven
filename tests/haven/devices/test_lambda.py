@@ -7,6 +7,7 @@ from ophyd_async.core import (
     UUIDFilenameProvider,
     set_mock_value,
 )
+from ophyd_async.epics.adcore import ADWriterFactory
 from ophyd_async.testing import assert_value
 
 from haven.devices import LambdaDetector
@@ -18,8 +19,11 @@ async def detector(tmp_path):
         filename_provider=UUIDFilenameProvider(),
         directory_path=tmp_path,
     )
+    writer = ADWriterFactory.hdf(path_provider, writer_suffix="HDF1:")
     detector = LambdaDetector(
-        prefix="255idLambda:", name="lambda_flex", path_provider=path_provider
+        "255idLambda:",
+        writer,
+        name="lambda_flex",
     )
     await detector.connect(mock=True)
     # Registry with the simulated registry
@@ -66,7 +70,7 @@ async def test_configuration(detector):
 
 @pytest.mark.asyncio
 async def test_prepare_internal(detector):
-    set_mock_value(detector.writer.file_path_exists, True)
+    set_mock_value(detector.hdf.file_path_exists, True)
     tinfo = TriggerInfo(collections_per_event=5, livetime=2.3, deadtime=0.2)
     await detector.prepare(tinfo)
     await assert_value(detector.driver.trigger_mode, "Internal")
@@ -78,7 +82,7 @@ async def test_prepare_internal(detector):
 
 @pytest.mark.asyncio
 async def test_prepare_external(detector):
-    set_mock_value(detector.writer.file_path_exists, True)
+    set_mock_value(detector.hdf.file_path_exists, True)
     tinfo = TriggerInfo(
         trigger=DetectorTrigger.EXTERNAL_EDGE,
         collections_per_event=5,

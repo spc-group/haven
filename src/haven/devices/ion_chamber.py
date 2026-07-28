@@ -62,7 +62,6 @@ def load_ion_chambers(scalers, labjacks, ion_chambers):
             for ic_cfg in ion_chambers
             if ic_cfg["scaler"] == cfg["name"]
         }
-        print(ic_configs, cfg["name"])
         _scalers[cfg["name"]] = IonChamberScaler(
             name=cfg["name"], prefix=cfg["prefix"], ion_chambers=ic_configs
         )
@@ -164,7 +163,6 @@ class IonChamber(StandardReadable, Triggerable):
             [
                 self.mcs.scaler.channels[0].net_count,
                 self.mcs.scaler.channels[0].raw_count,
-                self.scaler_channel.net_count,
                 self.scaler_channel.raw_count,
                 self.mcs.scaler.elapsed_time,
             ],
@@ -466,7 +464,7 @@ class IonChamber(StandardReadable, Triggerable):
         await self.mcs.num_channels.set(num_channels)
         # Start acquiring if another ion chamber hasn't done so already
         if await self.mcs.acquiring.get_value() != self.mcs.Acquiring.ACQUIRING:
-            self.mcs.erase_start.trigger()
+            await self.mcs.erase_start.trigger()
             # Wait for acquisition to start
             await wait_for_value(
                 self.mcs.acquiring,
@@ -474,7 +472,6 @@ class IonChamber(StandardReadable, Triggerable):
                 timeout=DEFAULT_TIMEOUT,
             )
         self._fly_start_timestamp_local = time.time()
-        return
 
     @AsyncStatus.wrap
     async def complete(self):

@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from ophyd_async.core import set_mock_value
+from ophyd_async.core import set_mock_attr, set_mock_value
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.devices import SoftGlueFlyerController
@@ -28,7 +28,7 @@ async def motors(sim_registry, sync_motors):
             },
         }
     }
-    motor1.describe = mock.AsyncMock(return_value=description)
+    set_mock_attr(motor1, "describe", mock.AsyncMock(return_value=description))
     motor2 = Motor(name="async_motor_2", prefix="")
     # Connect motors
     async_motors = [motor1, motor2]

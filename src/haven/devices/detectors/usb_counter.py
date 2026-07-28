@@ -11,7 +11,7 @@ from event_model import DataKey
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     Array1D,
-    DetectorArmLogic,
+    DetectorAcquireLogic,
     DetectorDataLogic,
     DetectorTriggerLogic,
     DeviceVector,
@@ -177,7 +177,7 @@ class USBCounterTriggerLogic(DetectorTriggerLogic):
 
 
 @dataclass
-class USBCounterArmLogic(DetectorArmLogic):
+class USBCounterAcquireLogic(DetectorAcquireLogic):
     def __init__(self, driver: USBCounterDriverIO):
         self.driver = driver
 
@@ -190,7 +190,7 @@ class USBCounterArmLogic(DetectorArmLogic):
             timeout=DEFAULT_TIMEOUT,
         )
 
-    async def arm(self):
+    async def start_acquiring(self):
         self.acquire_status = await set_and_wait_for_other_value(
             set_signal=self.driver.erase_start,
             set_value=True,
@@ -200,7 +200,7 @@ class USBCounterArmLogic(DetectorArmLogic):
             timeout=DEFAULT_TIMEOUT,
         )
 
-    async def disarm(self, on_unstage: bool):
+    async def ensure_stopped(self):
         disarm_status = await set_and_wait_for_other_value(
             set_signal=self.driver.stop_all,
             set_value=True,
@@ -215,7 +215,7 @@ class USBCounterArmLogic(DetectorArmLogic):
 class USBCounter(StandardDetector):
     def __init__(
         self,
-        arm_logic: DetectorArmLogic | None = None,
+        arm_logic: DetectorAcquireLogic | None = None,
         prefix: str = "",
         channels: Sequence[int] = range(1, 8),
         plugins: Mapping[str, NDPluginBaseIO] | None = None,
@@ -229,7 +229,7 @@ class USBCounter(StandardDetector):
                 setattr(self, plugin_name, plugin)
         trigger_logic = USBCounterTriggerLogic(driver=self.driver)
         self.add_detector_logics(trigger_logic)
-        arm_logic = USBCounterArmLogic(self.driver)
+        arm_logic = USBCounterAcquireLogic(self.driver)
         step_logic = StepDataLogic(driver=self.driver)
         self.add_detector_logics(arm_logic, step_logic)
         self.add_config_signals(

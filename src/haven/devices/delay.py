@@ -22,7 +22,7 @@ from ophyd_async.core import (
 from ophyd_async.epics.core import (
     epics_signal_r,
     epics_signal_rw,
-    epics_signal_x,
+    epics_triggerable_command,
 )
 
 
@@ -83,8 +83,12 @@ class DG645Output(StandardReadable):
             self.polarity = epics_signal_io(self.Polarity, f"{prefix}OutputPolarityB")
             self.amplitude = epics_signal_io(float, f"{prefix}OutputAmpA")
             self.offset = epics_signal_io(float, f"{prefix}OutputOffsetA")
-        self.output_mode_ttl = epics_signal_x(f"{prefix}OutputModeTtlSS.PROC")
-        self.output_mode_nim = epics_signal_x(f"{prefix}OutputModeNimSS.PROC")
+        self.output_mode_ttl = epics_triggerable_command(
+            f"{prefix}OutputModeTtlSS.PROC"
+        )
+        self.output_mode_nim = epics_triggerable_command(
+            f"{prefix}OutputModeNimSS.PROC"
+        )
         super().__init__(name=name)
 
 
@@ -156,18 +160,18 @@ class DG645Delay(StandardReadable):
             self.label = epics_signal_rw(str, f"{prefix}Label")
             self.device_id = epics_signal_r(str, f"{prefix}IdentSI")
         self.status = epics_signal_r(str, f"{prefix}StatusSI")
-        self.clear_error = epics_signal_x(f"{prefix}StatusClearBO")
-        self.goto_remote = epics_signal_x(f"{prefix}GotoRemoteBO")
-        self.goto_local = epics_signal_x(f"{prefix}GotoLocalBO")
-        self.reset = epics_signal_x(f"{prefix}ResetBO")
+        self.clear_error = epics_triggerable_command(f"{prefix}StatusClearBO")
+        self.goto_remote = epics_triggerable_command(f"{prefix}GotoRemoteBO")
+        self.goto_local = epics_triggerable_command(f"{prefix}GotoLocalBO")
+        self.reset = epics_triggerable_command(f"{prefix}ResetBO")
         self.status_checking = epics_signal_rw(bool, f"{prefix}StatusCheckingBO")
-        self.reset_serial = epics_signal_x(f"{prefix}IfaceSerialResetBO")
+        self.reset_serial = epics_triggerable_command(f"{prefix}IfaceSerialResetBO")
         self.serial_state = epics_signal_io(bool, f"{prefix}IfaceSerialStateB")
         self.serial_baud = epics_signal_io(self.BaudRate, f"{prefix}IfaceSerialBaudM")
-        self.reset_gpib = epics_signal_x(f"{prefix}IfaceGpibResetBO")
+        self.reset_gpib = epics_triggerable_command(f"{prefix}IfaceGpibResetBO")
         self.gpib_state = epics_signal_io(bool, f"{prefix}IfaceGpibStateB")
         self.gpib_address = epics_signal_io(int, f"{prefix}IfaceGpibAddrL")
-        self.reset_lan = epics_signal_x(f"{prefix}IfaceLanResetBO")
+        self.reset_lan = epics_triggerable_command(f"{prefix}IfaceLanResetBO")
         self.mac_address = epics_signal_r(str, f"{prefix}IfaceMacAddrSI")
         self.lan_state = epics_signal_io(bool, f"{prefix}IfaceLanStateB")
         self.dhcp_state = epics_signal_io(bool, f"{prefix}IfaceDhcpStateB")
