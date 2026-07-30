@@ -22,15 +22,16 @@ def num_to_char(num):
 
 
 class ScalerChannel(StandardReadable):
-    def __init__(self, prefix, channel_num, name=""):
+    def __init__(self, prefix, channel_num, name="", use_offset_correction=True):
         epics_ch_num = channel_num + 1  # EPICS is 1-indexed
         # Hinted signals
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
-            net_suffix = (
-                f"_net{num_to_char((channel_num // 12))}"
-                f".{num_to_char(channel_num % 12)}"
-            )
-            self.net_count = epics_signal_r(float, f"{prefix}{net_suffix}")
+            if use_offset_correction:
+                net_suffix = (
+                    f"_net{num_to_char((channel_num // 12))}"
+                    f".{num_to_char(channel_num % 12)}"
+                )
+                self.net_count = epics_signal_r(float, f"{prefix}{net_suffix}")
         # Regular readable signals
         with self.add_children_as_readables():
             self.raw_count = epics_signal_r(float, f"{prefix}.S{epics_ch_num}")
@@ -39,8 +40,11 @@ class ScalerChannel(StandardReadable):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
             self.is_gate = epics_signal_rw(bool, f"{prefix}.G{epics_ch_num}")
             self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
-            offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
-            self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
+            if use_offset_correction:
+                offset_suffix = (
+                    f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
+                )
+                self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
         super().__init__(name=name)
 
 
@@ -176,19 +180,39 @@ class MultiChannelScaler(StandardReadable):
 
 
 class Scaler(StandardReadable):
-    """A scaler device that has one or more channels."""
+    """A scaler device that has one or more channels.
+
+    Parameters
+    ==========
+    prefix
+      EPICS IOC prefix for this scaler.
+    channels
+      Which channel numbers to include in channels.
+    name
+      Data key name segment for this device.
+    use_offset_correction
+      Whether the IOC has Dale's dark current offset support built
+      in. Deprecated, will be removed in a future release
+
+    """
 
     class CountMode(SubsetEnum):
         ONE_SHOT = "OneShot"
         AUTO_COUNT = "AutoCount"
 
-    def __init__(self, prefix, channels: Sequence[int], name=""):
+    def __init__(
+        self, prefix, channels: Sequence[int], name="", use_offset_correction=True
+    ):
         # Add invidiaul scaler channels
         with self.add_children_as_readables():
             # Add individual channels
             self.channels = DeviceVector(
                 {
-                    ch_num: ScalerChannel(f"{prefix}", channel_num=ch_num)
+                    ch_num: ScalerChannel(
+                        f"{prefix}",
+                        channel_num=ch_num,
+                        use_offset_correction=use_offset_correction,
+                    )
                     for ch_num in channels
                 }
             )
@@ -202,12 +226,13 @@ class Scaler(StandardReadable):
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
         self.auto_count = epics_signal_rw(bool, f"{prefix}.CONT")
         self.count = epics_signal_rw(bool, f"{prefix}.CNT")
-        self.record_dark_current = epics_triggerable_command(
-            f"{prefix}_offset_start.PROC"
-        )
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")
-        self.dark_current_time = epics_signal_rw(float, f"{prefix}_offset_time.VAL")
+        if use_offset_correction:
+            self.record_dark_current = epics_triggerable_command(
+                f"{prefix}_offset_start.PROC"
+            )
+            self.dark_current_time = epics_signal_rw(float, f"{prefix}_offset_time.VAL")
         super().__init__(name=name)
 
 

@@ -10,8 +10,11 @@ from .cl3000 import CL3000 as CL3000
 from .delay import DG645Delay  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
+
+# from .detectors.counter import Counter as Counter
+# from .detectors.counter import CTR08Counter as CTR08Counter
+# from .detectors.counter import SIS3820Counter as SIS3820Counter
 from .detectors.eiger import EigerDetector  # noqa: F401
-from .detectors.ion_chamber_scaler import IonChamberScaler as IonChamberScaler
 from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.split_ion_chamber import SplitIonChamber as SplitIonChamber
 from .detectors.split_ion_chamber import SplitIonChamberSet as SplitIonChamberSet

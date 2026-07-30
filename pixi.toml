@@ -57,6 +57,7 @@ apstools = ">=1.7.8"
 guarneri = ">=0.5.0"
 ophyd = ">=1.11.0"
 ophyd-async = { version = "==0.20.1", extras = ["ca"] }
+# ophyd-async = { git = "https://github.com/bluesky/ophyd-async.git", extras = ["ca"], rev="df154492a8fac71926435f5f25fd2d4ecca99569" }
 scanspec = "==1.0a2"
 # bluesky-adaptive = ">=0.3.2"
 bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }

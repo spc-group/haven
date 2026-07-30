@@ -4,6 +4,7 @@ qserver."""
 import logging
 import logging.config
 import time
+import warnings
 from collections.abc import Callable
 from functools import partial, wraps
 
@@ -52,11 +53,15 @@ from haven.plans import (  # noqa: F401
 )
 from haven.preprocessors import fixed_offset_wrapper  # noqa: F401
 
-# Configure logging
-config = haven.load_config()
-haven.setup_logging(config.logging)
 log = logging.getLogger("haven")
 
+# Configure logging
+config = haven.load_config()
+try:
+    haven.setup_logging(config.logging)
+except ValueError as exc:
+    log.exception(exc)
+    warnings.warn(f"Could not configure logging: {exc}")
 
 # Create a run engine
 writer = None

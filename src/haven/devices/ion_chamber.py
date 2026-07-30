@@ -21,7 +21,6 @@ from ophyd_async.core import (
     wait_for_value,
 )
 
-from . import IonChamberScaler
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
 from .srs570 import SRS570PreAmplifier
@@ -62,9 +61,9 @@ def load_ion_chambers(scalers, labjacks, ion_chambers):
             for ic_cfg in ion_chambers
             if ic_cfg["scaler"] == cfg["name"]
         }
-        _scalers[cfg["name"]] = IonChamberScaler(
-            name=cfg["name"], prefix=cfg["prefix"], ion_chambers=ic_configs
-        )
+        # _scalers[cfg["name"]] = IonChamberScaler(
+        #     name=cfg["name"], prefix=cfg["prefix"], ion_chambers=ic_configs
+        # )
     return [*_labjacks.values(), *_scalers.values()]
 
 

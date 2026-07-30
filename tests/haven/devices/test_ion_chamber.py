@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_attr, set_mock_value
 from ophyd_async.testing import assert_value
 
-from haven.devices import IonChamberScaler
+# from haven.devices import Counter
 from haven.devices.ion_chamber import IonChamber, load_ion_chambers
 from haven.devices.labjack import LabJackBase
 
@@ -96,7 +96,8 @@ def test_load_labjacks():
 @pytest.mark.skip(reason="Will be fixed with new counter support.")
 def test_load_scalers():
     devices = load_ion_chambers(**ion_chamber_kwargs)
-    scalers = [device for device in devices if isinstance(device, IonChamberScaler)]
+    # scalers = [device for device in devices if isinstance(device, Counter)]
+    scalers = []  # Work-around until Counter is stable
     assert len(scalers) == 2
     ion_chambers = scalers[0].driver.ion_chambers
     assert list(ion_chambers.keys()) == [2, 3]

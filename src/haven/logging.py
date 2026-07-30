@@ -1,6 +1,5 @@
 import logging
 import sys
-from logging.config import dictConfig
 
 from .iconfig import LoggingConfig
 
@@ -61,5 +60,3 @@ def setup_logging(config: LoggingConfig):
         get_ipython().set_custom_exc((Exception,), log_exception_ipython)
     else:
         sys.excepthook = log_exception_python
-
-    dictConfig(config.model_dump(by_alias=True))

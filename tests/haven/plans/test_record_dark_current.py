@@ -1,13 +1,14 @@
 import pytest_asyncio
 
-from haven.devices import IonChamberScaler
+from haven.devices import SplitIonChamberSet
 from haven.devices.shutter import ShutterState
 from haven.plans import record_dark_current
 
 
 @pytest_asyncio.fixture()
 async def scaler(sim_registry):
-    device = IonChamberScaler(prefix="scaler:", ion_chambers={})
+    device = SplitIonChamberSet(prefix="scaler:")
+    # device = Counter(prefix="scaler:", channels=[])
     await device.connect(mock=True)
     return device
 
