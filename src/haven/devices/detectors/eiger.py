@@ -2,9 +2,10 @@ import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from ophyd_async.core import DetectorTriggerLogic, SignalR
+from ophyd_async.core import DetectorTriggerLogic, SignalR, derived_signal_r
 from ophyd_async.epics.adcore import (
     ADAcquireLogic,
+    ADBaseDataType,
     ADBaseIO,
     ADWriterFactory,
     AreaDetector,
@@ -14,6 +15,21 @@ from ophyd_async.epics.adcore import (
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
+
+
+def data_type_from_bit_depth(bit_depth: int) -> ADBaseDataType:
+    """Decide on a numpy datatype based on bit depth.
+
+    Assumes that the Eiger will always write unsigned data.
+
+    """
+    data_types = {
+        8: ADBaseDataType.UINT8,
+        16: ADBaseDataType.UINT16,
+        32: ADBaseDataType.UINT32,
+        64: ADBaseDataType.UINT64,
+    }
+    return data_types.get(bit_depth, ADBaseDataType.UNDEFINED)
 
 
 class EigerDriverIO(ADBaseIO):
@@ -30,6 +46,12 @@ class EigerDriverIO(ADBaseIO):
         self.threshold_energy = epics_signal_rw_rbv(float, f"{prefix}ThresholdEnergy")
         self.photon_energy = epics_signal_rw_rbv(float, f"{prefix}PhotonEnergy")
         super().__init__(prefix=prefix, name=name)
+        # Fixes a bug where the standard data type RBV PV is wrong
+        old_name = self.data_type.name
+        self.data_type = derived_signal_r(
+            data_type_from_bit_depth, bit_depth=self.bit_depth
+        )
+        self.data_type.set_name(old_name)
 
 
 @dataclass

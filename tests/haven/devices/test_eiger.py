@@ -57,8 +57,6 @@ async def test_configuration(eiger):
     assert "eiger-driver-photon_energy" in config.keys()
 
 
-# Maybe write the derived signal for eiger data type.
-@pytest.mark.xfail
 async def test_dtype(eiger):
     """Our eiger detector support has a bug where the "DataType_RBV" PV
     reports "int8" even though the detector is producing other data
@@ -66,7 +64,7 @@ async def test_dtype(eiger):
 
     """
     set_mock_value(eiger.driver.bit_depth, 32)
-    await assert_value(eiger.writer.data_type, ADBaseDataType.UINT32)
+    await assert_value(eiger.driver.data_type, ADBaseDataType.UINT32)
 
 
 # -----------------------------------------------------------------------------
