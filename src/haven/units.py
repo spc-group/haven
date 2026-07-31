@@ -15,6 +15,7 @@ ureg = UnitRegistry()
 
 # Add some oddly named units from epics
 ureg.define("Angstro = angstrom")
+ureg.define("ANGSTRO = angstrom")
 
 h = (
     constants.physical_constants["Planck constant in eV/Hz"][0]
