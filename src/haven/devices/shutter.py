@@ -57,8 +57,8 @@ class PssShutter(Positioner):
         self._allow_open = allow_open
         self._allow_close = allow_close
         # Actuators for opening/closing the shutter
-        self.open_signal = epics_signal_rw(int, f"{prefix}OpenEPICSC")
-        self.close_signal = epics_signal_rw(int, f"{prefix}CloseEPICSC")
+        self.open_signal = epics_signal_rw(bool, f"{prefix}OpenEPICSC")
+        self.close_signal = epics_signal_rw(bool, f"{prefix}CloseEPICSC")
         # Just use convenient values for these since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")

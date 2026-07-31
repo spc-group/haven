@@ -74,7 +74,6 @@ def prepare_per_event(
             # This data point changes how the detector gets trigger,
             # so we need to re-prepare
             for det in preparables:
-                print(det)
                 yield from bps.prepare(det, tinfo, group=prep_group, wait=False)
             yield from bps.wait(group=prep_group)
             past_trigger_infos.append(tinfo)
