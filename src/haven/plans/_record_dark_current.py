@@ -62,21 +62,26 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
         yield from close_shutters(shutters)
         # Old-style ion chambers need to be handled differently
         old_ion_chambers = [ic for ic in detectors if isinstance(ic, IonChamber)]
-        new_detectors = [ic for ic in detectors if not isinstance(ic, IonChamber)]
+        calibrated_detectors = [
+            ic
+            for ic in detectors
+            if not isinstance(ic, IonChamber) and hasattr(ic, "calibrate")
+        ]
+        counted_detectors = [ic for ic in detectors if ic not in old_ion_chambers]
         # Remove previous calibrations so we get a fresh starting point
-        for detector in new_detectors:
+        for detector in calibrated_detectors:
             yield Msg("calibrate", detector, truth=0, dial=0)
         # Record dark currents
         group = uuid.uuid4()
         for ic in old_ion_chambers:
             yield Msg("trigger", ic, group=group, record_dark_current=True)
         yield from bpp.run_wrapper(
-            bpp.stub_wrapper(bp.count([*new_detectors, *shutters])), md=_md
+            bpp.stub_wrapper(bp.count([*counted_detectors, *shutters])), md=_md
         )
         # Wait for the devices to be done recording dark current
         yield from bps.wait(group=group)
         # Calibrate standard detectors to they read zero
-        for detector in new_detectors:
+        for detector in calibrated_detectors:
             yield Msg("calibrate", detector, truth=0)
         # Reset shutters to their original states
         to_open = [

@@ -195,69 +195,6 @@ def gain_signal(
     return GainSignal(backend, name=name)
 
 
-# class GainSignal(EpicsSignal):
-#     """
-#     A signal where the settling time depends on the pre-amp gain.
-
-#     Used to introduce a specific settle time when setting to account
-#     for the amp's RC relaxation time when changing gain.
-#     """
-
-#     def set(self, value, *, timeout=DEFAULT_WRITE_TIMEOUT, settle_time="auto"):
-#         """
-#         Set the value of the Signal and return a Status object.
-
-#         If put completion is used for this EpicsSignal, the status object
-#         will complete once EPICS reports the put has completed.
-
-#         Otherwise the readback will be polled until equal to the set point
-#         (as in ``Signal.set``)
-
-#         Parameters
-#         ----------
-
-#         value : any
-#             The gain value.
-
-#         timeout : float, optional
-#             Maximum time to wait.
-
-#         settle_time: float, optional
-#             Delay after ``set()`` has completed to indicate completion
-#             to the caller. If ``"auto"`` (default), a reasonable settle
-#             time will be chosen based on the gain mode of the pre-amp.
-
-#         Returns
-#         -------
-#         st : Status
-
-#         .. seealso::
-#             * Signal.set
-#             * EpicsSignal.set
-
-#         """
-#         # Determine optimal settling time.
-#         if settle_time == "auto":
-#             signals = [self.parent.sensitivity_value, self.parent.sensitivity_unit, self.parent.gain_mode]
-#             args = [value if self is sig else sig.get() for sig in signals]
-#             val, unit, mode = args
-#             # Resolve string values to indices if provided
-#             if val in gain_values:
-#                 val = gain_values.index(val)
-#             if unit in gain_units:
-#                 unit = gain_units.index(unit)
-#             if mode in gain_modes:
-#                 mode = gain_modes.index(mode)
-#             # Low-drift mode uses the same settling times as low-noise mode
-#             if mode == "LOW DRIFT":
-#                 mode = "LOW NOISE"
-#             # Calculate settling time
-#             _settle_time = calculate_settle_time(gain_value=val, gain_unit=unit, gain_mode=mode)
-#         else:
-#             _settle_time = settle_time
-#         return super().set(value, timeout=timeout, settle_time=_settle_time)
-
-
 class SRS570PreAmplifier(Device):
     """Ophyd-async support for Stanford Research Systems 570 preamp."""
 
