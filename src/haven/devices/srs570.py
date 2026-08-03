@@ -21,8 +21,9 @@ from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    Device,
     SignalRW,
+    StandardReadable,
+    StandardReadableFormat,
     StrictEnum,
     derived_signal_r,
     derived_signal_rw,
@@ -195,7 +196,7 @@ def gain_signal(
     return GainSignal(backend, name=name)
 
 
-class SRS570PreAmplifier(Device):
+class SRS570PreAmplifier(StandardReadable):
     """Ophyd-async support for Stanford Research Systems 570 preamp."""
 
     offset_difference = -3  # How many levels higher should the offset be
@@ -272,55 +273,61 @@ class SRS570PreAmplifier(Device):
         """
         Update the gain when the sensitivity changes.
         """
-        self.sensitivity_value = gain_signal(self.SensValue, f"{prefix}sens_num")
-        self.sensitivity_unit = gain_signal(self.SensUnit, f"{prefix}sens_unit")
-
-        self.offset_on = epics_signal_rw(bool, f"{prefix}offset_on")
-        self.offset_sign = epics_signal_rw(Sign, f"{prefix}offset_sign")
-        self.offset_value = epics_signal_rw(self.SensValue, f"{prefix}offset_num")
-        self.offset_unit = epics_signal_rw(self.OffsetUnit, f"{prefix}offset_unit")
-        self.offset_fine = epics_signal_rw(int, f"{prefix}off_u_put")
-        self.offset_cal = epics_signal_rw(Cal, f"{prefix}offset_cal")
-
         self.set_all = epics_triggerable_command(f"{prefix}init.PROC")
-
-        self.bias_value = epics_signal_rw(int, f"{prefix}bias_put")
-        self.bias_on = epics_signal_rw(bool, f"{prefix}bias_on")
-
-        self.filter_type = epics_signal_rw(
-            self.FilterType,
-            f"{prefix}filter_type",
-        )
         self.filter_reset = epics_triggerable_command(f"{prefix}filter_reset.PROC")
-        self.filter_lowpass = epics_signal_rw(self.FilterLowPass, f"{prefix}low_freq")
-        self.filter_highpass = epics_signal_rw(
-            self.FilterHighPass, f"{prefix}high_freq"
-        )
-        self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
-        self.invert = epics_signal_rw(bool, f"{prefix}invert_on")
-        self.blank = epics_signal_rw(bool, f"{prefix}blank_on")
 
-        # Gain signals derived from the sensitivity signals
-        sens_signals = {
-            "sens_value": self.sensitivity_value,
-            "sens_unit": self.sensitivity_unit,
-        }
-        self.gain = derived_signal_r(
-            raw_to_derived=self._gain_from_sensitivity,
-            derived_units="V A⁻",
-            **sens_signals,
-        )
-        self.gain_db = derived_signal_r(
-            raw_to_derived=self._dB, derived_units="dB", gain=self.gain
-        )
-        level_signals = dict(
-            offset_value=self.offset_value, offset_unit=self.offset_unit, **sens_signals
-        )
-        self.gain_level = derived_signal_rw(
-            raw_to_derived=self._to_gain_level,
-            set_derived=self._from_gain_level,
-            **level_signals,
-        )
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+            self.sensitivity_value = gain_signal(self.SensValue, f"{prefix}sens_num")
+            self.sensitivity_unit = gain_signal(self.SensUnit, f"{prefix}sens_unit")
+
+            self.offset_on = epics_signal_rw(bool, f"{prefix}offset_on")
+            self.offset_sign = epics_signal_rw(Sign, f"{prefix}offset_sign")
+            self.offset_value = epics_signal_rw(self.SensValue, f"{prefix}offset_num")
+            self.offset_unit = epics_signal_rw(self.OffsetUnit, f"{prefix}offset_unit")
+
+            self.offset_fine = epics_signal_rw(int, f"{prefix}off_u_put")
+            self.offset_cal = epics_signal_rw(Cal, f"{prefix}offset_cal")
+
+            self.bias_value = epics_signal_rw(int, f"{prefix}bias_put")
+            self.bias_on = epics_signal_rw(bool, f"{prefix}bias_on")
+
+            self.filter_type = epics_signal_rw(
+                self.FilterType,
+                f"{prefix}filter_type",
+            )
+            self.filter_lowpass = epics_signal_rw(
+                self.FilterLowPass, f"{prefix}low_freq"
+            )
+            self.filter_highpass = epics_signal_rw(
+                self.FilterHighPass, f"{prefix}high_freq"
+            )
+            self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
+            self.invert = epics_signal_rw(bool, f"{prefix}invert_on")
+            self.blank = epics_signal_rw(bool, f"{prefix}blank_on")
+
+            # Gain signals derived from the sensitivity signals
+            sens_signals = {
+                "sens_value": self.sensitivity_value,
+                "sens_unit": self.sensitivity_unit,
+            }
+            self.gain = derived_signal_r(
+                raw_to_derived=self._gain_from_sensitivity,
+                derived_units="V A⁻",
+                **sens_signals,
+            )
+            self.gain_db = derived_signal_r(
+                raw_to_derived=self._dB, derived_units="dB", gain=self.gain
+            )
+            level_signals = dict(
+                offset_value=self.offset_value,
+                offset_unit=self.offset_unit,
+                **sens_signals,
+            )
+            self.gain_level = derived_signal_rw(
+                raw_to_derived=self._to_gain_level,
+                set_derived=self._from_gain_level,
+                **level_signals,
+            )
         super().__init__(name=name)
 
     def _gain_from_sensitivity(

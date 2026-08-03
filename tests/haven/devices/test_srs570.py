@@ -152,6 +152,41 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     sleep_mock.assert_called_once_with(settle_time)
 
 
+async def test_readings(preamp):
+    reading = await preamp.read()
+    reading_keys = set()
+    assert set(reading.keys()) == reading_keys
+    config = await preamp.read_configuration()
+    config_keys = {
+        "preamp-bias_on",
+        "preamp-bias_value",
+        "preamp-blank",
+        "preamp-filter_highpass",
+        "preamp-filter_lowpass",
+        "preamp-filter_type",
+        "preamp-gain",
+        "preamp-gain_db",
+        "preamp-gain_level",
+        "preamp-gain_mode",
+        "preamp-invert",
+        "preamp-offset_cal",
+        "preamp-offset_fine",
+        "preamp-offset_on",
+        "preamp-offset_on",
+        "preamp-offset_sign",
+        "preamp-offset_sign",
+        "preamp-offset_unit",
+        "preamp-offset_unit",
+        "preamp-offset_value",
+        "preamp-offset_value",
+        "preamp-sensitivity_unit",
+        "preamp-sensitivity_unit",
+        "preamp-sensitivity_value",
+        "preamp-sensitivity_value",
+    }
+    assert set(config.keys()) == config_keys
+
+
 async def test_preamp_gain_mode_settling(mocker, preamp):
     """The SR-570 Pre-amp also has a low drift mode, whose settling times
     are the same as the low noise mode.
