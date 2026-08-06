@@ -21,12 +21,17 @@ def count_is_complete(*, old_value, value, **kwargs):
     return is_done
 
 
-def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] = []):
+def record_dark_current(
+    detectors: Sequence[Device],
+    shutters: Sequence[Device] = [],
+    preamps: Sequence[Device] = [],
+):
     """Record the dark current on the ion chambers.
 
     - Close shutters
     - Trigger detectors
     - Calibrate to make readings zero
+    - Store uncalibrated values as "zero" readings
     - Restore shutters to their previous positions
 
     Parameters
@@ -37,6 +42,8 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
       Shutter devices or names. These shutters will be closed before
       recording the dark current, and then be returned to its original
       state afterward recording the dark current.
+    preamps
+      Pre-amplifiers, will be added to the counted detectors.
 
     """
     detectors = beamline.devices.findall(detectors)
@@ -47,12 +54,13 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
         "plan_args": {
             "detectors": list(map(repr, detectors)),
             "shutters": list(map(repr, shutters)),
+            "preamps": list(map(repr, preamps)),
         },
         "plan_name": "record_dark_current",
         "hints": {},
     }
 
-    @bpp.stage_decorator([*detectors, *shutters])
+    @bpp.stage_decorator([*detectors, *shutters, *preamps])
     def inner():
         # Get previous shutter states
         old_shutters = {}
@@ -76,7 +84,8 @@ def record_dark_current(detectors: Sequence[Device], shutters: Sequence[Device] 
         for ic in old_ion_chambers:
             yield Msg("trigger", ic, group=group, record_dark_current=True)
         yield from bpp.run_wrapper(
-            bpp.stub_wrapper(bp.count([*counted_detectors, *shutters])), md=_md
+            bpp.stub_wrapper(bp.count([*counted_detectors, *shutters, *preamps])),
+            md=_md,
         )
         # Wait for the devices to be done recording dark current
         yield from bps.wait(group=group)

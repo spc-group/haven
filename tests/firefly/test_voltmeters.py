@@ -9,7 +9,7 @@ from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from qtpy import QtWidgets
 
 from firefly.voltmeters import SplitIonChamberSetRow, VoltmetersDisplay
-from haven.devices import IonChamber, SplitIonChamberSet
+from haven.devices import IonChamber, SplitIonChamberSet, SRS570PreAmplifier
 
 
 @pytest.fixture()
@@ -29,6 +29,14 @@ async def ion_chambers(sim_registry):
         sim_registry.register(ion_chamber)
         devices.append(ion_chamber)
     return devices
+
+
+@pytest_asyncio.fixture()
+async def preamps(sim_registry):
+    device = SRS570PreAmplifier(prefix="255idz:SR03:", name="preamp")
+    await device.connect(mock=True)
+    sim_registry.register(device)
+    return [device]
 
 
 @pytest_asyncio.fixture()
@@ -56,7 +64,7 @@ async def shutters(sim_registry):
 
 
 @pytest.fixture()
-async def voltmeters_display(qtbot, ion_chambers, sim_registry):
+async def voltmeters_display(qtbot, ion_chambers, preamps, sim_registry):
     vms_display = VoltmetersDisplay()
     qtbot.addWidget(vms_display)
     await vms_display.update_devices(sim_registry)
@@ -255,19 +263,18 @@ async def test_shutters_checkbox_with_shutters(
 async def test_read_dark_current_plan(voltmeters_display, qtbot):
     display = voltmeters_display
     display.ui.shutter_checkbox.setChecked(False)
-    # Check that the correct plan was sent
-    expected_item = BPlan("record_dark_current", ["I0", "It"])
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        # Simulate clicking on the dark_current button
-        # display.ui.dark_current_button.click()
+    # Click the run button and see if the correct plan is queued
+    with qtbot.waitSignal(display.queue_item_submitted, timeout=1000) as ws:
         display.ui.record_dark_current()
+    emitted_plan = ws.args[0].to_dict()
+    assert emitted_plan["item_type"] == "plan"
+    assert emitted_plan["name"] == "record_dark_current"
+    assert emitted_plan["kwargs"]["detectors"] == ["I0", "It"]
+    assert set(emitted_plan["kwargs"]["preamps"]) == {
+        "I0.preamp",
+        "It.preamp",
+        "preamp",
+    }
 
 
 @pytest.mark.asyncio
@@ -275,20 +282,20 @@ async def test_read_dark_current_plan_with_shutters(voltmeters_display, qtbot):
     display = voltmeters_display
     display.ui.shutter_checkbox.setChecked(True)
     display.ui.shutter_combobox.setCurrentIndex(1)
-    # Check that the correct plan was sent
-    shutter_name = display.ui.shutter_combobox.itemText(1)
-    expected_item = BPlan("record_dark_current", ["I0", "It"], shutters=[shutter_name])
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        # Simulate clicking on the dark_current button
-        # display.ui.dark_current_button.click()
+    # Click the run button and see if the correct plan is queued
+    with qtbot.waitSignal(display.queue_item_submitted, timeout=1000) as ws:
         display.ui.record_dark_current()
+    emitted_plan = ws.args[0].to_dict()
+    assert emitted_plan["item_type"] == "plan"
+    assert emitted_plan["name"] == "record_dark_current"
+    assert emitted_plan["kwargs"]["detectors"] == ["I0", "It"]
+    shutter_name = display.ui.shutter_combobox.itemText(1)
+    assert emitted_plan["kwargs"]["shutters"] == [shutter_name]
+    assert set(emitted_plan["kwargs"]["preamps"]) == {
+        "I0.preamp",
+        "It.preamp",
+        "preamp",
+    }
 
 
 # -----------------------------------------------------------------------------

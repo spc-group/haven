@@ -4,6 +4,7 @@ from typing import Sequence
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
 from pydm.widgets import PyDMChannel, PyDMEnumComboBox, PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
@@ -21,6 +22,7 @@ from qtpy.QtWidgets import (
 
 import haven
 from firefly import display
+from firefly.component_selector import dotted_name
 from haven.devices import IonChamber, SplitIonChamberSet
 
 log = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ log = logging.getLogger(__name__)
 
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_rows: Sequence
+    _preamps: Sequence[Device] = []
 
     def customize_ui(self):
         # Connect support for running the auto_gain and dark current plans
@@ -51,6 +54,8 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
     @asyncSlot(object)
     async def update_devices(self, registry):
+        await super().update_devices(registry=registry)
+        self._preamps = registry.findall(label="preamps", allow_none=True)
         ion_chambers = registry.findall(label="ion_chambers")
 
         def beamline_position(ion_chamber):
@@ -141,9 +146,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
         if self.ui.shutter_checkbox.isChecked():
             shutter_name = self.ui.shutter_combobox.currentText()
             kwargs["shutters"] = [shutter_name]
+        kwargs["preamps"] = [dotted_name(preamp) for preamp in self._preamps]
+        kwargs["detectors"] = [ic.name for ic in self.ion_chambers]
         # Construct the plan
-        ic_names = [ic.name for ic in self.ion_chambers]
-        item = BPlan("record_dark_current", ic_names, **kwargs)
+        item = BPlan("record_dark_current", **kwargs)
         # Send it to the queue server
         self.queue_item_submitted.emit(item)
 

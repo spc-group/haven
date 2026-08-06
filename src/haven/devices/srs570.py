@@ -199,6 +199,8 @@ def gain_signal(
 class SRS570PreAmplifier(StandardReadable):
     """Ophyd-async support for Stanford Research Systems 570 preamp."""
 
+    _ophyd_labels_ = {"preamps"}
+
     offset_difference = -3  # How many levels higher should the offset be
 
     class FilterType(StrictEnum):

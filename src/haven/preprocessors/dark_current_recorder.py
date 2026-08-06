@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -66,6 +67,7 @@ class DarkCurrentRecorder:
     _preamp_readings: dict = field(default_factory=dict)
     _scan_uid: str | None = None
     _pending: dict = field(default_factory=dict)
+    _is_subscribed: bool = False
 
     def preamp_readings(self):
         """Measure the state of all the preamps for comparison."""
@@ -94,6 +96,12 @@ class DarkCurrentRecorder:
         # Make the dark current reading if needed
         if needs_dark_current:
             yield from record_dark_current(detectors=self.detectors)
+        # If we're subscribed to the run engine, we should at least
+        # see messages from the `record_dark_current()` plan above.
+        if not self._is_subscribed:
+            warnings.warn(
+                f"{repr(self.stash_dark_current)} is not subscribed to the run engine."
+            )
         # Call the original plan as intended
         yield from bpp.msg_mutator(plan, self.inject_dark_current_uid)
 
@@ -125,6 +133,9 @@ class DarkCurrentRecorder:
         ```
 
         """
+        # If we receive any documents, we have to be subscribed to a
+        # run engine
+        self._is_subscribed = True
         if name == "start" and doc.get("plan_name") == "record_dark_current":
             self._pending = {"start_uid": doc["uid"]}
             return
@@ -141,8 +152,9 @@ class DarkCurrentRecorder:
                     {sig.name: config[sig.name] for sig in sigs}
                 )
         # We only want to stash the dark current metadata if the run was successful
-        successful_run = name == "stop" and doc.get("exit_status") == "success"
-        if successful_run:
+        is_stop_doc = name == "stop"
+        exit_status = doc.get("exit_status")
+        if is_stop_doc and exit_status == "success":
             # Maybe we didn't actually get all the info we need for some reason
             missing_keys = [
                 key
@@ -157,6 +169,13 @@ class DarkCurrentRecorder:
             self._scan_uid = self._pending["start_uid"]
             self._preamp_readings = self._pending["preamp_readings"]
             self._last_measured = time.monotonic()
+        if is_stop_doc and exit_status != "success":
+            # Failed run, so we won't stash anything, just clean up and report
+            log.warning(
+                f"Run '{self._pending['start_uid']}' completed with status {repr(doc.get('exit_status'))}."
+                " Dark current may be measured again next run."
+            )
+            self._pending = dict()
 
 
 # -----------------------------------------------------------------------------

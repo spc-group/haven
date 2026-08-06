@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pytest
@@ -14,13 +15,28 @@ async def test_records_with_no_history():
     await detector.connect(mock=True)
     preamp = SR570PreAmplifier("", name="preamp")
     await preamp.connect(mock=True)
-    recorder = DarkCurrentRecorder(detectors=[detector], preamps=[preamp])
+    recorder = DarkCurrentRecorder(
+        detectors=[detector], preamps=[preamp], _is_subscribed=True
+    )
     msgs = list(recorder(bp.count([detector])))
     open_run_messages = [msg for msg in msgs if msg.command == "open_run"]
     assert len(open_run_messages) == 2
     dark_msg, plan_msg = open_run_messages
     assert dark_msg.kwargs["plan_name"] == "record_dark_current"
     assert plan_msg.kwargs["plan_name"] == "count"
+
+
+@pytest.mark.asyncio
+async def test_warns_if_not_subscribed():
+    detector = soft_signal_rw(int)
+    await detector.connect(mock=True)
+    preamp = SR570PreAmplifier("", name="preamp")
+    await preamp.connect(mock=True)
+    recorder = DarkCurrentRecorder(
+        detectors=[detector], preamps=[preamp], _is_subscribed=False
+    )
+    with pytest.warns(UserWarning):
+        msgs = list(recorder(bp.count([detector])))
 
 
 preamp_readings = {
@@ -49,6 +65,7 @@ async def test_skips_if_recent():
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings=preamp_readings,
+        _is_subscribed=True,
     )
     msgs = list(recorder(bp.count([detector])))
     open_run_messages = [msg for msg in msgs if msg.command == "open_run"]
@@ -73,6 +90,7 @@ async def test_records_if_old():
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings={"preamp": 0},
+        _is_subscribed=True,
     )
     msgs = list(recorder(bp.count([detector])))
     open_run_messages = [msg for msg in msgs if msg.command == "open_run"]
@@ -96,6 +114,7 @@ async def test_records_if_preamps_changed():
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings=preamp_readings,
+        _is_subscribed=True,
     )
     # Pretend the preamp gain changed and make sure the new dark current was recorded
     plan = recorder(bp.count([detector]))
@@ -122,6 +141,7 @@ async def test_adds_dark_current_uid():
         detectors=[detector],
         preamps=[preamp],
         _scan_uid="abc-123",
+        _is_subscribed=True,
     )
     # Pretend the preamp gain changed and make sure the new dark current was recorded
     plan = recorder(bp.count([detector]))
@@ -441,6 +461,24 @@ async def test_stashes_last_recorded_time():
     recorder.stash_dark_current("descriptor", descriptor_doc)
     recorder.stash_dark_current("stop", stop_doc)
     assert recorder._last_measured == pytest.approx(time.monotonic())
+
+
+@pytest.mark.asyncio
+async def test_warns_if_dark_current_fails(caplog):
+    detector = soft_signal_rw(int)
+    await detector.connect(mock=True)
+    preamp = SR570PreAmplifier("", name="preamp")
+    await preamp.connect(mock=True)
+    recorder = DarkCurrentRecorder(
+        detectors=[detector],
+        preamps=[preamp],
+    )
+    recorder.stash_dark_current("start", start_doc)
+    recorder.stash_dark_current("descriptor", descriptor_doc)
+    with caplog.at_level(logging.WARNING):
+        recorder.stash_dark_current("stop", {**stop_doc, "exit_status": "fail"})
+    assert recorder._last_measured is None
+    assert "Dark current may be measured again" in caplog.text
 
 
 # -----------------------------------------------------------------------------
