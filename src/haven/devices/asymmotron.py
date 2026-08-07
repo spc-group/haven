@@ -277,9 +277,8 @@ class EnergyTransform(Transform):
             return EnergyDerived(energy=float("nan"))
         # Convert geometry params to energy
         bragg = theta_M - alpha
-        log.debug(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
-        log.debug(f"Inverse: {energy=}")
+        log.debug(f"Inverse: {energy=}, {bragg=}")
         energy_val = float(energy.to(ureg(self.xtal.energy_unit)).magnitude)
         derived = EnergyDerived(energy=energy_val)
         return derived
@@ -287,8 +286,6 @@ class EnergyTransform(Transform):
 
 class EnergyPositioner(Positioner):
     """Positions the energy of an analyzer crystal."""
-
-    _xtals: dict[str, Analyzer] = {}
 
     def __init__(self, *, xtal: Analyzer, name: str = ""):
         xtal_signals = {
@@ -298,12 +295,6 @@ class EnergyPositioner(Positioner):
         }
         # We need a dynamic class so we can keep access to the xtal units
         this_transform = type("EnergyTransform", (EnergyTransform,), {"xtal": xtal})
-
-        # Need the xtal object in the method, but it can't be a child
-        # device of the positioner, but we can't use a partial
-        # otherwise we hit this bug maybe(?)
-        # https://github.com/python/typing/issues/797
-        self._xtals["xtal"] = xtal
 
         self._setpoint_factory = DerivedSignalFactory(
             this_transform,
@@ -340,10 +331,9 @@ class EnergyPositioner(Positioner):
         transform = await self._setpoint_factory.transform()
         raw = transform.derived_to_raw(energy=value)
         # Set the new calculated signals
-        xtal = self._xtals["xtal"]
         await asyncio.gather(
-            xtal.chord.set(raw["chord"]),
-            xtal.crystal_pitch.set(raw["crystal_pitch"]),
+            transform.xtal.chord.set(raw["chord"]),
+            transform.xtal.crystal_pitch.set(raw["crystal_pitch"]),
         )
 
 

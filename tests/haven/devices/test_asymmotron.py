@@ -2,6 +2,7 @@ import math
 
 import pytest
 from ophyd_async.core import set_mock_value, soft_signal_rw
+from ophyd_async.testing import assert_value
 
 from haven.devices.asymmotron import (
     Analyzer,
@@ -82,8 +83,7 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     assert new_bragg == pytest.approx(theta, rel=0.001)
 
 
-@pytest.fixture()
-async def xtal(sim_registry):
+async def build_analyzer(name="analyzer"):
     # Create the analyzer documents
     xtal = Analyzer(
         name="analyzer",
@@ -109,6 +109,11 @@ async def xtal(sim_registry):
     # xtal.units["asymmetry_angle"] = ureg.degrees
     # xtal.units["energy"] = ureg.electron_volt
     return xtal
+
+
+@pytest.fixture()
+async def xtal(sim_registry):
+    return await build_analyzer()
 
 
 analyzer_values = [
@@ -248,6 +253,23 @@ async def test_readings(xtal):
     }
     desc = await xtal.describe()
     assert desc.keys() == reading.keys()
+
+
+@pytest.mark.asyncio
+async def test_multiple_analyzers():
+    """Test for a bug where multiple analyzers always move the same motors."""
+    analyzer0 = await build_analyzer("analyzer0")
+    analyzer1 = await build_analyzer("analyzer1")
+    await assert_value(analyzer0.chord.user_setpoint, 0)
+    await assert_value(analyzer1.chord.user_setpoint, 0)
+
+    await analyzer0.energy.set(8000)
+    assert (await analyzer0.chord.locate())["setpoint"] == pytest.approx(47.673129)
+    assert (await analyzer1.chord.locate())["setpoint"] == 0
+
+    await analyzer1.energy.set(8000)
+    assert (await analyzer0.chord.locate())["setpoint"] == pytest.approx(47.673129)
+    assert (await analyzer1.chord.locate())["setpoint"] == pytest.approx(47.673129)
 
 
 # -----------------------------------------------------------------------------
