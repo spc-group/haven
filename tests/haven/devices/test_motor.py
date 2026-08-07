@@ -1,7 +1,8 @@
 import pytest
+from scanspec.core import Path
+from scanspec.specs import Fly, Line
 
 from haven.devices.motor import Motor, load_motors, short_name
-from haven.devices.undulator import TrajectoryMotorInfo
 
 
 @pytest.fixture()
@@ -34,10 +35,15 @@ async def test_description_field_updates(motor):
     assert (await motor.description.get_value()) == "TestMotor"
 
 
-async def test_prepare_trajectory(motor):
-    """We should be able to prepare a trajectory scan, but have it just be a normal scan really."""
-    tinfo = TrajectoryMotorInfo(positions=[], times=[])
-    await motor.prepare(tinfo)
+async def test_prepare_scanspec(motor):
+    """We should be able to prepare a scanspec path, but have it just be a
+    normal scan really.
+
+    """
+    spec = Fly(0.5 @ Line(motor, 1, 2, 5))
+    path = Path(spec.calculate())
+    await motor.prepare(path)
+    await motor.kickoff()
 
 
 names = [

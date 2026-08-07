@@ -10,8 +10,7 @@ from ophyd_async.core import (
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.motor import Motor as MotorBase
-
-from haven.devices.undulator import TrajectoryMotorInfo
+from scanspec.core import Path
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +42,17 @@ class Motor(MotorBase):
         await self.description.set(short_name(self.name))
 
     @AsyncStatus.wrap
-    async def prepare(self, value: FlyMotorInfo | TrajectoryMotorInfo):
-        if isinstance(value, FlyMotorInfo):
+    async def prepare(self, value: FlyMotorInfo | Path):
+        if isinstance(value, Path):
+            # Decode the path into what a motor needs in order to fly
+            points = value.consume()
+            flyinfo = FlyMotorInfo(
+                start_position=points.lower[self][0],
+                end_position=points.lower[self][-1],
+                time_for_move=sum(points.duration),
+            )
+            return await super().prepare(flyinfo)
+        elif isinstance(value, FlyMotorInfo):
             return await super().prepare(value)
 
 
