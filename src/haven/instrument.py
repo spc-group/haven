@@ -44,6 +44,7 @@ beamline = Instrument(
         "eiger": devices.EigerDetector,
         "lambda": devices.LambdaDetector,
         "ion_chamber": devices.IonChamber,
+        "ion_chambers": devices.load_ion_chambers,
         "sim_detector": devices.SimDetector,
         "xspress3": devices.Xspress3Detector,
         "split_ion_chambers": devices.SplitIonChamberSet,

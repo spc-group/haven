@@ -20,6 +20,7 @@ from .detectors.split_ion_chamber import SplitIonChamber as SplitIonChamber
 from .detectors.split_ion_chamber import SplitIonChamberSet as SplitIonChamberSet
 from .detectors.xspress import Xspress3Detector as Xspress3Detector
 from .ion_chamber import IonChamber  # noqa: F401
+from .ion_chamber import load_ion_chambers as load_ion_chambers
 from .labjack import LabJackT4 as LabJackT4
 from .labjack import LabJackT7 as LabJackT7
 from .labjack import LabJackT7Pro as LabJackT7Pro

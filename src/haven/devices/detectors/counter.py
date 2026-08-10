@@ -18,7 +18,6 @@ from ophyd_async.core import (
     DetectorDataLogic,
     DetectorTriggerLogic,
     DeviceVector,
-    PageableDataProvider,
     Signal,
     SignalR,
     SignalRW,
@@ -29,6 +28,12 @@ from ophyd_async.core import (
     SubsetEnum,
     set_and_wait_for_other_value,
 )
+
+try:
+    from ophyd_async.core import PageableDataProvider
+except ImportError:
+    # Remove when released https://github.com/bluesky/ophyd-async/pull/1367
+    PageableDataProvider = object
 from ophyd_async.epics.adcore import NDPluginBaseIO
 from ophyd_async.epics.core import (
     EpicsDevice,

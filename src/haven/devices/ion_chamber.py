@@ -3,9 +3,9 @@
 import asyncio
 import logging
 import time
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator, Mapping, Sequence
 from itertools import repeat
-from typing import Any
+from typing import Any, Literal, NotRequired, TypedDict
 
 import numpy as np
 from bluesky.protocols import Triggerable
@@ -13,6 +13,7 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     DetectorTrigger,
+    Device,
     StandardReadable,
     StandardReadableFormat,
     TriggerInfo,
@@ -21,6 +22,7 @@ from ophyd_async.core import (
     wait_for_value,
 )
 
+from .detectors.counter import CTR08Counter, MCAChannel, SIS3820Counter
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
 from .srs570 import SRS570PreAmplifier
@@ -28,10 +30,68 @@ from .srs570 import SRS570PreAmplifier
 log = logging.getLogger(__name__)
 
 
-__all__ = ["IonChamber", "load_ion_chambers"]
+__all__ = ["IonChamber", "IonChamberInfo", "load_ion_chambers"]
 
 
-def load_ion_chambers(scalers, labjacks, ion_chambers):
+counter_classes = {
+    "SIS3820": SIS3820Counter,
+    "CTR08": CTR08Counter,
+}
+
+
+class CounterInfo(TypedDict):
+    name: str
+    prefix: str
+    mcs_prefix: NotRequired[str]
+    scaler_prefix: NotRequired[str]
+    flavor: Literal["CTR08", "SIS3820"]
+
+
+class LabJackInfo(TypedDict):
+    name: str
+    prefix: str
+
+
+class IonChamberInfo(TypedDict):
+    name: str
+    scaler: str
+    scaler_channel: int
+    labjack: str
+    labjack_channel: int
+    preamp_prefix: str
+    hertz_per_volt: int | float
+
+
+def load_ion_chambers(
+    counters: Sequence[CounterInfo],
+    labjacks: Sequence[LabJackInfo],
+    ion_chambers: Sequence[IonChamberInfo],
+) -> list[Device]:
+    """Create (but don't connect) devices to match ion chamber
+    definitions.
+
+    *counters* and *labjacks* specify general devices that will be
+     used for multiple ion chambers, and *ion_chambers* definitions
+     will reference these devices and set up the proper counter
+     channels and labjack inputs. The corresponding preamps will also
+     be created.
+
+    Each entry in *ion_chamber* must either have a flavor:
+
+    - `"CTR08"` for the Measurement Computer USB CTR08 counter
+    - `"SIS3820"` for the Struck SIS3820 VME scaler
+
+    Returns
+    =======
+    devices
+      All the new devices created.
+
+    """
+    # Pre-amps are just separate, isolated devices
+    _preamps = [
+        SRS570PreAmplifier(name=f"{cfg['name']}_preamp", prefix=cfg["preamp_prefix"])
+        for cfg in ion_chambers
+    ]
     # Build labjack devices with only the analog inputs we need for the ion chambers
     _labjacks = {}
     for cfg in labjacks:
@@ -51,8 +111,8 @@ def load_ion_chambers(scalers, labjacks, ion_chambers):
         labjack_channel = ic["labjack_channel"]
         labjack.analog_inputs[labjack_channel].set_name(f"{ic['name']}_voltmeter")
     # Finally, create the scaler objects now that we have the preamps, labjacks, etc
-    _scalers = {}
-    for cfg in scalers:
+    _counters = {}
+    for cfg in counters:
         ic_configs = {
             ic_cfg["name"]: {
                 "channel": ic_cfg["scaler_channel"],
@@ -61,10 +121,21 @@ def load_ion_chambers(scalers, labjacks, ion_chambers):
             for ic_cfg in ion_chambers
             if ic_cfg["scaler"] == cfg["name"]
         }
-        # _scalers[cfg["name"]] = IonChamberScaler(
-        #     name=cfg["name"], prefix=cfg["prefix"], ion_chambers=ic_configs
-        # )
-    return [*_labjacks.values(), *_scalers.values()]
+        channels: list[MCAChannel] = [
+            {"name": ic_cfg["name"], "number": ic_cfg["scaler_channel"]}
+            for ic_cfg in ion_chambers
+            if ic_cfg["scaler"] == cfg["name"]
+        ]
+        Counter = counter_classes[cfg["flavor"]]
+        # kwargs = {key: val for key, val in cfg.items() if key != "flavor"}
+        _counters[cfg["name"]] = Counter(
+            prefix=cfg["prefix"],
+            mcs_prefix=cfg.get("mcs_prefix", ""),
+            scaler_prefix=cfg.get("scaler_prefix", ""),
+            channels=channels,
+            name=cfg["name"],
+        )
+    return [*_preamps, *_labjacks.values(), *_counters.values()]
 
 
 class IonChamber(StandardReadable, Triggerable):

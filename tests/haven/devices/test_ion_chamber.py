@@ -5,22 +5,33 @@ from unittest.mock import AsyncMock
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_attr, set_mock_value
+from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_value
+
+try:
+    from ophyd_async.core import set_mock_attr
+except ImportError:
+    # Remove when released https://github.com/bluesky/ophyd-async/pull/1367
+    set_mock_attr = None
 from ophyd_async.testing import assert_value
+
+from haven.devices.detectors.counter import Counter
 
 # from haven.devices import Counter
 from haven.devices.ion_chamber import IonChamber, load_ion_chambers
 from haven.devices.labjack import LabJackBase
+from haven.devices.srs570 import SRS570PreAmplifier
 
 ion_chamber_kwargs = dict(
-    scalers=[
+    counters=[
         {
             "name": "upstream_scaler",
             "prefix": "25idcVME:3820",
+            "flavor": "SIS3820",
         },
         {
             "name": "downstream_scaler",
             "prefix": "25idcVME:3820_ds",
+            "flavor": "CTR08",
         },
     ],
     labjacks=[
@@ -74,15 +85,14 @@ ion_chamber_kwargs = dict(
 )
 
 
-# def test_load_preamps():
-#     devices = load_ion_chambers(**ion_chamber_kwargs)
-#     preamps = [device for device in devices if isinstance(device, SRS570PreAmplifier)]
-#     assert len(preamps) == 4
-#     device_names = {device.name for device in preamps}
-#     assert device_names == {"IpreKB_preamp", "I0_preamp", "It_preamp", "Iref_preamp"}
+def test_load_preamps():
+    devices = load_ion_chambers(**ion_chamber_kwargs)
+    preamps = [device for device in devices if isinstance(device, SRS570PreAmplifier)]
+    assert len(preamps) == 4
+    device_names = {device.name for device in preamps}
+    assert device_names == {"IpreKB_preamp", "I0_preamp", "It_preamp", "Iref_preamp"}
 
 
-@pytest.mark.skip(reason="Will be fixed with new counter support.")
 def test_load_labjacks():
     devices = load_ion_chambers(**ion_chamber_kwargs)
     labjacks = [device for device in devices if isinstance(device, LabJackBase)]
@@ -93,19 +103,14 @@ def test_load_labjacks():
     assert labjacks[0].analog_inputs[2].name == "I0_voltmeter"
 
 
-@pytest.mark.skip(reason="Will be fixed with new counter support.")
 def test_load_scalers():
     devices = load_ion_chambers(**ion_chamber_kwargs)
-    # scalers = [device for device in devices if isinstance(device, Counter)]
-    scalers = []  # Work-around until Counter is stable
+    scalers = [device for device in devices if isinstance(device, Counter)]
     assert len(scalers) == 2
-    ion_chambers = scalers[0].driver.ion_chambers
+    ion_chambers = scalers[0].driver.mcs.mcas
     assert list(ion_chambers.keys()) == [2, 3]
     IpreKB = ion_chambers[2]
     assert IpreKB.name == "IpreKB"
-    assert IpreKB.preamp.name == "IpreKB-preamp"
-    # print(IpreKB)
-    # assert False
 
 
 ##################
@@ -264,6 +269,7 @@ async def test_trigger(ion_chamber):
     assert status2.done
 
 
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
 @pytest.mark.asyncio
 async def test_trigger_dark_current(ion_chamber, monkeypatch):
     await ion_chamber.connect(mock=True)
@@ -403,6 +409,7 @@ def trigger_info():
     )
 
 
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
 async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)
@@ -419,6 +426,8 @@ async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     await assert_value(ion_chamber.mcs.scaler.preset_time, 1.3)
 
 
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
+@pytest.mark.asyncio
 async def test_flyscan_prepare_external_trigger(ion_chamber):
     trigger_info = TriggerInfo(
         number_of_events=5,
@@ -441,6 +450,8 @@ async def test_flyscan_prepare_external_trigger(ion_chamber):
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
 
 
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
+@pytest.mark.asyncio
 async def test_flyscan_kickoff(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
@@ -465,6 +476,8 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     assert ion_chamber._fly_start_timestamp_remote is not None
 
 
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
+@pytest.mark.asyncio
 async def test_flyscan_complete(ion_chamber):
     await ion_chamber.connect(mock=True)
     # Run the complete method
@@ -475,6 +488,7 @@ async def test_flyscan_complete(ion_chamber):
     assert stop_mock.trigger.called
 
 
+@pytest.mark.asyncio
 async def test_flyscan_collect(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
     # Make fake fly-scan data
