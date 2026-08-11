@@ -320,10 +320,14 @@ class CounterTriggerLogic(DetectorTriggerLogic):
         deadtime
           how long between exposures, 0 means the shortest possible
         """
-        await asyncio.gather(
+        coros = [
             self.driver.mcs.num_channels.set(num),
             self.driver.mcs.channel_advance_source.set(ChannelAdvanceSource.INTERNAL),
-        )
+            self.driver.mcs.erase_all.set(True),
+        ]
+        if livetime > 0:
+            coros.append(self.driver.mcs.dwell_time.set(livetime))
+        await asyncio.gather(*coros)
 
 
 @dataclass
@@ -342,7 +346,7 @@ class CounterAcquireLogic(DetectorAcquireLogic):
 
     async def start_acquiring(self):
         self.acquire_status = await set_and_wait_for_other_value(
-            set_signal=self.driver.mcs.erase_start,
+            set_signal=self.driver.mcs.start_all,
             set_value=True,
             match_signal=self.driver.mcs.acquiring,
             match_value=True,
@@ -388,9 +392,9 @@ class Counter(StandardDetector):
                 setattr(self, plugin_name, plugin)
         trigger_logic = CounterTriggerLogic(driver=self.driver)
         self.add_detector_logics(trigger_logic)
-        arm_logic = CounterAcquireLogic(self.driver)
+        acquire_logic = CounterAcquireLogic(self.driver)
         data_logic = CounterDataLogic(driver=self.driver)
-        self.add_detector_logics(arm_logic, data_logic)
+        self.add_detector_logics(acquire_logic, data_logic)
         self.add_config_signals(*self.driver.config_signals, *config_sigs)
         super().__init__(name=name)
 
