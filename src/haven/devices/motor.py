@@ -48,7 +48,7 @@ class Motor(MotorBase):
             points = value.consume()
             flyinfo = FlyMotorInfo(
                 start_position=points.lower[self][0],
-                end_position=points.lower[self][-1],
+                end_position=points.upper[self][-1],
                 time_for_move=sum(points.duration),
             )
             return await super().prepare(flyinfo)
