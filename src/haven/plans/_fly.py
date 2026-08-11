@@ -165,10 +165,14 @@ def fly_scan(
 
     """
     # For now, the aerotech is producing shorter segments than expected
+    # livetime = 0.85 * dwell_time
+    # deadtime = 0.15 * dwell_time
+    livetime = dwell_time
+    deadtime = 0
     trigger_info = TriggerInfo(
         number_of_events=num,
-        livetime=dwell_time * 0.85,
-        deadtime=dwell_time * 0.15,
+        livetime=livetime,
+        deadtime=deadtime,
         trigger=trigger,
     )
     # Prepare the motor trajectory
