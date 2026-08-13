@@ -27,6 +27,7 @@ from ophyd_async.core import (
     StrictEnum,
     SubsetEnum,
     set_and_wait_for_other_value,
+    soft_signal_r_and_setter,
 )
 
 try:
@@ -205,9 +206,14 @@ class CounterDriverIO(EpicsDevice):
             use_offset_correction=False,
         )
         self.mcs = self.MCS(prefix=mcs_prefix, channels=channels)
+        dark_signals = [sig.name for sig in self.mcs.mcas.values()]
+        self.dark_current_signals, _ = soft_signal_r_and_setter(
+            Sequence[str], initial_value=dark_signals
+        )
         self._channels = channels
         super().__init__(prefix=prefix, name=name)
         self.config_signals = [
+            self.dark_current_signals,
             self.scaler.delay,
             self.scaler.clock_frequency,
             self.scaler.count_mode,

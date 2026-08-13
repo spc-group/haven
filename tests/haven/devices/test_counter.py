@@ -182,6 +182,8 @@ async def test_counter_configuration(flavor):
     assert counter.driver.mcs.clock.mode.name in config
     assert counter.driver.mcs.mcas[2].mode.name in config
     assert counter.driver.mcs.mcas[1].mode.name in config
+    assert f"{counter.name}-dark_current_signals" in config
+    assert config[f"{counter.name}-dark_current_signals"]["value"] == ["I0", "It"]
 
 
 @pytest.mark.asyncio
