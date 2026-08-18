@@ -28,6 +28,7 @@ from ophyd_async.core import (
     SubsetEnum,
     set_and_wait_for_other_value,
     soft_signal_r_and_setter,
+    soft_signal_rw,
 )
 
 try:
@@ -119,6 +120,7 @@ class PulseGenerator(EpicsDevice):
 class MCAChannel(TypedDict):
     number: int
     name: NotRequired[str]
+    hertz_per_volt: NotRequired[int | float]
 
 
 class MCA(StandardReadable):
@@ -128,7 +130,13 @@ class MCA(StandardReadable):
         MCS = "MCS"
         LIST = "List"
 
-    def __init__(self, prefix, name=""):
+    def __init__(
+        self,
+        prefix,
+        *,
+        hertz_per_volt: int | float | None = None,
+        name="",
+    ):
         # Signals
         with self.add_children_as_readables(
             StandardReadableFormat.HINTED_UNCACHED_SIGNAL
@@ -137,6 +145,10 @@ class MCA(StandardReadable):
         self.background = epics_signal_r(Array1D[np.int32], f"{prefix}.BG")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.mode = epics_signal_rw(self.MCAMode, f"{prefix}.MODE")
+            if hertz_per_volt is not None:
+                self.hertz_per_volt = soft_signal_rw(
+                    float, initial_value=hertz_per_volt
+                )
         super().__init__(name=name)
 
 
@@ -173,7 +185,9 @@ class MultiChannelScaler(EpicsDevice):
         self.mcas = DeviceVector(
             {
                 ch["number"]: MCA(
-                    f"{prefix}mca{ch['number']+1}", name=ch.get("name", "")
+                    f"{prefix}mca{ch['number']+1}",
+                    name=ch.get("name", ""),
+                    hertz_per_volt=ch.get("hertz_per_volt"),
                 )
                 for ch in channels
             }

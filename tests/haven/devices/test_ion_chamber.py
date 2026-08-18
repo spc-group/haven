@@ -103,7 +103,8 @@ def test_load_labjacks():
     assert labjacks[0].analog_inputs[2].name == "I0_voltmeter"
 
 
-def test_load_scalers():
+@pytest.mark.asyncio
+async def test_load_scalers():
     devices = load_ion_chambers(**ion_chamber_kwargs)
     scalers = [device for device in devices if isinstance(device, Counter)]
     assert len(scalers) == 2
@@ -111,6 +112,7 @@ def test_load_scalers():
     assert list(ion_chambers.keys()) == [2, 3]
     IpreKB = ion_chambers[2]
     assert IpreKB.name == "IpreKB"
+    await assert_value(IpreKB.hertz_per_volt, 1e7)
 
 
 ##################

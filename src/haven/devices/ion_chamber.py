@@ -122,7 +122,11 @@ def load_ion_chambers(
             if ic_cfg["scaler"] == cfg["name"]
         }
         channels: list[MCAChannel] = [
-            {"name": ic_cfg["name"], "number": ic_cfg["scaler_channel"]}
+            {
+                "name": ic_cfg["name"],
+                "number": ic_cfg["scaler_channel"],
+                "hertz_per_volt": ic_cfg["hertz_per_volt"],
+            }
             for ic_cfg in ion_chambers
             if ic_cfg["scaler"] == cfg["name"]
         ]
