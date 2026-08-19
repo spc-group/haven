@@ -60,6 +60,26 @@ class LambdaDriverIO(ADBaseIO):
         self.set_name(self.name)
 
 
+class LambdaAcquireLogic(ADAcquireLogic):
+    async def ensure_ready(self):
+        """The operating mode might change depending on the scan we're
+        running.
+
+        Stash it so we can restore it after the scan is done.
+
+        """
+        self._operating_mode, _ = await asyncio.gather(
+            self.driver.operating_mode.get_value(),
+            super().ensure_ready(),
+        )
+
+    async def ensure_stopped(self):
+        coros = [super().ensure_stopped()]
+        if getattr(self, "_operating_mode", None) is not None:
+            coros.append(self.driver.operating_mode.set(self._operating_mode))
+        await asyncio.gather(*coros)
+
+
 @dataclass
 class LambdaTriggerLogic(DetectorTriggerLogic):
     driver: ADBaseIO
@@ -71,9 +91,20 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
             return 1e-6
         return 0.0
 
+    async def set_trigger_mode(self):
+        """External triggering requires a 1ms additiona delay in 24-bit mode.
+
+        We want to avoid that, so use 12-bit mode if needed.
+
+        """
+        bit_depth = await self.driver.operating_mode.get_value()
+        if bit_depth == OperatingMode.TWENTY_FOUR_BIT:
+            await self.driver.operating_mode.set(OperatingMode.TWELVE_BIT)
+
     async def prepare_edge(self, num: int, livetime: float) -> None:
         task = asyncio.ensure_future(
             asyncio.gather(
+                self.set_trigger_mode(),
                 prepare_exposures(self.driver, num),
                 self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_IMAGE),
                 self.driver.acquire_time.set(livetime),
@@ -133,7 +164,7 @@ class LambdaDetector(AreaDetector):
             driver,
             prefix,
             *writer_factories,
-            acquire_logic=ADAcquireLogic(driver),
+            acquire_logic=LambdaAcquireLogic(driver),
             trigger_logic=LambdaTriggerLogic(driver),
             plugins=plugins,
             config_sigs=config_sigs,

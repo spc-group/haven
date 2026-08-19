@@ -83,6 +83,8 @@ async def test_prepare_internal(detector):
 @pytest.mark.asyncio
 async def test_prepare_external(detector):
     set_mock_value(detector.hdf.file_path_exists, True)
+    set_mock_value(detector.driver.operating_mode, "24-Bit")
+    await detector.stage()
     tinfo = TriggerInfo(
         trigger=DetectorTrigger.EXTERNAL_EDGE,
         collections_per_event=5,
@@ -91,6 +93,11 @@ async def test_prepare_external(detector):
     await assert_value(detector.driver.trigger_mode, "External_ImagePer")
     await assert_value(detector.driver.num_images, 5)
     await assert_value(detector.driver.image_mode, "Multiple")
+    # We need 12-bit mode so that we can use edge triggering properly
+    await assert_value(detector.driver.operating_mode, "12-Bit")
+    # Make sure operating mode gets set back
+    await detector.unstage()
+    await assert_value(detector.driver.operating_mode, "24-Bit")
 
 
 @pytest.mark.parametrize(
