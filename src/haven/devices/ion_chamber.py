@@ -127,7 +127,7 @@ def load_ion_chambers(
                 "number": ic_cfg["counter_channel"],
                 "hertz_per_volt": ic_cfg["hertz_per_volt"],
             }
-            for ic_cfg in ion_chambers
+            for ic_cfg in ion_chamber
             if ic_cfg["scaler"] == cfg["name"]
         ]
         Counter = counter_classes[cfg["flavor"]]

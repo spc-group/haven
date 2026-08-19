@@ -14,6 +14,7 @@ from ophyd_async.core import (
     StrictEnum,
     error_if_none,
     observe_value,
+    set_and_wait_for_other_value,
 )
 from ophyd_async.epics.core import (
     epics_signal_r,
@@ -246,14 +247,13 @@ class AerotechMotor(Motor):
             self._fly_info, "Motor must be prepared before attempting to kickoff"
         )
         stage = self.parent
-        await stage.profile_move.execute.trigger()
-        # Wait for the stage to report it is flying
-        observations = observe_value(
-            stage.profile_move.execute_state, done_timeout=DEFAULT_TIMEOUT
+        await set_and_wait_for_other_value(
+            set_signal=stage.profile_move.execute,
+            set_value=True,
+            match_signal=stage.profile_move.execute_state,
+            match_value=ExecuteState.EXECUTING,
+            wait_for_set_completion=False,
         )
-        async for current_state in observations:
-            if current_state == ExecuteState.EXECUTING:
-                break
 
     @AsyncStatus.wrap
     async def complete(self):
@@ -383,7 +383,7 @@ class ProfileMove(StandardReadable):
         self.build = epics_triggerable_command(f"{prefix}Build")
         self.build_state = epics_signal_r(BuildState, f"{prefix}BuildState")
         self.build_status = epics_signal_r(str, f"{prefix}BuildStatus")
-        self.execute = epics_triggerable_command(f"{prefix}Execute")
+        self.execute = epics_signal_rw(bool, f"{prefix}Execute")
         self.execute_state = epics_signal_r(ExecuteState, f"{prefix}ExecuteState")
         self.execute_status = epics_signal_r(str, f"{prefix}ExecuteStatus")
         super().__init__(name=name)
