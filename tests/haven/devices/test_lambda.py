@@ -93,6 +93,23 @@ async def test_prepare_external(detector):
     await assert_value(detector.driver.image_mode, "Multiple")
 
 
+@pytest.mark.parametrize(
+    "bit_depth,deadtime",
+    [
+        ("1-Bit", 0.0),
+        ("6-Bit", 0.0),
+        ("12-Bit", 0.0),
+        ("24-Bit", 1e-6),
+    ],
+)
+@pytest.mark.asyncio
+async def test_deadtime(detector, bit_depth: str, deadtime: float):
+    config_values = {
+        detector.driver.operating_mode: bit_depth,
+    }
+    assert (detector._trigger_logic.get_deadtime(config_values)) == deadtime
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

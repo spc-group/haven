@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     DetectorTriggerLogic,
+    SignalDict,
     SignalR,
     StrictEnum,
     SubsetEnum,
@@ -63,17 +64,19 @@ class LambdaDriverIO(ADBaseIO):
 class LambdaTriggerLogic(DetectorTriggerLogic):
     driver: ADBaseIO
 
-    def get_deadtime(self, exposure: float | None) -> float:
+    def get_deadtime(self, config_values: SignalDict) -> float:
         # From manual: No readout time in 12-bit, 6-bit and 1-bit mode,
         # 1 ms in 24-bit mode
-        return 5e-3
+        if config_values[self.driver.operating_mode] == OperatingMode.TWENTY_FOUR_BIT:
+            return 1e-6
+        return 0.0
 
     async def prepare_edge(self, num: int, livetime: float) -> None:
         task = asyncio.ensure_future(
             asyncio.gather(
                 prepare_exposures(self.driver, num),
                 self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_IMAGE),
-                self.driver.acquire_time.set(livetime - self.get_deadtime(livetime)),
+                self.driver.acquire_time.set(livetime),
             )
         )
         await self._wait_for_num_images(num)
