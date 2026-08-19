@@ -54,8 +54,8 @@ class LabJackInfo(TypedDict):
 
 class IonChamberInfo(TypedDict):
     name: str
-    scaler: str
-    scaler_channel: int
+    counter: str
+    counter_channel: int
     labjack: str
     labjack_channel: int
     preamp_prefix: str
@@ -63,9 +63,9 @@ class IonChamberInfo(TypedDict):
 
 
 def load_ion_chambers(
-    counters: Sequence[CounterInfo],
-    labjacks: Sequence[LabJackInfo],
-    ion_chambers: Sequence[IonChamberInfo],
+    counter: Sequence[CounterInfo],
+    labjack: Sequence[LabJackInfo],
+    ion_chamber: Sequence[IonChamberInfo],
 ) -> list[Device]:
     """Create (but don't connect) devices to match ion chamber
     definitions.
@@ -90,13 +90,13 @@ def load_ion_chambers(
     # Pre-amps are just separate, isolated devices
     _preamps = [
         SRS570PreAmplifier(name=f"{cfg['name']}_preamp", prefix=cfg["preamp_prefix"])
-        for cfg in ion_chambers
+        for cfg in ion_chamber
     ]
     # Build labjack devices with only the analog inputs we need for the ion chambers
     _labjacks = {}
-    for cfg in labjacks:
+    for cfg in labjack:
         name = cfg["name"]
-        aios = [ic["labjack_channel"] for ic in ion_chambers if ic["labjack"] == name]
+        aios = [ic["labjack_channel"] for ic in ion_chamber if ic["labjack"] == name]
         _labjacks[name] = LabJackT7(
             prefix=cfg["prefix"],
             name=cfg["name"],
@@ -106,25 +106,25 @@ def load_ion_chambers(
         )
     # Rename the labjack voltmeter inputs to match their ion chamber
     # so they make sense when reading
-    for ic in ion_chambers:
+    for ic in ion_chamber:
         labjack = _labjacks[ic["labjack"]]
         labjack_channel = ic["labjack_channel"]
         labjack.analog_inputs[labjack_channel].set_name(f"{ic['name']}_voltmeter")
     # Finally, create the scaler objects now that we have the preamps, labjacks, etc
     _counters = {}
-    for cfg in counters:
+    for cfg in counter:
         ic_configs = {
             ic_cfg["name"]: {
-                "channel": ic_cfg["scaler_channel"],
+                "channel": ic_cfg["counter_channel"],
                 "preamp_prefix": ic_cfg["preamp_prefix"],
             }
-            for ic_cfg in ion_chambers
-            if ic_cfg["scaler"] == cfg["name"]
+            for ic_cfg in ion_chamber
+            if ic_cfg["counter"] == cfg["name"]
         }
         channels: list[MCAChannel] = [
             {
                 "name": ic_cfg["name"],
-                "number": ic_cfg["scaler_channel"],
+                "number": ic_cfg["counter_channel"],
                 "hertz_per_volt": ic_cfg["hertz_per_volt"],
             }
             for ic_cfg in ion_chambers
