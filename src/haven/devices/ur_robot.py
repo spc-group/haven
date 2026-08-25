@@ -4,6 +4,7 @@ import time
 from ophyd import Component
 from ophyd import Device, DeviceStatus
 from ophyd import PVPositionerPC
+from ophyd import DerivedSignal
 from ophyd import EpicsSignal
 from ophyd import EpicsSignalRO
 from ophyd.status import Status
@@ -19,7 +20,22 @@ class _URRobotiqGripperGroup(Device):
     open = Component(EpicsSignal, "RobotiqGripper:Open")
     close = Component(EpicsSignal, "RobotiqGripper:Close")
 
+    # String aliases accepted by set() (e.g. from bps.mv).
+    _str_to_state = {
+        "open": GripperState.OPEN,
+        "close": GripperState.CLOSE,
+        "closed": GripperState.CLOSE,
+    }
+
     def set(self, target, timeout=None):
+        if isinstance(target, str):
+            try:
+                target = self._str_to_state[target.lower()]
+            except KeyError:
+                raise ValueError(
+                    f"gripper target must be a GripperState or one of "
+                    f"{sorted(self._str_to_state)}, got {target!r}"
+                ) from None
         status = DeviceStatus(self, timeout=timeout)
         done_callback = lambda **kwargs: status.set_finished()
         if target == GripperState.OPEN:
@@ -130,6 +146,27 @@ class _URJointGroup(Device):
         return status
 
 
+class _TCPAxisSignal(DerivedSignal):
+    """Read-only scalar view onto one axis of the TCP pose array.
+
+    ``derived_from`` may be a dotted attribute path relative to the parent
+    device (e.g. ``"pose.readback"``), so a single element of the nested
+    ``ActualTCPPose`` array can be exposed at the top level.
+    """
+
+    def __init__(self, derived_from, *, axis, parent=None, **kwargs):
+        self._axis = axis
+        if isinstance(derived_from, str):
+            obj = parent
+            for part in derived_from.split("."):
+                obj = getattr(obj, part)
+            derived_from = obj
+        super().__init__(derived_from, parent=parent, **kwargs)
+
+    def inverse(self, value):
+        return value[self._axis]
+
+
 class UR(Device):
     """Universal Robots e-series arm exposed via the urRobot EPICS support module."""
 
@@ -138,3 +175,6 @@ class UR(Device):
     gripper = Component(_URRobotiqGripperGroup, "")
     joints = Component(_URJointGroup, "")
     pose = Component(_URPoseGroup, "")
+    pose_y_readback = Component(
+        _TCPAxisSignal, derived_from="pose.readback", axis=1, kind="omitted"
+    )
