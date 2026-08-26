@@ -2,19 +2,25 @@
 UR5 sample-changer plans
 ========================
 
-Bluesky port of the caproto ``SamplesGroup`` sample-changer IOC. The robot
-picks a sample holder off the board, travels a fixed waypoint path to the
-Aerotech stage, and places it (and the reverse). Drives the
-:class:`mcp_instrument.devices.ur5_robot.UR5` device: ``ur5.pose`` performs a
-linear Cartesian move (``moveL``) and ``ur5.gripper`` grabs/releases.
+Bluesky translation of the caproto ``SamplesGroup`` sample-changer IOC. A UR5
+robot moves a sample holder between a board of 24 holders and the Aerotech
+stage, following a fixed set of waypoints so the arm travels a known, safe path.
 
-The IOC's stateful bookkeeping does *not* translate to a stateless plan and is
-intentionally omitted: labjack presence sensing, autosave PVs,
-``current_sample`` tracking, and the camera/dashboard ``cal_stage`` calibration
-(which reads ``.urp`` programs the UR5 device does not expose). The caller is
-responsible for the stage being empty before ``load_sample`` and occupied
-before ``unload_sample``; pass an explicit ``stage_position`` once it has been
-calibrated, otherwise the nominal :data:`STAGE_POSITION` is used.
+Each plan takes the ``ur5`` device (:class:`haven.devices.ur_robot.UR`) as its
+first argument and drives just two of its parts:
+
+* ``ur5.pose`` -- a linear Cartesian move (``moveL``) to a 6-element
+  ``(x, y, z, rx, ry, rz)`` pose,
+* ``ur5.gripper`` -- ``"closed"`` to grab a holder, ``"open"`` to release it.
+
+The IOC's stateful bookkeeping is intentionally left out because it does not fit
+a stateless plan (and the ``ur5`` device does not expose the hardware for it):
+labjack presence sensing, ``current_sample`` tracking, and the ``cal_stage``
+camera calibration (which plays ``.urp`` programs through a dashboard). The
+caller is therefore responsible for the stage being empty before
+:func:`load_sample` and occupied before :func:`unload_sample`, and for passing a
+calibrated ``stage`` pose once one is known (otherwise the nominal
+:data:`STAGE_POSITION` is used).
 
 .. autosummary::
     ~load_sample
@@ -24,169 +30,164 @@ calibrated, otherwise the nominal :data:`STAGE_POSITION` is used.
 
 import logging
 
-import numpy as np
 from bluesky import plan_stubs as bps
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
-# -- Geometry (from the SamplesGroup IOC) -----------------------------------
+# ---------------------------------------------------------------------------
+# Geometry (transcribed from the caproto SamplesGroup IOC)
+# ---------------------------------------------------------------------------
+# Every pose is ``(x, y, z, rx, ry, rz)``: millimetres for position and
+# rotation-vector radians for orientation, in the robot's base frame.
 
-# Nominal Aerotech stage pose. On the real system the (x, y, z) is measured by
-# the camera calibration; here it is the nominal value plus the camera offset.
-XYZ_STAGE = [0.20354, -0.41995, -0.06055]
-RXYZ_STAGE = [-2.893, -1.226, -0.003]
-# Offset accounting for the camera not being centered on the robot.
-STAGE_DELTA = [0.00499, 0.00105, 0, 0, 0, 0]
-STAGE_POSITION = [a + b for a, b in zip(XYZ_STAGE + RXYZ_STAGE, STAGE_DELTA)]
+# Aerotech stage. On the real system the (x, y, z) is measured by the camera
+# calibration (``cal_stage``); here the nominal survey value plus the camera
+# offset is used as a sensible default.
+_STAGE_XYZ = [203.54, -419.95, -60.55]
+_STAGE_RXYZ = [-2.893, -1.226, -0.003]
+_CAMERA_OFFSET = [4.99, 1.05, 0.0, 0.0, 0.0, 0.0]
+STAGE_POSITION = [
+    coord + offset for coord, offset in zip(_STAGE_XYZ + _STAGE_RXYZ, _CAMERA_OFFSET)
+]
 
-# 24 sample holders arranged in a 6-wide grid on the board.
-xyz8 = [-0.07709, 0.35717, 0.06101]
-xyz22 = [0.07552, 0.20068, 0.06088]
-x_del = (xyz22[0] - xyz8[0]) / 2
-y_del = (xyz8[1] - xyz22[1]) / 2
-pos15 = (np.array(xyz8) + np.array(xyz22)) / 2
-pos0 = [pos15[0] - 3 * x_del, pos15[1] + 2 * y_del, pos15[2]]
-Rxyz0 = [-2.244, 2.2, 0.009]
+# Sample board: 24 holders in a 6-wide grid, sharing one orientation. The grid
+# is reconstructed from two surveyed holders (#8 and #22); #15 is their midpoint
+# and holder #0 sits three columns left and two rows up from it.
+_XYZ_8 = [-77.09, 357.17, 61.01]
+_XYZ_22 = [75.52, 200.68, 60.88]
+_HOLDER_RXYZ = [-2.244, 2.2, 0.009]
+_COLUMN_STEP = (_XYZ_22[0] - _XYZ_8[0]) / 2  # x spacing between adjacent columns
+_ROW_STEP = (_XYZ_8[1] - _XYZ_22[1]) / 2  # y spacing between adjacent rows
+_center = [(a + b) / 2 for a, b in zip(_XYZ_8, _XYZ_22)]  # holder #15
+_holder0 = [_center[0] - 3 * _COLUMN_STEP, _center[1] + 2 * _ROW_STEP, _center[2]]
 
 SAMPLE_POSITIONS = []
 for _n in range(24):
-    _x = pos0[0] + _n % 6 * x_del
-    _y = pos0[1] - _n // 6 * y_del
-    SAMPLE_POSITIONS.append([_x, _y, pos15[2]] + Rxyz0)
+    _x = _holder0[0] + (_n % 6) * _COLUMN_STEP
+    _y = _holder0[1] - (_n // 6) * _ROW_STEP
+    SAMPLE_POSITIONS.append([_x, _y, _holder0[2]] + _HOLDER_RXYZ)
 
-# Safe travel path between the board and the stage. Each waypoint is (x, y, z)
-# only; the orientation is filled in with TRAVEL_RXYZ (the board orientation the
-# IOC's ``home`` used when padding these same waypoints).
-BOARD_TO_STAGE_PATH = [
-    [-0.26949, 0.10510, 0.41805],
-    [-0.04074, -0.40701, 0.31061],
+# Safe travel path between the board and the stage, ordered board side first.
+# The IOC stored these as (x, y, z) only and moved with the fixed travel
+# orientation below; the ur5 device's moveL needs a full 6-DOF pose, so the
+# orientation is padded on here.
+_TRAVEL_RXYZ = [2.242, -2.199, -0.008]
+BOARD_TO_STAGE = [
+    [-269.49, 105.10, 418.05] + _TRAVEL_RXYZ,  # board side
+    [-40.74, -407.01, 310.61] + _TRAVEL_RXYZ,  # stage side
 ]
-TRAVEL_RXYZ = [2.242, -2.199, -0.008]
-
-# Gripper is lifted 0.2 m above the stage position (used by cal_stage on the
-# real system; kept here for reference).
-Z_GRIPPER_STAGE = 0.2
 
 
-# -- Motion helpers ---------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Low-level robot motions
+# ---------------------------------------------------------------------------
 
-def _as_pose6(pose):
-    """Return a 6-vector (x, y, z, rx, ry, rz), padding 3-vectors with the
-    travel orientation."""
-    pose = list(pose)
-    if len(pose) == 3:
-        return pose + TRAVEL_RXYZ
-    if len(pose) == 6:
-        return pose
-    raise ValueError(f"pose must have 3 or 6 elements, got {len(pose)}")
+def move_to(ur5, pose):
+    """Linear Cartesian move (``moveL``) to a 6-element pose."""
+    yield from bps.mv(ur5.pose, tuple(pose))
 
 
-def _sample_position(sample):
-    """Resolve *sample* to a 6-vector: an int indexes SAMPLE_POSITIONS, a
-    sequence is used as an explicit pose."""
+def grab(ur5):
+    """Close the gripper onto a holder (the IOC's ``pick``)."""
+    yield from bps.mv(ur5.gripper, "closed")
+
+
+def release(ur5):
+    """Open the gripper to let go of a holder (the IOC's ``place``)."""
+    yield from bps.mv(ur5.gripper, "open")
+
+
+def board_pose(sample):
+    """Resolve *sample* to a 6-element pose.
+
+    An ``int`` indexes the board grid (0-23); any other sequence is taken as an
+    explicit ``(x, y, z, rx, ry, rz)`` pose.
+    """
     if isinstance(sample, int):
         return SAMPLE_POSITIONS[sample]
     return list(sample)
 
 
-def move_l(ur5, pose):
-    """Linear Cartesian move to *pose* (the IOC's ``driver.movel``)."""
-    yield from bps.mv(ur5.pose, tuple(_as_pose6(pose)))
+# ---------------------------------------------------------------------------
+# Sample-changer plans
+# ---------------------------------------------------------------------------
 
+def load_sample(ur5, sample, stage=None):
+    """Move a sample holder from the board onto the stage.
 
-def pick(ur5, pose):
-    """Move to *pose* and close the gripper on the holder (``driver.pickl``)."""
-    yield from move_l(ur5, pose)
-    yield from bps.mv(ur5.gripper, "closed")
-
-
-def place(ur5, pose):
-    """Move to *pose* and release the holder (``driver.placel``)."""
-    yield from move_l(ur5, pose)
-    yield from bps.mv(ur5.gripper, "open")
-
-
-# -- Sample-changer plans ---------------------------------------------------
-
-def load_sample(ur5, sample, stage_position=None, waypoints=None):
-    """Load a sample from the board onto the stage.
-
-    Mirrors ``SampleGroup.load``: pick the holder off the board, traverse the
-    waypoints toward the stage, place it, then retreat along the waypoints in
-    reverse to a safe resting pose.
+    Mirrors ``SampleGroup.load``.
 
     Parameters
     ----------
     sample
-        Board index (0-23 into :data:`SAMPLE_POSITIONS`) or an explicit
-        (x, y, z, rx, ry, rz) board pose.
-    stage_position
-        Calibrated stage pose; defaults to :data:`STAGE_POSITION`.
-    waypoints
-        Board-to-stage travel path; defaults to :data:`BOARD_TO_STAGE_PATH`.
+        Board grid index (0-23) or an explicit ``(x, y, z, rx, ry, rz)`` pose.
+    stage
+        Where to place the holder; defaults to :data:`STAGE_POSITION`. Pass the
+        calibrated stage pose once it is known.
     """
-    logger.debug("load_sample(%r)", sample)
-    sample_position = _sample_position(sample)
-    stage_position = STAGE_POSITION if stage_position is None else stage_position
-    waypoints = BOARD_TO_STAGE_PATH if waypoints is None else waypoints
+    log.debug("load_sample(%r)", sample)
+    board = board_pose(sample)
+    stage = STAGE_POSITION if stage is None else stage
 
-    yield from pick(ur5, sample_position)
-    for waypoint in waypoints:
-        yield from move_l(ur5, waypoint)
-    yield from place(ur5, stage_position)
-    for waypoint in reversed(waypoints):
-        yield from move_l(ur5, waypoint)
+    # 1. Pick the holder up off the board.
+    yield from move_to(ur5, board)
+    yield from grab(ur5)
+    # 2. Carry it out to the stage along the safe path.
+    for waypoint in BOARD_TO_STAGE:
+        yield from move_to(ur5, waypoint)
+    # 3. Set it down on the stage.
+    yield from move_to(ur5, stage)
+    yield from release(ur5)
+    # 4. Retreat back along the path to a resting pose.
+    for waypoint in reversed(BOARD_TO_STAGE):
+        yield from move_to(ur5, waypoint)
 
 
-def unload_sample(ur5, sample, stage_position=None, waypoints=None):
-    """Return a sample from the stage to its board position.
+def unload_sample(ur5, sample, stage=None):
+    """Return a sample holder from the stage to its board position.
 
-    Mirrors ``SampleGroup.unload``: traverse the waypoints to the stage, pick
-    the holder off the stage, retreat along the waypoints in reverse, place it
-    back on the board, then rest at the first waypoint.
+    Mirrors ``SampleGroup.unload``.
 
     Parameters
     ----------
     sample
-        Board index (0-23) or explicit board pose to return the holder to.
-    stage_position
-        Calibrated stage pose; defaults to :data:`STAGE_POSITION`.
-    waypoints
-        Board-to-stage travel path; defaults to :data:`BOARD_TO_STAGE_PATH`.
+        Board grid index (0-23) or an explicit ``(x, y, z, rx, ry, rz)`` pose to
+        return the holder to.
+    stage
+        Where to pick the holder up from; defaults to :data:`STAGE_POSITION`.
     """
-    logger.debug("unload_sample(%r)", sample)
-    sample_position = _sample_position(sample)
-    stage_position = STAGE_POSITION if stage_position is None else stage_position
-    waypoints = BOARD_TO_STAGE_PATH if waypoints is None else waypoints
+    log.debug("unload_sample(%r)", sample)
+    board = board_pose(sample)
+    stage = STAGE_POSITION if stage is None else stage
 
-    for waypoint in waypoints:
-        yield from move_l(ur5, waypoint)
-    yield from pick(ur5, stage_position)
-    for waypoint in reversed(waypoints):
-        yield from move_l(ur5, waypoint)
-    yield from place(ur5, sample_position)
-    yield from move_l(ur5, waypoints[0])
+    # 1. Travel out to the stage along the safe path.
+    for waypoint in BOARD_TO_STAGE:
+        yield from move_to(ur5, waypoint)
+    # 2. Pick the holder up off the stage.
+    yield from move_to(ur5, stage)
+    yield from grab(ur5)
+    # 3. Retreat back along the path.
+    for waypoint in reversed(BOARD_TO_STAGE):
+        yield from move_to(ur5, waypoint)
+    # 4. Set the holder back down on the board.
+    yield from move_to(ur5, board)
+    yield from release(ur5)
+    # 5. Rest at the board-side waypoint.
+    yield from move_to(ur5, BOARD_TO_STAGE[0])
 
 
-def home_robot(ur5, waypoints=None):
-    """Send the robot to its home/rest pose near the board.
+def home_robot(ur5):
+    """Send the arm to its rest pose near the board.
 
     Mirrors ``SamplesGroup.home``: if the arm is currently out toward the stage
-    (past the last waypoint in y), retreat through the waypoints in reverse;
-    otherwise go straight to the board-side waypoint.
-
-    Parameters
-    ----------
-    waypoints
-        Board-to-stage travel path; defaults to :data:`BOARD_TO_STAGE_PATH`.
+    (past the stage-side waypoint in y), retreat through the waypoints in
+    reverse; otherwise go straight to the board-side waypoint.
     """
-    logger.debug("home_robot()")
-    waypoints = BOARD_TO_STAGE_PATH if waypoints is None else waypoints
-    poses = [_as_pose6(waypoint) for waypoint in waypoints]
-
-    if ur5.pose_y_readback.get() < poses[-1][1]:
-        for pose in reversed(poses):
-            yield from move_l(ur5, pose)
+    log.debug("home_robot()")
+    stage_side = BOARD_TO_STAGE[-1]
+    if ur5.pose_y_readback.get() < stage_side[1]:
+        for waypoint in reversed(BOARD_TO_STAGE):
+            yield from move_to(ur5, waypoint)
     else:
-        yield from move_l(ur5, poses[0])
+        yield from move_to(ur5, BOARD_TO_STAGE[0])
