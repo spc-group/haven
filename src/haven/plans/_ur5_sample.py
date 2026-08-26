@@ -191,3 +191,9 @@ def home_robot(ur5):
             yield from move_to(ur5, waypoint)
     else:
         yield from move_to(ur5, BOARD_TO_STAGE[0])
+
+def move_to_stage(ur5):
+    """Move the robot to the stage position."""
+    log.debug("move_to_stage()")
+    for waypoint in BOARD_TO_STAGE:
+        yield from move_to(ur5, waypoint)
