@@ -74,7 +74,8 @@ for _n in range(24):
 # orientation is padded on here.
 _TRAVEL_RXYZ = [2.242, -2.199, -0.008]
 BOARD_TO_STAGE = [
-    [-269.49, 105.10, 418.05] + _TRAVEL_RXYZ,  # board side
+    [-264.89, -116.25, 418.02, *_TRAVEL_RXYZ],
+    # [-269.49, 105.10, 418.05] + _TRAVEL_RXYZ,  # board side
     [-40.74, -407.01, 310.61] + _TRAVEL_RXYZ,  # stage side
 ]
 
