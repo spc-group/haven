@@ -164,6 +164,7 @@ class IonChamber(StandardReadable, Triggerable):
 
     _ophyd_labels_ = {"ion_chambers", "detectors"}
     _trigger_statuses: dict[str, AsyncStatus] = {}
+    _dark_current_statuses: dict[str, AsyncStatus] = {}
     _clock_register_width = 32  # bits in the register
     _fly_start_timestamp_remote: int | float | None = None
     _fly_start_timestamp_local: int | float | None = None
@@ -459,6 +460,10 @@ class IonChamber(StandardReadable, Triggerable):
           reading.
 
         """
+        if record_dark_current:
+            log.info(f"Recording dark current for '{self.name}' ion chamber.")
+        else:
+            log.info(f"Triggering '{self.name}' ion chamber.")
         # Make sure we have a fresh voltmeter reading
         await self.voltmeter_channel.trigger()
         # Recording the dark current is done differently
@@ -481,7 +486,15 @@ class IonChamber(StandardReadable, Triggerable):
 
     async def record_dark_current(self):
         signal = self.mcs.scaler.record_dark_current
-        await signal.trigger()
+        last_status = self._dark_current_statuses.get(signal.source)
+        if last_status is not None and not last_status.done:
+            # Previous trigger is still going, so wait for that instead
+            await last_status
+        else:
+            # No previous trigger, so start our own
+            status = signal.trigger()
+            self._dark_current_statuses[signal.source] = status
+            await status
         # Now wait for the count state to return to done
         integration_time = await self.mcs.scaler.dark_current_time.get_value()
         timeout = integration_time + DEFAULT_TIMEOUT

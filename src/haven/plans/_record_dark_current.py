@@ -88,7 +88,7 @@ def record_dark_current(
             md=_md,
         )
         # Wait for the devices to be done recording dark current
-        yield from bps.wait(group=group)
+        yield from bps.wait(group=group, timeout=40)
         # Calibrate standard detectors to they read zero
         for detector in calibrated_detectors:
             yield Msg("calibrate", detector, truth=0)
