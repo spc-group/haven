@@ -18,6 +18,7 @@ from ophyd_async.core import (
     StandardReadableFormat,
     TriggerInfo,
     derived_signal_r,
+    set_and_wait_for_other_value,
     soft_signal_rw,
     wait_for_value,
 )
@@ -551,9 +552,9 @@ class IonChamber(StandardReadable, Triggerable):
         await self.mcs.num_channels.set(num_channels)
         # Start acquiring if another ion chamber hasn't done so already
         if await self.mcs.acquiring.get_value() != self.mcs.Acquiring.ACQUIRING:
-            await self.mcs.erase_start.trigger()
-            # Wait for acquisition to start
-            await wait_for_value(
+            await set_and_wait_for_other_value(
+                self.mcs.erase_start,
+                True,
                 self.mcs.acquiring,
                 self.mcs.Acquiring.ACQUIRING,
                 timeout=DEFAULT_TIMEOUT,

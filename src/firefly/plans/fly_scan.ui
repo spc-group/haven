@@ -62,7 +62,7 @@
           </item>
           <item>
            <property name="text">
-            <string>EDGE_TRIGGER</string>
+            <string>EXTERNAL_EDGE</string>
            </property>
           </item>
          </widget>

@@ -458,8 +458,6 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
     await ion_chamber.prepare(trigger_info)
-    # Prepare the mocked put commands
-    start_mock = set_mock_attr(ion_chamber.mcs, "erase_start", AsyncMock())
     # Kickoff the fly scan
     status = ion_chamber.kickoff()
     # The timing matters here, scaler needs to be idle to make sure it
@@ -471,7 +469,7 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     await status
     await assert_value(ion_chamber.mcs.num_channels, 8000)
     # Check that the scan was started
-    assert start_mock.trigger.called
+    await assert_value(ion_chamber.mcs.erase_start, True)
     # Check that timestamps get recorded when new data are available
     set_mock_value(ion_chamber.mcs.current_channel, 1)
     assert ion_chamber._fly_start_timestamp_local is not None

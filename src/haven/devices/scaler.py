@@ -126,7 +126,7 @@ class MultiChannelScaler(StandardReadable):
         self.start_all = epics_triggerable_command(f"{prefix}StartAll")
         self.stop_all = epics_triggerable_command(f"{prefix}StopAll")
         self.erase_all = epics_triggerable_command(f"{prefix}EraseAll")
-        self.erase_start = epics_triggerable_command(f"{prefix}EraseStart")
+        self.erase_start = epics_signal_rw(bool, f"{prefix}EraseStart", wait=False)
         self.software_channel_advance = epics_triggerable_command(
             f"{prefix}SoftwareChannelAdvance"
         )
