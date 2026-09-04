@@ -116,7 +116,8 @@ class PssShutter(Positioner):
         return all([self._allow_open, searched, aps_key, user_key])
 
     def _close_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
-        return all([self._allow_close, searched, aps_key, user_key])
+        # Even if the hutch is not searched, we can always still *close* the shutter
+        return all([self._allow_close])
 
     async def _actuate_shutter(self, setpoint: int) -> None:
         """Open/close the shutter using derived-from signals."""
