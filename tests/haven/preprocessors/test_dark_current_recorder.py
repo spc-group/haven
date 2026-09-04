@@ -16,7 +16,7 @@ async def test_records_with_no_history():
     preamp = SR570PreAmplifier("", name="preamp")
     await preamp.connect(mock=True)
     recorder = DarkCurrentRecorder(
-        detectors=[detector], preamps=[preamp], _is_subscribed=True
+        detectors=[detector], preamps=[preamp], shutters=[], _is_subscribed=True
     )
     msgs = list(recorder(bp.count([detector])))
     open_run_messages = [msg for msg in msgs if msg.command == "open_run"]
@@ -33,7 +33,7 @@ async def test_warns_if_not_subscribed():
     preamp = SR570PreAmplifier("", name="preamp")
     await preamp.connect(mock=True)
     recorder = DarkCurrentRecorder(
-        detectors=[detector], preamps=[preamp], _is_subscribed=False
+        detectors=[detector], preamps=[preamp], shutters=[], _is_subscribed=False
     )
     with pytest.warns(UserWarning):
         msgs = list(recorder(bp.count([detector])))
@@ -62,6 +62,7 @@ async def test_skips_if_recent():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings=preamp_readings,
@@ -87,6 +88,7 @@ async def test_records_if_old():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings={"preamp": 0},
@@ -111,6 +113,7 @@ async def test_records_if_preamps_changed():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
         time_to_live=ttl,
         _last_measured=last_time,
         _preamp_readings=preamp_readings,
@@ -140,6 +143,7 @@ async def test_adds_dark_current_uid():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
         _scan_uid="abc-123",
         _is_subscribed=True,
     )
@@ -418,6 +422,7 @@ async def test_stashes_recorded_uid():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
     )
     recorder.stash_dark_current("start", start_doc)
     recorder.stash_dark_current("descriptor", descriptor_doc)
@@ -432,6 +437,7 @@ async def test_stashes_preamp_readings():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
     )
     recorder.stash_dark_current("start", start_doc)
     recorder.stash_dark_current("descriptor", descriptor_doc)
@@ -456,6 +462,7 @@ async def test_stashes_last_recorded_time():
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
     )
     recorder.stash_dark_current("start", start_doc)
     recorder.stash_dark_current("descriptor", descriptor_doc)
@@ -472,6 +479,7 @@ async def test_warns_if_dark_current_fails(caplog):
     recorder = DarkCurrentRecorder(
         detectors=[detector],
         preamps=[preamp],
+        shutters=[],
     )
     recorder.stash_dark_current("start", start_doc)
     recorder.stash_dark_current("descriptor", descriptor_doc)

@@ -46,7 +46,7 @@ def record_dark_current(
       Pre-amplifiers, will be added to the counted detectors.
 
     """
-    detectors = beamline.devices.findall(detectors)
+    detectors = beamline.devices.findall(detectors, allow_none=True)
     _md = {
         "detectors": [det.name for det in detectors],
         "num_points": 1,

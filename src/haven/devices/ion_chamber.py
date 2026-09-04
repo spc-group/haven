@@ -128,7 +128,7 @@ def load_ion_chambers(
                 "hertz_per_volt": ic_cfg["hertz_per_volt"],
             }
             for ic_cfg in ion_chamber
-            if ic_cfg["scaler"] == cfg["name"]
+            if ic_cfg["counter"] == cfg["name"]
         ]
         Counter = counter_classes[cfg["flavor"]]
         # kwargs = {key: val for key, val in cfg.items() if key != "flavor"}

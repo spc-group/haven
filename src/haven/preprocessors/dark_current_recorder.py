@@ -97,10 +97,18 @@ class DarkCurrentRecorder:
         needs_dark_current = needs_dark_current or preamps_changed
         # Make the dark current reading if needed
         if needs_dark_current:
-            reason = "preamps have changed" if preamps_changed else "previous dark current expired"
+            reason = (
+                "preamps have changed"
+                if preamps_changed
+                else "previous dark current expired"
+            )
             log.info(f"Recording dark current: {reason}")
-            yield from record_dark_current(detectors=self.detectors, shutters=self.shutters, preamps=self.preamps)
-            yield from bps.sleep(1)  # <- kludge to deal with tetramm, remove once .calibrate() is gone
+            yield from record_dark_current(
+                detectors=self.detectors, shutters=self.shutters, preamps=self.preamps
+            )
+            yield from bps.sleep(
+                1
+            )  # <- kludge to deal with tetramm, remove once .calibrate() is gone
         # If we're subscribed to the run engine, we should at least
         # see messages from the `record_dark_current()` plan above.
         if not self._is_subscribed:

@@ -22,7 +22,7 @@ from haven.devices.labjack import LabJackBase
 from haven.devices.srs570 import SRS570PreAmplifier
 
 ion_chamber_kwargs = dict(
-    counters=[
+    counter=[
         {
             "name": "upstream_scaler",
             "prefix": "25idcVME:3820",
@@ -34,7 +34,7 @@ ion_chamber_kwargs = dict(
             "flavor": "CTR08",
         },
     ],
-    labjacks=[
+    labjack=[
         {
             "name": "upstream_voltmeters",
             "prefix": "25idc:LJT7Voltmeter_0:",
@@ -44,11 +44,11 @@ ion_chamber_kwargs = dict(
             "prefix": "25idc:LJT7Voltmeter_1:",
         },
     ],
-    ion_chambers=[
+    ion_chamber=[
         {
             "name": "IpreKB",
-            "scaler": "upstream_scaler",
-            "scaler_channel": 2,
+            "counter": "upstream_scaler",
+            "counter_channel": 2,
             "labjack": "upstream_voltmeters",
             "labjack_channel": 1,
             "preamp_prefix": "25idc:SR03:",
@@ -56,8 +56,8 @@ ion_chamber_kwargs = dict(
         },
         {
             "name": "I0",
-            "scaler": "upstream_scaler",
-            "scaler_channel": 3,
+            "counter": "upstream_scaler",
+            "counter_channel": 3,
             "labjack": "upstream_voltmeters",
             "labjack_channel": 2,
             "preamp_prefix": "25idc:SR04:",
@@ -65,8 +65,8 @@ ion_chamber_kwargs = dict(
         },
         {
             "name": "It",
-            "scaler": "downstream_scaler",
-            "scaler_channel": 2,
+            "counter": "downstream_scaler",
+            "counter_channel": 2,
             "labjack": "downstream_voltmeters",
             "labjack_channel": 1,
             "preamp_prefix": "25idc:SR05:",
@@ -74,8 +74,8 @@ ion_chamber_kwargs = dict(
         },
         {
             "name": "Iref",
-            "scaler": "downstream_scaler",
-            "scaler_channel": 3,
+            "counter": "downstream_scaler",
+            "counter_channel": 3,
             "labjack": "downstream_voltmeters",
             "labjack_channel": 2,
             "preamp_prefix": "25idc:SR06:",

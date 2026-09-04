@@ -104,7 +104,7 @@ del num_devices
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
-preamps = devices.findall('preamps', allow_none=True)
+preamps = devices.findall("preamps", allow_none=True)
 for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
     # as its parent.
@@ -153,7 +153,9 @@ else:
     sd.monitors.append(aps.current)
     # Suspend when shutter permit is disabled or storage ring current is too low
     plan_decorators.append(
-        haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
+        haven.preprocessors.aps_suspenders_decorator(
+            aps=aps, shutters=endstation_shutters
+        )
     )
 
 plan_decorator = haven.plans.chain(*plan_decorators)
