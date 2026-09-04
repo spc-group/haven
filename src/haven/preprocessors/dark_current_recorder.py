@@ -8,6 +8,7 @@ from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky import preprocessors as bpp
 from bluesky.protocols import Readable
+from ophyd_async.core import Device
 
 from haven.devices import SRS570PreAmplifier as SR570PreAmplifier
 from haven.plans._record_dark_current import record_dark_current
@@ -25,7 +26,7 @@ PREAMP_SIGNALS: Sequence[str] = [
 ]
 
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -61,6 +62,7 @@ class DarkCurrentRecorder:
     """
 
     detectors: Sequence[Readable]
+    shutters: Sequence[Device]
     preamps: Sequence[SR570PreAmplifier]
     time_to_live: int | float = TEN_MINUTES
     _last_measured: int | float | None = None
@@ -95,7 +97,10 @@ class DarkCurrentRecorder:
         needs_dark_current = needs_dark_current or preamps_changed
         # Make the dark current reading if needed
         if needs_dark_current:
-            yield from record_dark_current(detectors=self.detectors)
+            reason = "preamps have changed" if preamps_changed else "previous dark current expired"
+            log.info(f"Recording dark current: {reason}")
+            yield from record_dark_current(detectors=self.detectors, shutters=self.shutters, preamps=self.preamps)
+            yield from bps.sleep(1)  # <- kludge to deal with tetramm, remove once .calibrate() is gone
         # If we're subscribed to the run engine, we should at least
         # see messages from the `record_dark_current()` plan above.
         if not self._is_subscribed:
@@ -103,6 +108,7 @@ class DarkCurrentRecorder:
                 f"{repr(self.stash_dark_current)} is not subscribed to the run engine."
             )
         # Call the original plan as intended
+        log.debug("Calling original plan")
         yield from bpp.msg_mutator(plan, self.inject_dark_current_uid)
 
     def inject_dark_current_uid(self, msg: Msg) -> Msg:

@@ -124,6 +124,7 @@ class TetrAmmAcquireLogic(ADAcquireLogic):
     async def wait_for_idle(self):
         if self.acquire_status:
             await self.acquire_status
+        await self.driver.acquire.set(False)
         await wait_for_good_state(
             self.driver.acquire,
             {False},
