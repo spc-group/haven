@@ -26,6 +26,7 @@ from bluesky.run_engine import (  # noqa: F401
     call_in_bluesky_event_loop,
 )
 from bluesky.simulators import summarize_plan  # noqa: F401
+from bluesky.utils import make_decorator
 from bluesky_queueserver import is_re_worker_active
 from guarneri.exceptions import ComponentNotFound
 from ophyd_async.core import NotConnectedError
@@ -103,6 +104,7 @@ del num_devices
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
+preamps = devices.findall('preamps', allow_none=True)
 for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
     # as its parent.
@@ -122,6 +124,20 @@ sd = bpp.SupplementalData(
 )
 RE.preprocessors.append(sd)
 
+# Dark Current Recorder
+# =====================
+#
+# This automatically manages the record_dark_current() plan.
+endstation_shutters = devices.findall("endstation_shutter", allow_none=True)
+endstation_shutters = [dev for dev in endstation_shutters if dev.parent is None]
+dark_current_wrapper = haven.preprocessors.DarkCurrentRecorder(
+    detectors=ion_chambers,
+    shutters=endstation_shutters,
+    preamps=preamps,
+)
+RE.subscribe(dark_current_wrapper.stash_dark_current)
+RE.preprocessors.append(dark_current_wrapper)
+
 # Plan Decorators
 # ===============
 #
@@ -136,7 +152,6 @@ except ComponentNotFound:
 else:
     sd.monitors.append(aps.current)
     # Suspend when shutter permit is disabled or storage ring current is too low
-    shutters = haven.beamline.devices.findall("endstation_shutter", allow_none=True)
     plan_decorators.append(
         haven.preprocessors.aps_suspenders_decorator(aps=aps, shutters=shutters)
     )
@@ -221,6 +236,7 @@ del time
 del RunEngine
 del autoawait_in_bluesky_event_loop
 del call_in_bluesky_event_loop
+del make_decorator
 del NotConnectedError
 del ComponentNotFound
 del rich
