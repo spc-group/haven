@@ -44,9 +44,12 @@ log = logging.getLogger(__name__)
 # Aerotech stage. On the real system the (x, y, z) is measured by the camera
 # calibration (``cal_stage``); here the nominal survey value plus the camera
 # offset is used as a sensible default.
-_STAGE_XYZ = [203.54, -419.95, -60.55]
+# _STAGE_XYZ = [203.54, -419.95, -60.55]
+# _STAGE_RXYZ = [-2.893, -1.226, -0.003]
+_STAGE_XYZ = [148.04, -434.11, 140.38+22]
 _STAGE_RXYZ = [-2.893, -1.226, -0.003]
-_CAMERA_OFFSET = [4.99, 1.05, 0.0, 0.0, 0.0, 0.0]
+# _CAMERA_OFFSET = [4.99, 1.05, 0.0, 0.0, 0.0, 0.0]
+_CAMERA_OFFSET = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 STAGE_POSITION = [
     coord + offset for coord, offset in zip(_STAGE_XYZ + _STAGE_RXYZ, _CAMERA_OFFSET)
 ]
@@ -54,8 +57,10 @@ STAGE_POSITION = [
 # Sample board: 24 holders in a 6-wide grid, sharing one orientation. The grid
 # is reconstructed from two surveyed holders (#8 and #22); #15 is their midpoint
 # and holder #0 sits three columns left and two rows up from it.
-_XYZ_8 = [-77.09, 357.17, 61.01]
-_XYZ_22 = [75.52, 200.68, 60.88]
+# _XYZ_8 = [-77.09, 357.17, 61.01]
+_XYZ_8 = [-100.58, 359.30, 271+24]
+# _XYZ_22 = [75.52, 200.68, 60.88]
+_XYZ_22 = [50.07, 202.28, 271+24]
 _HOLDER_RXYZ = [-2.244, 2.2, 0.009]
 _COLUMN_STEP = (_XYZ_22[0] - _XYZ_8[0]) / 2  # x spacing between adjacent columns
 _ROW_STEP = (_XYZ_8[1] - _XYZ_22[1]) / 2  # y spacing between adjacent rows
@@ -72,9 +77,11 @@ for _n in range(24):
 # The IOC stored these as (x, y, z) only and moved with the fixed travel
 # orientation below; the ur5 device's moveL needs a full 6-DOF pose, so the
 # orientation is padded on here.
-_TRAVEL_RXYZ = [2.242, -2.199, -0.008]
+# _TRAVEL_RXYZ = [2.242, -2.199, -0.008]
+_TRAVEL_RXYZ = [-2.242, 2.199, 0.008]
 BOARD_TO_STAGE = [
-    [-264.89, -116.25, 418.02, *_TRAVEL_RXYZ],
+    #[-264.89, -116.25, 418.02, *_TRAVEL_RXYZ],
+    [-269.49, 105.10, 418.05, *_TRAVEL_RXYZ],
     # [-269.49, 105.10, 418.05] + _TRAVEL_RXYZ,  # board side
     [-40.74, -407.01, 310.61] + _TRAVEL_RXYZ,  # stage side
 ]
