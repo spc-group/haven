@@ -439,6 +439,1457 @@ async def test_update(client, monkeypatch):
     assert api.status.called
 
 
+@pytest.mark.asyncio
+async def test_save_queue(client, tmp_path, mocker):
+    queue_get = {
+        "success": True,
+        "msg": "",
+        "items": [
+            {
+                "item_type": "plan",
+                "name": "rel_scan",
+                "args": [
+                    ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                    "aerotech.horizontal",
+                    -20.0,
+                    20.0,
+                ],
+                "kwargs": {
+                    "num": 41,
+                    "livetime": 0.5,
+                    "collections_per_event": 1,
+                    "md": {
+                        "sample_name": "Beam_H_withI0pinhole",
+                        "dm_exp": "2026_3_Startup",
+                    },
+                },
+                "user": "GUI Client",
+                "user_group": "primary",
+                "item_uid": "bd71443a-996b-4fb9-bff4-34e58e2df081",
+            }
+        ],
+        "running_item": None,
+        "plan_queue_uid": "97c6fac3-603a-40ac-883b-fd1b98336f5a",
+    }
+    client.api.queue_get.return_value = queue_get
+    target_file = tmp_path / "queue_export.txt"
+    mock_file_dialog = mocker.MagicMock()
+    mock_file_dialog.selectedFiles.return_value = [str(target_file)]
+    mocker.patch(
+        "firefly.queue_client.QFileDialog",
+        mocker.MagicMock(return_value=mock_file_dialog),
+    )
+    await client.save_queue()
+    assert target_file.exists()
+    with open(target_file, mode="r") as fd:
+        lines = fd.readlines()
+        assert len(lines) == 2  # 1 for header, 1 for plan
+        assert lines[0] == '{"haven_spec_version": 1}\n'
+
+
+json_text = """
+{"haven_spec_version": 1}
+{"item_type": "plan", "name": "rel_scan", "args": [["It", "I0", "Iref", "IpreKB", "Ipreslit"], "aerotech.horizontal", -20.0, 20.0], "kwargs": {"num": 41, "livetime": 0.5, "collections_per_event": 1, "md": {"sample_name": "Beam_H_withI0pinhole", "dm_exp": "2026_3_Startup"}}, "user": "GUI Client", "user_group": "primary", "item_uid": "bd71443a-996b-4fb9-bff4-34e58e2df081"}
+"""
+
+
+@pytest.mark.asyncio
+async def test_restore_queue(client, tmp_path, mocker):
+    target_file = tmp_path / "queue_export.txt"
+    with open(target_file, mode="w") as fd:
+        fd.write(json_text)
+    mock_file_dialog = mocker.MagicMock()
+    mock_file_dialog.selectedFiles.return_value = [str(target_file)]
+    mocker.patch(
+        "firefly.queue_client.QFileDialog",
+        mocker.MagicMock(return_value=mock_file_dialog),
+    )
+    await client.restore_queue()
+    assert client.api.item_add_batch.called
+
+
+{
+    "success": True,
+    "msg": "",
+    "items": [
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "bd71443a-996b-4fb9-bff4-34e58e2df081",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "54a16f19-647c-407c-9c68-1f1d3eae4fea",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "827396cc-2715-407b-b4e8-c9969187ac57",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "e4eb6083-d6d7-4cb4-a473-f345ebc18477",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "c5c60669-c3fd-4a50-a9db-d0deef78cdcd",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "abef637a-a475-4901-8bfd-e0ee848111e4",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "6cd49624-842f-446f-90c5-5ad169a226d1",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "0e5a349d-f6f1-469f-b496-53bf8d15f9ab",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "fe185ded-8204-4d3b-b42a-f464f485917c",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "7a6c55ca-a5db-459c-bf2e-1c71886aadaf",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "172c92bc-0463-4a48-ac6f-37e7df49ac76",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "d8071f31-8f2d-41e4-ad39-bd704f80a2fc",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "247bda5e-a2e5-4453-b1bd-023b2e51c32f",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "22644ee5-95ed-4b43-8194-caae29096029",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "a3b8e88c-1771-4385-ba08-1a04a4d2fee0",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "6d8bbf16-6d2d-499e-a1e3-dcce09cb14ed",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "876ae84a-81b2-4ee3-8afa-07dfbd7d7090",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "2ec47e8a-c5cc-425b-bf76-2961e5f340a4",
+        },
+        {
+            "item_type": "plan",
+            "name": "mv",
+            "args": [
+                "sam_beam",
+                3154.5,
+                "aerotech.horizontal",
+                -7670.458,
+                "aerotech.vertical",
+                7760.014,
+            ],
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "2220df14-0b3e-471b-a2ec-db5bcdd35a79",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "06e30627-627c-47d5-b1d4-68b6822ba194",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "c13a42bf-7c54-4fdc-bd9f-97a9f8f66ec5",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "9fcf61b3-1e10-438d-b6ec-23486c4f7815",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "c7fa10a9-05bc-4504-8cf3-408c97d9a94d",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "f0d3827c-88e8-4b01-b752-e86ea5e657a1",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "060fdb1f-9ac6-46a4-88d1-82f2a06248fb",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "0408779a-b3e1-4507-a479-90b5b611718f",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "2da3c5c1-c22a-48a6-92de-be01ff54ed83",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "c7f8d761-801c-40c1-a2c3-a4430bd7a6c2",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "1554d014-4ebe-46fa-95ac-4d47135e8b34",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "402ca7a3-1c0c-4e0e-9db2-59aa5ac2bcfb",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "fe855d55-d8a0-4a5e-9253-f5d6a7c49b3e",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "d808f998-175a-4014-92d6-6a95b275d318",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "7f023c92-9330-4ae8-9b29-436d40867a8f",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "10e46271-3a8f-4d81-b67a-0b297db22590",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "ee67cb19-8d50-4485-867c-b2d8c95f9c19",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "f06568b3-1fa1-4c12-8cc7-db15fcc1865f",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "af032d03-fab9-480d-b0c1-21ddd8e080b6",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "5c4b275c-e833-4ca2-80eb-973e674ed7ad",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "49bc8eb1-4f96-4cef-8429-a70407023365",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "8ff0c724-9ccc-4a9b-942f-fee305e9ebfa",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "83066457-45b2-48ad-998a-9887dd7e6866",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "0fdf66aa-31cd-4dfe-81fa-92d655220b8d",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "a8f46a8e-c249-41b9-9793-143c6aef7636",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "e4120a4c-9cc8-42f3-8be1-35a363f34c3c",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "37547475-81a7-4bf1-b54e-57ad59b2e25c",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "aa3d0880-bfd9-4f50-ba95-e6fd4bf0a64a",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "cfd65670-a31f-4489-9eb2-0f6619d66d9d",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "830667cf-9925-4598-8a3f-5bece17ba515",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.vertical",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 1,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_V_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "46169ca3-7250-4162-877f-b25a065b5407",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [["It", "I0", "Iref", "IpreKB", "Ipreslit"], "I0_H", -200.0, 200.0],
+            "kwargs": {
+                "num": 41,
+                "md": {"sample_name": "I0_H_withpinhole", "dm_exp": "2026_3_Startup"},
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "84a89ccd-98db-4a5b-b1b2-b8a3c2c9cecb",
+        },
+        {
+            "item_type": "plan",
+            "name": "record_dark_current",
+            "kwargs": {
+                "shutters": ["endstation_shutter"],
+                "preamps": ["I0.preamp", "Iref.preamp", "IpreKB.preamp", "It.preamp"],
+                "detectors": ["Ipreslit", "IpreKB", "I0", "It", "Iref"],
+            },
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "3ad9434c-8bef-4074-86db-27dc791d966f",
+        },
+        {
+            "item_type": "plan",
+            "name": "mv",
+            "args": [
+                "sam_beam",
+                2954.5,
+                "aerotech.horizontal",
+                2329.501,
+                "aerotech.vertical",
+                -1476.934,
+            ],
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "ee622691-945c-413f-9fd0-0d47f5a5e030",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "Queue Server API User",
+            "user_group": "primary",
+            "item_uid": "8f09755b-6e71-4f4c-88b4-709949f376c8",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "412ae84f-1460-4747-8bcd-534768d75def",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "b536dd1d-98bc-4cf1-adfb-4941cdf8b00d",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "8d67371e-2165-479a-80cb-b61634edbb8e",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "6e6e8bc7-131e-45fe-8f7f-0e8fbed83f49",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "933e9e37-66b5-4b77-8fe8-1900bd3546f9",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "b8882b44-1405-42a2-959f-c71f8d0f5f49",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "96ef7721-7dc9-431d-8ef9-42bb87314f57",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "576e09ad-ff14-48e7-b9d8-c42059b1125d",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+                "livetime": 0.2,
+                "collections_per_event": 1,
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "fae83a58-ca5c-4b08-9ca1-a851a832e026",
+        },
+        {
+            "item_type": "plan",
+            "name": "rel_scan",
+            "args": [
+                ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+                "aerotech.horizontal",
+                -20.0,
+                20.0,
+            ],
+            "kwargs": {
+                "num": 41,
+                "livetime": 0.5,
+                "collections_per_event": 1,
+                "md": {
+                    "sample_name": "Beam_H_withI0pinhole",
+                    "dm_exp": "2026_3_Startup",
+                },
+            },
+            "user": "GUI Client",
+            "user_group": "primary",
+            "item_uid": "8ccff135-05b7-4c6c-b6cd-bfd53301f8bc",
+        },
+    ],
+    "running_item": {
+        "item_type": "plan",
+        "name": "rel_scan",
+        "args": [
+            ["It", "I0", "Iref", "IpreKB", "Ipreslit"],
+            "aerotech.horizontal",
+            -20.0,
+            20.0,
+        ],
+        "kwargs": {
+            "num": 41,
+            "livetime": 0.5,
+            "collections_per_event": 1,
+            "md": {"sample_name": "Beam_H_withI0pinhole", "dm_exp": "2026_3_Startup"},
+        },
+        "user": "GUI Client",
+        "user_group": "primary",
+        "item_uid": "f60ec4bb-be8d-4012-a2e8-d05090f9f578",
+        "properties": {"time_start": 1789265861.6850863},
+    },
+    "plan_queue_uid": "97c6fac3-603a-40ac-883b-fd1b98336f5a",
+}
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

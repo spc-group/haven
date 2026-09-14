@@ -1,3 +1,5 @@
+import asyncio
+import json
 import logging
 import os
 from typing import Mapping, Optional
@@ -6,6 +8,7 @@ from bluesky_queueserver_api import comm_base
 from bluesky_queueserver_api.zmq.aio import REManagerAPI
 from qasync import asyncSlot
 from qtpy.QtCore import QObject, QTimer, Signal
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 from haven.exceptions import InvalidConfiguration
 
@@ -139,6 +142,61 @@ class QueueClient(QObject):
             self.environment_opened.emit(to_open)
         else:
             log.error(f"Failed to open/close environment: {result['msg']}")
+
+    @asyncSlot()
+    async def save_queue(self):
+        """Save the plans currently in the queue to a jsonl file."""
+        dialog = QFileDialog(None)
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        dialog.setNameFilter("JSONL (*.jsonl)")
+        dialog.setWindowTitle("Save")
+        dialog.setDirectory("/net/s25data/export/25-ID-C")
+        if await asyncio.to_thread(dialog.exec_):
+            (filename,) = dialog.selectedFiles()
+        else:
+            # User canceled?
+            return
+        # Get the queue and save it
+        try:
+            queue_contents = await self.api.queue_get()
+            with open(filename, mode="w", encoding="utf-8") as fd:
+                fd.write('{"haven_spec_version": 1}\n')
+                for item in queue_contents["items"]:
+                    fd.write(json.dumps(item, ensure_ascii=False) + "\n")
+        except Exception as exc:
+            await asyncio.to_thread(
+                QMessageBox.critical,
+                None,
+                "Saving queue failed",
+                f"Unable to save queue plans.\n\n{str(exc)}",
+            )
+            raise
+
+    @asyncSlot()
+    async def restore_queue(self):
+        dialog = QFileDialog(None)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
+        dialog.setNameFilter("JSONL (*.jsonl)")
+        # dialog.setDirectory("/net/s25data/export/25-ID-C")
+        if await asyncio.to_thread(dialog.exec_):
+            (filename,) = dialog.selectedFiles()
+        else:
+            # User canceled?
+            return
+        try:
+            with open(filename, mode="r", encoding="utf-8") as fd:
+                lines = [line.strip() for line in fd]
+                lines = [line for line in lines if line != ""]
+                md, *items = [json.loads(line) for line in lines]
+                await self.api.item_add_batch(items)
+        except Exception as exc:
+            await asyncio.to_thread(
+                QMessageBox.critical,
+                None,
+                "Saving queue failed",
+                f"Unable to save queue plans.\n\n{str(exc)}",
+            )
+            raise
 
     @asyncSlot(bool)
     async def request_pause(self, *args, defer: bool = True, **kwargs):

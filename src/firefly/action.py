@@ -145,6 +145,7 @@ class ActionsRegistry:
     queue_monitor: WindowAction = None
     queue_settings: Mapping[str, QAction]
     queue_controls: Mapping[str, QAction]
+    queue_exports: Mapping[str, QAction]
 
     # Show windows for controlling devices
     devices: Mapping[str, WindowAction]
@@ -164,6 +165,7 @@ class ActionsRegistry:
         self.ptz_cameras = {}
         self.queue_settings = {}
         self.queue_controls = {}
+        self.queue_exports = {}
         # Devices
         self.area_detectors = {}
         self.cameras = {}

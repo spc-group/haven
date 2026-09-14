@@ -186,6 +186,7 @@ class FireflyMainWindow(PyDMMainWindow):
             queue_monitor=actions.queue_monitor,
             queue_control_actions=actions.queue_controls,
             queue_settings_actions=actions.queue_settings,
+            queue_export_actions=actions.queue_exports,
             energy_window_action=actions.energy,
             attenuators_action=actions.attenuators,
             slits_actions=actions.slits,
@@ -213,6 +214,7 @@ class FireflyMainWindow(PyDMMainWindow):
         queue_monitor,
         queue_control_actions,
         queue_settings_actions,
+        queue_export_actions,
         energy_window_action,
         attenuators_action,
         slits_actions,
@@ -241,9 +243,12 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.queue_menu.addAction(action)
         self.ui.queue_menu.addSeparator()
         # Queue settings for the queue client
+        for action in queue_export_actions.values():
+            self.ui.queue_menu.addAction(action)
         for action in queue_settings_actions.values():
             self.ui.queue_menu.addAction(action)
         self.ui.queue_menu.addAction(queue_monitor)
+        # Actions for exporting and restoring the queue
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",

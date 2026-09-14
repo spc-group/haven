@@ -382,7 +382,8 @@ class FireflyController(QtCore.QObject):
         # Action for launch queue-monitor
         self.actions.queue_monitor = Action(
             name="launch_queuemonitor_action",
-            text="Queue Monitor",
+            text="Queue &Monitor",
+            icon=qta.icon("fa6s.list-ol"),
             shortcut="Ctrl+Q",
         )
         self.actions.queue_monitor.triggered.connect(self.launch_queuemonitor)
@@ -451,9 +452,24 @@ class FireflyController(QtCore.QObject):
             ),
             "open_environment": Action(
                 name="queue_open_environment_action",
-                text="&Open Environment",
+                text="Open &Environment",
                 tooltip="If open (checked), the queue server is able to run plans.",
                 checkable=True,
+            ),
+        }
+        # Actions for saving/restoring the queue to/from a file
+        self.actions.queue_exports = {
+            "save": Action(
+                name="queue_export_action",
+                text="&Save queue",
+                icon=qta.icon("fa6s.floppy-disk"),
+                tooltip="Save the current list of queued plans to a file.",
+            ),
+            "restore": Action(
+                name="queue_restore_action",
+                text="Rest&ore queue",
+                icon=qta.icon("fa6s.folder-open"),
+                tooltip="Load previously saved plans back to the queueserver.",
             ),
         }
 
@@ -545,7 +561,6 @@ class FireflyController(QtCore.QObject):
         # Create the client object
         if client is None:
             client = QueueClient(api=api)
-        # self.queue_open_environment_action.triggered.connect(client.open_environment)
         self.actions.queue_settings["open_environment"].triggered.connect(
             client.open_environment
         )
@@ -588,6 +603,10 @@ class FireflyController(QtCore.QObject):
         self.actions.queue_settings["autostart"].toggled.connect(
             client.toggle_autostart
         )
+        # Connect signals for saving/restoring the queue
+        self.actions.queue_exports["save"].triggered.connect(client.save_queue)
+        self.actions.queue_exports["restore"].triggered.connect(client.restore_queue)
+
         return client
 
     def start(self):
