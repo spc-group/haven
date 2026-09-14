@@ -49,23 +49,25 @@ lint-all = [
 
 [feature.bluesky.pypi-dependencies]
 aioca = ">=2.0"
-bluesky = "==1.14.6"
 # apsbits = ">=2.0.0"  # Use canismarko's version until upstream PR is merged
 # https://github.com/BCDA-APS/BITS/pull/185
 apsbits = { git = "https://github.com/bcda-aps/bits" }
 apstools = ">=1.7.8"
+# bluesky = { git = "https://github.com/bluesky/bluesky.git", rev = "1a8e902deb00dbb950fbe0b4277ac308b8b8e41f" }
+bluesky = "==1.14.6"
+bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }
+bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 guarneri = ">=0.5.0"
+# Hatchling for getting library versions
+hatchling = ">=1.29.0, <2"
+hatch-vcs = ">=0.5.0, <0.6"
 ophyd = ">=1.11.0"
 ophyd-async = { version = "==0.20.1", extras = ["ca"] }
 # ophyd-async = { git = "https://github.com/bluesky/ophyd-async.git", extras = ["ca"], rev="df154492a8fac71926435f5f25fd2d4ecca99569" }
 scanspec = "==1.0a2"
 # bluesky-adaptive = ">=0.3.2"
-bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }
-bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"
-hatchling = ">=1.29.0, <2"
-hatch-vcs = ">=0.5.0, <0.6"
 
 [feature.ipython]
 dependencies = { python = "3.13.*", ipython = "*" }
@@ -140,13 +142,13 @@ qtawesome = ">=1.4.2"
 pyqtgraph = "*"
 pydm = ">=1.28.1"
 qasync = "*"
-bluesky-widgets = "*"
 pandas = "<3"  # Otherwise aps-dm-api will preempt tiled's dependencies
 aps-dm-api = ">=10.1.0,<11"
 font-otf-fontawesome = ">=7.2.0,<8"
 
 [feature.gui.pypi-dependencies]
 apsbss = "*"
+bluesky-widgets = "*"
 prefect = ">=3.7.2, <4"
 # PyQT5 = ">=5.15"
 

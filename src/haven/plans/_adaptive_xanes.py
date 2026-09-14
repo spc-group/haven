@@ -1,7 +1,7 @@
 import logging
 import random
 import warnings
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, Optional, Tuple
 
 import numpy as np
@@ -245,7 +245,9 @@ class XANESSamplingRecommender:
             random.seed(random_seed)
         lb, ub = self.energy_range
         if method == "uniform":
-            x_init = np.linspace(lb, ub, n, dtype=float)
+            x_init: np.ndarray[tuple[int], np.dtype[np.float32]] = np.linspace(
+                lb, ub, n, dtype=np.float32
+            )
         elif method == "random":
             assert n > 2
             x_init = np.random.rand(n - 2) * (ub - lb) + lb
@@ -283,7 +285,11 @@ class XANESSamplingRecommender:
         value = to_tensor([[float(value)]])
         guide.update(energy, value)
 
-    def tell_many(self, energies: list[float], values: list[float]) -> None:
+    def tell_many(
+        self,
+        energies: Sequence[float],
+        values: Sequence[float | Sequence[float]],
+    ) -> None:
         r"""Update model with multiple data points.
 
         Parameters
@@ -306,7 +312,7 @@ class XANESSamplingRecommender:
         """
         guide = self.check_guide()
         tenergies = to_tensor(energies).reshape(-1, 1)
-        values_ = np.asarray(values)
+        values_: np.ndarray[tuple[int, int], np.dtype[np.float32]] = np.asarray(values)
         if values_.ndim == 1:
             µ = values_
         elif values_.shape[1] == 1:

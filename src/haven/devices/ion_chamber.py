@@ -581,7 +581,9 @@ class IonChamber(StandardReadable, Triggerable):
         raw_counts = raw_counts[:num_points]
         times = raw_times / clock_freq
         # Fill in any missing timestamps
-        elapsed_times = np.cumsum(times[1:])
+        elapsed_times: np.ndarray[tuple[int], np.dtype[np.float32]] = np.cumsum(
+            times[1:]
+        )
         t0 = (
             self._fly_start_timestamp_remote
             if self._fly_start_timestamp_remote is not None
