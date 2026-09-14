@@ -47,7 +47,7 @@ def record_dark_current(
 
     """
     detectors = beamline.devices.findall(detectors, allow_none=True)
-    _md = {
+    md_ = {
         "detectors": [det.name for det in detectors],
         "num_points": 1,
         "num_intervals": 0,
@@ -61,6 +61,7 @@ def record_dark_current(
     }
 
     @bpp.stage_decorator([*detectors, *shutters, *preamps])
+    @bpp.run_decorator(md=md_)
     def inner():
         # Get previous shutter states
         old_shutters = {}
@@ -83,12 +84,8 @@ def record_dark_current(
         group = uuid.uuid4()
         for ic in old_ion_chambers:
             yield Msg("trigger", ic, group=group, record_dark_current=True)
-        yield from bpp.run_wrapper(
-            bpp.stub_wrapper(bp.count([*counted_detectors, *shutters, *preamps])),
-            md=_md,
-        )
-        # Wait for the devices to be done recording dark current
         yield from bps.wait(group=group, timeout=40)
+        yield from bpp.stub_wrapper(bp.count([*counted_detectors, *shutters, *preamps]))
         # Calibrate standard detectors to they read zero
         for detector in calibrated_detectors:
             yield Msg("calibrate", detector, truth=0)
