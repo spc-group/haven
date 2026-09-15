@@ -117,6 +117,17 @@ def board_pose(sample):
     return list(sample)
 
 
+# Approach offset applied to a pick/place target to get the safe "above" pose
+# the arm passes through before descending onto a holder (and lifts back to
+# after the gripper acts). x/y/z are millimetres, rx/ry/rz are radians.
+_ABOVE_OFFSET = [0.0, -76.2, 134.0, 0.103, -0.104, 0.151]
+
+
+def above_pose(pose):
+    """Return the safe approach pose above a pick/place *pose*."""
+    return [coord + offset for coord, offset in zip(pose, _ABOVE_OFFSET)]
+
+
 # ---------------------------------------------------------------------------
 # Sample-changer plans
 # ---------------------------------------------------------------------------
@@ -139,14 +150,18 @@ def load_sample(ur5, sample, stage=None):
     stage = STAGE_POSITION if stage is None else stage
 
     # 1. Pick the holder up off the board.
+    yield from move_to(ur5, above_pose(board))
     yield from move_to(ur5, board)
     yield from grab(ur5)
+    yield from move_to(ur5, above_pose(board))
     # 2. Carry it out to the stage along the safe path.
     for waypoint in BOARD_TO_STAGE:
         yield from move_to(ur5, waypoint)
     # 3. Set it down on the stage.
+    yield from move_to(ur5, above_pose(stage))
     yield from move_to(ur5, stage)
     yield from release(ur5)
+    yield from move_to(ur5, above_pose(stage))
     # 4. Retreat back along the path to a resting pose.
     for waypoint in reversed(BOARD_TO_STAGE):
         yield from move_to(ur5, waypoint)
@@ -173,14 +188,18 @@ def unload_sample(ur5, sample, stage=None):
     for waypoint in BOARD_TO_STAGE:
         yield from move_to(ur5, waypoint)
     # 2. Pick the holder up off the stage.
+    yield from move_to(ur5, above_pose(stage))
     yield from move_to(ur5, stage)
     yield from grab(ur5)
+    yield from move_to(ur5, above_pose(stage))
     # 3. Retreat back along the path.
     for waypoint in reversed(BOARD_TO_STAGE):
         yield from move_to(ur5, waypoint)
     # 4. Set the holder back down on the board.
+    yield from move_to(ur5, above_pose(board))
     yield from move_to(ur5, board)
     yield from release(ur5)
+    yield from move_to(ur5, above_pose(board))
     # 5. Rest at the board-side waypoint.
     yield from move_to(ur5, BOARD_TO_STAGE[0])
 
