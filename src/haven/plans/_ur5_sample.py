@@ -120,7 +120,8 @@ def board_pose(sample):
 # Approach offset applied to a pick/place target to get the safe "above" pose
 # the arm passes through before descending onto a holder (and lifts back to
 # after the gripper acts). x/y/z are millimetres, rx/ry/rz are radians.
-_ABOVE_OFFSET = [0.0, -76.2, 134.0, 0.103, -0.104, 0.151]
+# _ABOVE_OFFSET = [0.0, -76.2, 134.0, 0.103, -0.104, 0.151]
+_ABOVE_OFFSET = [0.0, -76.2, 134.0, 0.0, 0.0, 0.0]
 
 
 def above_pose(pose):
