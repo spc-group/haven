@@ -184,9 +184,9 @@ def unload_sample(ur5, sample, stage=None):
     board = board_pose(sample)
     stage = STAGE_POSITION if stage is None else stage
 
-    # 1. Travel out to the stage along the safe path.
-    for waypoint in BOARD_TO_STAGE:
-        yield from move_to(ur5, waypoint)
+    # # 1. Travel out to the stage along the safe path.
+    # for waypoint in BOARD_TO_STAGE:
+    #     yield from move_to(ur5, waypoint)
     # 2. Pick the holder up off the stage.
     yield from move_to(ur5, above_pose(stage))
     yield from move_to(ur5, stage)
