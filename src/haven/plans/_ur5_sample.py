@@ -148,7 +148,7 @@ def load_sample(ur5, sample, stage=None):
     log.debug("load_sample(%r)", sample)
     board = board_pose(sample)
     stage = STAGE_POSITION if stage is None else stage
-
+    yield from home_robot(ur5)
     # 1. Pick the holder up off the board.
     yield from move_to(ur5, above_pose(board))
     yield from move_to(ur5, board)
@@ -185,6 +185,8 @@ def unload_sample(ur5, sample, stage=None):
     stage = STAGE_POSITION if stage is None else stage
 
     # # 1. Travel out to the stage along the safe path.
+    yield from home_robot(ur5)
+
     # for waypoint in BOARD_TO_STAGE:
     #     yield from move_to(ur5, waypoint)
     # 2. Pick the holder up off the stage.
