@@ -1,4 +1,6 @@
 import asyncio
+import time
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -97,17 +99,31 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
         We want to avoid that, so use 12-bit mode if needed.
 
         """
-        bit_depth = await self.driver.operating_mode.get_value()
-        if bit_depth == OperatingMode.TWENTY_FOUR_BIT:
-            await self.driver.operating_mode.set(OperatingMode.TWELVE_BIT)
 
     async def prepare_edge(self, num: int, livetime: float) -> None:
+        # To use high-res (24bit), we need to add enough delay to
+        # ensure the detector is done before the next edge. We cut the
+        # acquisition short by some penalty to make sure there's
+        # enough time for these hi bit-depth frames.
+        hi_res_penalty = 0.2  # In detector EGU (seconds?)
+
+        async def set_livetime():
+            bit_depth = await self.driver.operating_mode.get_value()
+            if bit_depth == OperatingMode.TWENTY_FOUR_BIT:
+                await self.driver.acquire_time.set(livetime - hi_res_penalty)
+                # Remind ourselves to come back and fix this properly if we forget
+                if time.time() > 1799042400:
+                    warnings.warn(
+                        f"Cutting frames short by {hi_res_penalty} for 24-bit mode."
+                    )
+            else:
+                await self.driver.acquire_time.set(livetime)
+
         task = asyncio.ensure_future(
             asyncio.gather(
-                self.set_trigger_mode(),
                 prepare_exposures(self.driver, num),
+                set_livetime(),
                 self.driver.trigger_mode.set(LambdaTriggerMode.EXTERNAL_IMAGE),
-                self.driver.acquire_time.set(livetime),
             )
         )
         await self._wait_for_num_images(num)

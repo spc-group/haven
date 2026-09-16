@@ -81,9 +81,9 @@ async def test_prepare_internal(detector):
 
 
 @pytest.mark.asyncio
-async def test_prepare_external(detector):
+async def test_prepare_external_edge(detector):
     set_mock_value(detector.hdf.file_path_exists, True)
-    set_mock_value(detector.driver.operating_mode, "24-Bit")
+    set_mock_value(detector.driver.operating_mode, "12-Bit")
     await detector.stage()
     tinfo = TriggerInfo(
         trigger=DetectorTrigger.EXTERNAL_EDGE,
@@ -93,11 +93,34 @@ async def test_prepare_external(detector):
     await assert_value(detector.driver.trigger_mode, "External_ImagePer")
     await assert_value(detector.driver.num_images, 5)
     await assert_value(detector.driver.image_mode, "Multiple")
-    # We need 12-bit mode so that we can use edge triggering properly
-    await assert_value(detector.driver.operating_mode, "12-Bit")
-    # Make sure operating mode gets set back
     await detector.unstage()
-    await assert_value(detector.driver.operating_mode, "24-Bit")
+
+
+@pytest.mark.asyncio
+async def test_prepare_external_edge_24bit(detector):
+    """Tests a hacky work-around for getting 24-bit fly scanning to work.
+
+    24-bit edge triggering does not advance the frame if the current
+    one is not read out yet.
+
+    Eventually we will implement 24-bit level triggering then this
+    hack can be removed.
+
+    """
+    set_mock_value(detector.hdf.file_path_exists, True)
+    set_mock_value(detector.driver.operating_mode, "24-Bit")
+    await detector.stage()
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
+        livetime=1,
+        collections_per_event=5,
+    )
+    await detector.prepare(tinfo)
+    await assert_value(detector.driver.trigger_mode, "External_ImagePer")
+    await assert_value(detector.driver.num_images, 5)
+    await assert_value(detector.driver.acquire_time, 0.8)
+    await assert_value(detector.driver.image_mode, "Multiple")
+    await detector.unstage()
 
 
 @pytest.mark.parametrize(
