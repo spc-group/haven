@@ -6,6 +6,7 @@ import uuid
 from collections.abc import Mapping
 from functools import partial, reduce
 
+from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from bluesky import preprocessors as bpp
@@ -15,7 +16,7 @@ from bluesky.protocols import (
 )
 from bluesky.utils import MsgGenerator
 from cycler import Cycler, cycler
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import Device, TriggerInfo
 from scanspec.core import Path
 from scanspec.specs import Spec
 from typing_extensions import NotRequired, TypedDict
@@ -83,8 +84,13 @@ class Metadata(TypedDict):
     d_spacing: NotRequired[float | dict[str, float] | None]
 
 
-def prepare_undulators(msg, undulators, spec):
-    """Plan stub to prepare generators after they have been staged."""
+def prepare_undulators(msg: Msg, undulators: list[Device], spec: Spec):
+    """Mutator to prepare undulators with a pre-defined trajectory.
+
+    Assumes undulators will have been staged before the run is
+    opened.
+
+    """
     if msg.command != "open_run" or len(undulators) == 0:
         # Nothing to prepare, so just return
         return (None, None)
