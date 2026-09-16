@@ -97,7 +97,7 @@ async def test_prepare_external_edge(detector):
 
 
 @pytest.mark.asyncio
-async def test_prepare_external_edge_24bit(detector):
+async def test_prepare_external_edge_24bit():
     """Tests a hacky work-around for getting 24-bit fly scanning to work.
 
     24-bit edge triggering does not advance the frame if the current
@@ -107,6 +107,13 @@ async def test_prepare_external_edge_24bit(detector):
     hack can be removed.
 
     """
+    detector = LambdaDetector(
+        "255idLambda:",
+        name="lambda_flex",
+        twenty_four_bit_penalty=0.2,
+    )
+    await detector.connect(mock=True)
+
     set_mock_value(detector.hdf.file_path_exists, True)
     set_mock_value(detector.driver.operating_mode, "24-Bit")
     await detector.stage()

@@ -85,6 +85,7 @@ class LambdaAcquireLogic(ADAcquireLogic):
 @dataclass
 class LambdaTriggerLogic(DetectorTriggerLogic):
     driver: ADBaseIO
+    twenty_four_bit_penalty: float = 0.0
 
     def get_deadtime(self, config_values: SignalDict) -> float:
         # From manual: No readout time in 12-bit, 6-bit and 1-bit mode,
@@ -93,28 +94,25 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
             return 1e-6
         return 0.0
 
-    async def set_trigger_mode(self):
-        """External triggering requires a 1ms additiona delay in 24-bit mode.
-
-        We want to avoid that, so use 12-bit mode if needed.
-
-        """
-
     async def prepare_edge(self, num: int, livetime: float) -> None:
-        # To use high-res (24bit), we need to add enough delay to
-        # ensure the detector is done before the next edge. We cut the
-        # acquisition short by some penalty to make sure there's
-        # enough time for these hi bit-depth frames.
-        hi_res_penalty = 0.2  # In detector EGU (seconds?)
 
         async def set_livetime():
+            # To use high-res (24bit), we need to add enough delay to
+            # ensure the detector is done before the next edge. We cut the
+            # acquisition short by some penalty to make sure there's
+            # enough time for these hi bit-depth frames.
             bit_depth = await self.driver.operating_mode.get_value()
-            if bit_depth == OperatingMode.TWENTY_FOUR_BIT:
-                await self.driver.acquire_time.set(livetime - hi_res_penalty)
+            if (
+                bit_depth == OperatingMode.TWENTY_FOUR_BIT
+                and self.twenty_four_bit_penalty > 0
+            ):
+                await self.driver.acquire_time.set(
+                    livetime - self.twenty_four_bit_penalty
+                )
                 # Remind ourselves to come back and fix this properly if we forget
                 if time.time() > 1799042400:
                     warnings.warn(
-                        f"Cutting frames short by {hi_res_penalty} for 24-bit mode."
+                        f"Cutting frames short by {self.twenty_four_bit_penalty} for 24-bit mode."
                     )
             else:
                 await self.driver.acquire_time.set(livetime)
@@ -147,7 +145,17 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
 
 
 class LambdaDetector(AreaDetector):
-    """A Lambda area detector, e.g. Lambda 250K/."""
+    """A Lambda area detector, e.g. Lambda 250K or Lambda Flex.
+
+    There is a limitation in the firmware of our Lambda detectors that
+    affects the acquire time of a frame when using 24 bit measurements
+    with external edge triggering. In order to allow the registers to
+    be read out, the next trigger must not arrive before the previous
+    frame is finished. To allow this, the optional parameter
+    *twenty_four_bit_penalty* gives a duration by which to shorten the
+    requested livetime to ensure that the previous frame can finish.
+
+    """
 
     _ophyd_labels_ = {"detectors", "area_detectors"}
 
@@ -160,6 +168,8 @@ class LambdaDetector(AreaDetector):
         plugins: dict[str, NDPluginBaseIO] | None = None,
         config_sigs: Sequence[SignalR] = (),
         name: str = "",
+        # Temporary work-around, remove once 24-bit level triggering is available
+        twenty_four_bit_penalty: float = 0.0,
     ) -> None:
         if len(writer_factories) == 0:
             writer_factories = (
@@ -181,7 +191,9 @@ class LambdaDetector(AreaDetector):
             prefix,
             *writer_factories,
             acquire_logic=LambdaAcquireLogic(driver),
-            trigger_logic=LambdaTriggerLogic(driver),
+            trigger_logic=LambdaTriggerLogic(
+                driver, twenty_four_bit_penalty=twenty_four_bit_penalty
+            ),
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,
