@@ -23,7 +23,9 @@ class DummyScanDisplay(PlanDisplay):
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, sync_motors, async_motors):
+async def display(qtbot, sim_registry, sync_motors, async_motors, mocker):
+    # Speed up tests by shortening how long we wait for debouncing
+    mocker.patch("firefly.plans.metadata.DEBOUNCE_INTERVAL_MS", 10)
     display = DummyScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -74,7 +76,9 @@ def test_plan_metadata(display):
 
 def test_sample_metadata_changed(display, qtbot):
     with qtbot.waitSignal(display.sample_metadata_changed, timeout=1000) as blocker:
-        display.metadata_widget.formula_combo_box.setCurrentText("Xe260")
+        # display.metadata_widget.formula_combo_box.setCurrentText("Xe260")
+        qtbot.keyClicks(display.metadata_widget.formula_combo_box, "Xe260")
+    # This value won't be the full string if debouncing isn't working
     assert blocker.args == [{"chemical_formula": "Xe260"}]
 
 

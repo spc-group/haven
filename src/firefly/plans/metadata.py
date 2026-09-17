@@ -3,16 +3,19 @@ from pathlib import Path
 from typing import Any
 
 from qtpy import QtWidgets, uic
-from qtpy.QtCore import Signal
+from qtpy.QtCore import QTimer, Signal
 from qtpy.QtWidgets import QWidget
 
 from firefly.display import SampleMetadata
 from firefly.plans.util import is_valid_value
 
+DEBOUNCE_INTERVAL_MS = 500
+
 
 class MetadataWidget(QWidget):
     ui_file = Path(__file__).parent / "metadata.ui"
     sample_metadata_changed = Signal(dict)
+    debounce_timer: QTimer
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -35,9 +38,21 @@ class MetadataWidget(QWidget):
         self.ui.standard_check_box.toggled.connect(
             partial(self.change_sample_metadata, key="is_standard")
         )
+        # Debounce the shared metadata input fields otherwise they
+        # update too often and kill responsiveness
+        self.debounce_timer = QTimer()
+        self.debounce_timer.setSingleShot(True)
+        self.debounce_timer.setInterval(DEBOUNCE_INTERVAL_MS)
+        self.debounce_timer.timeout.connect(self.emit_changed_metadata)
+        self._pending_md_changes = {}
 
     def change_sample_metadata(self, value: str | bool, key: str):
-        self.sample_metadata_changed.emit({key: value})
+        self._pending_md_changes[key] = value
+        self.debounce_timer.start()
+
+    def emit_changed_metadata(self):
+        self.sample_metadata_changed.emit(self._pending_md_changes)
+        self._pending_md_changes = {}
 
     def confirm_public_standard(self, is_checked):
         """If 'Is standard' is checked, warn that the data will be public."""
@@ -68,10 +83,14 @@ class MetadataWidget(QWidget):
         return md
 
     def update_sample_metadata(self, md: SampleMetadata):
-        self.dm_experiment_combo_box.setCurrentText(md.dm_experiment)
-        self.formula_combo_box.setCurrentText(md.chemical_formula)
-        self.sample_combo_box.setCurrentText(md.sample_name)
-        self.standard_check_box.setChecked(md.is_standard)
+        if self.dm_experiment_combo_box.currentText() != md.dm_experiment:
+            self.dm_experiment_combo_box.setCurrentText(md.dm_experiment)
+        if self.formula_combo_box.currentText() != md.chemical_formula:
+            self.formula_combo_box.setCurrentText(md.chemical_formula)
+        if self.sample_combo_box.currentText() != md.sample_name:
+            self.sample_combo_box.setCurrentText(md.sample_name)
+        if self.standard_check_box.isChecked() != md.is_standard:
+            self.standard_check_box.setChecked(md.is_standard)
 
 
 # -----------------------------------------------------------------------------
