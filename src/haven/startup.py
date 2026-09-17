@@ -104,6 +104,8 @@ del num_devices
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
+endstation_shutters = devices.findall("endstation_shutter", allow_none=True)
+endstation_shutters = [dev for dev in endstation_shutters if dev.parent is None]
 preamps = devices.findall("preamps", allow_none=True)
 for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
@@ -124,19 +126,6 @@ sd = bpp.SupplementalData(
 )
 RE.preprocessors.append(sd)
 
-# Dark Current Recorder
-# =====================
-#
-# This automatically manages the record_dark_current() plan.
-endstation_shutters = devices.findall("endstation_shutter", allow_none=True)
-endstation_shutters = [dev for dev in endstation_shutters if dev.parent is None]
-dark_current_wrapper = haven.preprocessors.DarkCurrentRecorder(
-    detectors=ion_chambers,
-    shutters=endstation_shutters,
-    preamps=preamps,
-)
-RE.subscribe(dark_current_wrapper.stash_dark_current)
-RE.preprocessors.append(dark_current_wrapper)
 
 # Plan Decorators
 # ===============
