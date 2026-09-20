@@ -412,17 +412,22 @@ def trigger_info():
 
 
 @pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
-async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
+async def test_flyscan_prepare_internal_trigger(ion_chamber):
+    trigger_info = TriggerInfo(
+        number_of_events=5,
+        trigger=DetectorTrigger.INTERNAL,
+        deadtime=0,
+        livetime=1.3,
+    )
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
     # erase_mock_put = get_mock_put(ion_chamber.mcs.erase_all)
-    erase_mock = set_mock_attr(ion_chamber.mcs, "erase_all", AsyncMock())
-    assert not erase_mock.trigger.called
+    await assert_value(ion_chamber.mcs.erase_all, False)
     # Prepare the ion chamber
     await ion_chamber.prepare(trigger_info)
     # Check that the device was properly configured for fly-scanning
-    assert erase_mock.trigger.called
+    await assert_value(ion_chamber.mcs.erase_all, True)
     await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
     await assert_value(ion_chamber.mcs.scaler.preset_time, 1.3)
@@ -440,21 +445,22 @@ async def test_flyscan_prepare_external_trigger(ion_chamber):
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
-    erase_mock = set_mock_attr(ion_chamber.mcs, "erase_all", AsyncMock())
-    assert not erase_mock.trigger.called
+    await assert_value(ion_chamber.mcs.erase_all, False)
     # Prepare the ion chamber
-    await ion_chamber.prepare(trigger_info)
+    prepare_status = ion_chamber.prepare(trigger_info)
+    await asyncio.sleep(0.01)
     # Check that the device was properly configured for fly-scanning
-    assert erase_mock.trigger.called
+    await assert_value(ion_chamber.mcs.erase_all, True)
     await assert_value(ion_chamber.mcs.channel_advance_source, "External")
     assert next(ion_chamber._trigger_channel_nums) == 5
     assert next(ion_chamber._trigger_channel_nums) == 5
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
+    await assert_value(ion_chamber.mcs.start_all, True)
 
 
 @pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
 @pytest.mark.asyncio
-async def test_flyscan_kickoff(ion_chamber, trigger_info):
+async def test_flyscan_kickoff_internal(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
     await ion_chamber.prepare(trigger_info)
@@ -469,7 +475,7 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     await status
     await assert_value(ion_chamber.mcs.num_channels, 8000)
     # Check that the scan was started
-    await assert_value(ion_chamber.mcs.erase_start, True)
+    await assert_value(ion_chamber.mcs.start_all, True)
     # Check that timestamps get recorded when new data are available
     set_mock_value(ion_chamber.mcs.current_channel, 1)
     assert ion_chamber._fly_start_timestamp_local is not None
@@ -478,19 +484,59 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
 
 @pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
 @pytest.mark.asyncio
-async def test_flyscan_complete(ion_chamber):
+async def test_flyscan_kickoff_external_edge(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
+    await ion_chamber.prepare(trigger_info)
+    # Kickoff the fly scan
+    status = ion_chamber.kickoff()
+    # The timing matters here, scaler needs to be idle to make sure it
+    # can acquire, then needs to be acquiring so the coroutine
+    # finishes.
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.DONE)
+    await asyncio.sleep(0.01)
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.ACQUIRING)
+    await status
+    await assert_value(ion_chamber.mcs.num_channels, 8000)
+    # Check that the scan was started
+    await assert_value(ion_chamber.mcs.start_all, True)
+    # Check that timestamps get recorded when new data are available
+    set_mock_value(ion_chamber.mcs.current_channel, 1)
+    assert ion_chamber._fly_start_timestamp_local is not None
+    assert ion_chamber._fly_start_timestamp_remote is not None
+
+
+@pytest.mark.skipif(set_mock_attr is None, reason="set_mock_attr not available")
+@pytest.mark.asyncio
+async def test_flyscan_complete(ion_chamber, trigger_info):
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.stage()
+    await ion_chamber.prepare(trigger_info)
+    kickoff_status = ion_chamber.kickoff()
+    await asyncio.sleep(0.01)
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.ACQUIRING)
+    await asyncio.sleep(0.01)
+    await kickoff_status
     # Run the complete method
     stop_mock = set_mock_attr(ion_chamber.mcs, "stop_all", AsyncMock())
     assert not stop_mock.trigger.called
-    await ion_chamber.complete()
-    # Check that the detector is stopped
-    assert stop_mock.trigger.called
+    complete_status = ion_chamber.complete()
+    await asyncio.sleep(0.01)
+    # It shouldn't be done yet because the number of channels hasn't changed
+    assert not complete_status.done
+    set_mock_value(ion_chamber.mcs.current_channel, 5)
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.DONE)
+    await asyncio.sleep(0.01)
+    await complete_status
+    assert complete_status.success
 
 
 @pytest.mark.asyncio
 async def test_flyscan_collect(ion_chamber, trigger_info):
+    # Test that the device can collect event pages. Do two pages, with
+    # half of the data each.
     await ion_chamber.connect(mock=True)
+    await ion_chamber.prepare(trigger_info)
     # Make fake fly-scan data
     sim_data = np.zeros(shape=(8000,))
     sim_data[:6] = [3, 5, 8, 13, 2, 33]
@@ -501,7 +547,7 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     sim_times = np.asarray([4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     set_mock_value(ion_chamber.mcs.mcas[0].spectrum, sim_times)
     set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 1e7)
-    set_mock_value(ion_chamber.mcs.current_channel, 6)
+    set_mock_value(ion_chamber.mcs.current_channel, 3)  # First half of the events
     channel_numbers = range(len(sim_times) + 1)
     expected_timestamps = [1004, 1008, 1012, 1016, 1020, 1024]
     ion_chamber._fly_start_timestamp_remote = expected_timestamps[0]
@@ -512,25 +558,53 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     # Confirm data have the right structure
     assert collected["time"] == pytest.approx(time.time())
     assert_allclose(
-        collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:6]
+        collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:3]
     )
     assert_allclose(
-        collected["data"][ion_chamber.scaler_channel.net_count.name], sim_data[:6]
+        collected["data"][ion_chamber.scaler_channel.net_count.name], sim_data[:3]
     )
     assert_allclose(
-        collected["data"][ion_chamber.mcs.scaler.elapsed_time.name], [4] * 6
+        collected["data"][ion_chamber.mcs.scaler.elapsed_time.name], [4] * 3
     )
     assert_allclose(
         collected["timestamps"][ion_chamber.scaler_channel.raw_count.name],
-        expected_timestamps,
+        expected_timestamps[:3],
     )
     assert_allclose(
         collected["timestamps"][ion_chamber.scaler_channel.net_count.name],
-        expected_timestamps,
+        expected_timestamps[:3],
     )
     assert_allclose(
         collected["timestamps"][ion_chamber.mcs.scaler.elapsed_time.name],
-        expected_timestamps,
+        expected_timestamps[:3],
+    )
+    # Do the same test for the second half of the data
+    set_mock_value(ion_chamber.mcs.current_channel, 6)  # 2nd half of the events
+    collected = [c async for c in ion_chamber.collect_pages()]
+    assert len(collected) == 1
+    collected = collected[0]
+    # Confirm data have the right structure
+    assert collected["time"] == pytest.approx(time.time())
+    assert_allclose(
+        collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[3:6]
+    )
+    assert_allclose(
+        collected["data"][ion_chamber.scaler_channel.net_count.name], sim_data[3:6]
+    )
+    assert_allclose(
+        collected["data"][ion_chamber.mcs.scaler.elapsed_time.name], [4] * 3
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.scaler_channel.raw_count.name],
+        expected_timestamps[3:],
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.scaler_channel.net_count.name],
+        expected_timestamps[3:],
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.mcs.scaler.elapsed_time.name],
+        expected_timestamps[3:],
     )
 
 

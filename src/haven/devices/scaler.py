@@ -123,9 +123,9 @@ class MultiChannelScaler(StandardReadable):
 
     def __init__(self, prefix, channels: Sequence[int], name=""):
         # Controls
-        self.start_all = epics_triggerable_command(f"{prefix}StartAll")
-        self.stop_all = epics_triggerable_command(f"{prefix}StopAll")
-        self.erase_all = epics_triggerable_command(f"{prefix}EraseAll")
+        self.start_all = epics_signal_rw(bool, f"{prefix}StartAll", wait=False)
+        self.stop_all = epics_signal_rw(bool, f"{prefix}StopAll", wait=False)
+        self.erase_all = epics_signal_rw(bool, f"{prefix}EraseAll", wait=False)
         self.erase_start = epics_signal_rw(bool, f"{prefix}EraseStart", wait=False)
         self.software_channel_advance = epics_triggerable_command(
             f"{prefix}SoftwareChannelAdvance"
