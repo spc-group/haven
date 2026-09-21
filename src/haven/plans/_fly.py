@@ -60,7 +60,7 @@ def fly_segment(
     Parameters
     ==========
     detectors
-      Will be kicked off before the motors begin to move.
+      Will be kicked off as the motors begin to move.
     spec
       A scan spec that describes the trajectory to take. Will be
       consumed by this plan.
@@ -107,12 +107,12 @@ def fly_segment(
         yield from bps.kickoff_all(*flyer_controllers, wait=True)
     yield from bps.kickoff_all(*motors, wait=True)
     # Finish the scan and cleanup
-    yield from bps.complete_all(*motors, wait=True)
-    if len(flyer_controllers) > 0:
-        yield from bps.complete_all(*flyer_controllers, wait=True)
-    yield from bps.complete_all(*detectors, wait=True)
-    for detector in detectors:
-        yield from bps.collect(detector)
+    frame_time = trigger_info.livetime + trigger_info.deadtime
+    yield from bps.collect_while_completing(
+        flyers=[*motors, *detectors],
+        dets=detectors,
+        flush_period=frame_time * 3,  # Update every 3 frames, why not
+    )
     for motor in motors:
         yield from bps.unmonitor(motor)
 
