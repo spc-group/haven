@@ -23,14 +23,16 @@ xraydb = ">=4.5.0"
 xrayutilities = "*"
 
 [environments]
-default = { solve-group = "default" }
-dev =     { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
-qa =      { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-9bm =     { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
-25idc =   { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
-25idd =   { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled", "xrftools"], solve-group = "beamlines" }
+default =  { solve-group = "default" }
+dev =      { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
+qa =       { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+9bm =      { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc =    { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
+25idd =    { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled", "xrftools"], solve-group = "beamlines" }
 xrftools = { features = ["xrftools"] }
 # designer = { features = ["designer"] }
+# This `beamline` environment is meant for docker deployment.
+beamline = { features = ["bluesky", "ipython", "gui", "qserver", "ai"] }
 
 [tasks]
 test-all = [
@@ -56,6 +58,7 @@ bluesky = "==1.14.6"
 # Bluesky adaptive does not support secondary streams
 # bluesky-adaptive = ">=0.3.2"
 bluesky-adaptive = { git = "https://github.com/spc-group/bluesky-adaptive.git", rev="ed0c036dd583f082a393dc84f7b76b2063f4b4aa" }
+bluesky-tiled-plugins = "==2.0.10"
 bluesky-queueserver-api = ">=0.0.13"  #  = ">=0.0.12"
 guarneri = ">=0.5.0"
 # Include hatchling for getting library versions into metadata

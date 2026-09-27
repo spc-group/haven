@@ -116,6 +116,12 @@ $ pixi run make-docs
 ```
 
 
-# Packaging
+# Packaging and Deployment
 
-Coming soon…
+This deployment is EXPERIMENTAL and is likely to change in the future.
+
+```shell
+podman build --target=20bm -t git.aps.anl.gov:8443/spc-group/haven/20bm:dev .
+podman push -t git.aps.anl.gov:8443/spc-group/haven/20bm:dev
+docker run --mount=type=bind,source=/net/s25data/xorApps/bluesky/25idc/,destination=/etc/bluesky git.aps.anl.gov:8443/spc-group/haven/20bm:dev qserver
+```
