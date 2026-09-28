@@ -27,6 +27,7 @@ default =  { solve-group = "default" }
 dev =      { features = ["bluesky", "ipython", "dev",   "pytest", "gui", "qserver", "tiled", "ai"] }
 qa =       { features = ["bluesky", "ipython", "qa",    "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 9bm =      { features = ["bluesky", "ipython", "9bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+20bm =      { features = ["bluesky", "ipython", "20bm",   "pytest", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc =    { features = ["bluesky", "ipython", "25idc", "pytest", "gui", "qserver", "tiled", "ai"], solve-group = "beamlines" }
 25idd =    { features = ["bluesky", "ipython", "25idd", "pytest", "gui", "qserver", "tiled", "xrftools"], solve-group = "beamlines" }
 xrftools = { features = ["xrftools"] }
@@ -280,4 +281,14 @@ TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60615"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
 QSERVER_ZMQ_INFO_ADDRESS = "tcp://s9controller.xray.aps.anl.gov:60625"
+QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"
+
+
+[feature.20bm.activation.env]
+BLUESKY_DIR = "/net/s20data/export/burnaby/Private/bluesky-20bm/"
+HAVEN_CONFIG = "${BLUESKY_DIR}haven.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://blackcomb.xray.aps.anl.gov:60615"
+QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60615"
+QSERVER_ZMQ_INFO_ADDRESS = "tcp://blackcomb.xray.aps.anl.gov:60625"
 QSERVER_ZMQ_INFO_ADDRESS_FOR_SERVER = "tcp://*:60625"

@@ -162,6 +162,8 @@ class HavenConfig(ConfigModel):
 
 def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
+    if not file_path.exists():
+        return {}
     with open(file_path, mode="rb") as fd:
         log.debug(f"Loading config file: {fd}")
         config = tomli.load(fd)

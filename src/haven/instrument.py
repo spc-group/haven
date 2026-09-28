@@ -53,6 +53,7 @@ beamline = Instrument(
         "analyzer": devices.Analyzer,
         "aperture_slits": devices.ApertureSlits,
         "axilon_monochromator": devices.AxilonMonochromator,
+        "pnc_monochromator": devices.PNCMonochromator,
         "blade_slits": devices.BladeSlits,
         "capillary_heater": devices.CapillaryHeater,
         "cl3000": devices.CL3000,

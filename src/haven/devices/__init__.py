@@ -2,7 +2,7 @@ from .aerotech import AerotechStage as AerotechStage
 from .aperture_slits import ApertureSlits  # noqa: F401
 from .aps import ApsMachine as ApsMachine
 from .asymmotron import Analyzer  # noqa: F401
-from .axilon_monochromator import AxilonMonochromator  # noqa: F401
+from .axilon_monochromator import AxilonMonochromator as AxilonMonochromator
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .capillary_heater import CapillaryHeater as CapillaryHeater
 from .channel_cut_monochromator import ChannelCutMonochromator  # noqa: F401
@@ -27,6 +27,7 @@ from .labjack import LabJackT7Pro as LabJackT7Pro
 from .labjack import LabJackT8 as LabJackT8
 from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401
+from .pnc_monochromator import PNCMonochromator as PNCMonochromator
 from .ptc10 import PTC10Controller as PTC10Controller
 from .ptc10 import PTC10OutputChannel as PTC10OutputChannel
 from .ptc10 import PTC10RTDChannel as PTC10RTDChannel
