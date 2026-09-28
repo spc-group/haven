@@ -1,11 +1,13 @@
 import pytest
+import pytest_asyncio
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.core import set_mock_value
+from ophyd_async.testing import assert_value
 
 from haven.devices.shutter import PssShutter, ShutterState
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def shutter(sim_registry):
     """
     Example PVs:
@@ -15,7 +17,11 @@ async def shutter(sim_registry):
     S25ID-PSS:SCS:BeamBlockingM.VAL
     """
     shutter = PssShutter(
-        prefix="S255ID-PSS:SCS:", name="shutter", hutch_prefix="S255ID-PSS:StaC:"
+        prefix="S255ID-PSS:SCS:",
+        name="shutter",
+        hutch_prefix="S255ID-PSS:StaC:",
+        allow_open=True,
+        allow_close=True,
     )
     await shutter.connect(mock=True)
     set_mock_value(shutter.hutch_searched, True)
@@ -24,6 +30,14 @@ async def shutter(sim_registry):
     return shutter
 
 
+def reset_actuators(device):
+    # Prepare the shutter actuator mocks as if the shutter hasn't
+    # been moved
+    set_mock_value(device.open, 0)
+    set_mock_value(device.close, 0)
+
+
+@pytest.mark.asyncio()
 async def test_read_shutter(shutter):
     """The current state of the shutter should be readable.
 
@@ -34,62 +48,84 @@ async def test_read_shutter(shutter):
     assert shutter.name in reading
 
 
+@pytest.mark.asyncio()
 async def test_shutter_setpoint(shutter):
     """When we open and close the shutter, do the right EPICS signals get
     set?
 
     """
-    # Prepare some mocking so we can operate properly
-    open_put = get_mock_put(shutter.open_signal)
-    close_put = get_mock_put(shutter.close_signal)
-    set_mock_value(shutter.open_signal, 0)
-    set_mock_value(shutter.close_signal, 0)
+
     # Close the shutter
-    set_mock_value(shutter.open_signal, 0)
-    set_mock_value(shutter.close_signal, 0)
-    status = shutter.set(ShutterState.CLOSED)
-    set_mock_value(shutter.readback, ShutterState.CLOSED)
-    await status
-    assert not open_put.called
-    close_put.assert_called_once_with(1)
+    reset_actuators(shutter)
+    await shutter.set(ShutterState.CLOSED)
+    await assert_value(shutter.open, False)
+    await assert_value(shutter.close, True)
     # Open the shutter
-    open_put.reset_mock()
-    close_put.reset_mock()
-    set_mock_value(shutter.close_signal, 0)
-    set_mock_value(shutter.open_signal, 0)
-    status = shutter.set(ShutterState.OPEN)
-    set_mock_value(shutter.readback, ShutterState.OPEN)
-    await status
-    assert not close_put.called
-    open_put.assert_called_once_with(1)
+    reset_actuators(shutter)
+    await shutter.set(ShutterState.OPEN)
+    await assert_value(shutter.open, True)
+    await assert_value(shutter.close, False)
 
 
-async def test_open_allowed_signal(shutter):
-    shutter._allow_open = False
-    assert not await shutter.open_allowed.get_value()
-    # Make it openable
-    shutter._allow_open = True
-    assert await shutter.open_allowed.get_value()
+@pytest.mark.asyncio()
+async def test_fail_on_hutch_unsearched(shutter):
+    """When we open and close the shutter, do the right EPICS signals get
+    set?
+
+    """
+
+    # Close the shutter
+    reset_actuators(shutter)
+    set_mock_value(shutter.hutch_searched, False)
+    with pytest.raises(ReadOnlyError):
+        await shutter.set(ShutterState.OPEN)
+    await assert_value(shutter.open, False)
+    await assert_value(shutter.close, False)
 
 
-async def test_close_allowed_signal(shutter):
-    shutter._allow_close = False
-    assert not await shutter.close_allowed.get_value()
-    # Make it openable
-    shutter._allow_close = True
-    assert await shutter.close_allowed.get_value()
+@pytest.mark.asyncio()
+async def test_fail_on_aps_key_disabled(shutter):
+    """When we open and close the shutter, do the right EPICS signals get
+    set?
+
+    """
+
+    # Close the shutter
+    reset_actuators(shutter)
+    set_mock_value(shutter.aps_key, False)
+    with pytest.raises(ReadOnlyError):
+        await shutter.set(ShutterState.OPEN)
+    await assert_value(shutter.open, False)
+    await assert_value(shutter.close, False)
 
 
+@pytest.mark.asyncio()
+async def test_fail_on_user_key_disabled(shutter):
+    """When we open and close the shutter, do the right EPICS signals get
+    set?
+
+    """
+
+    # Close the shutter
+    reset_actuators(shutter)
+    set_mock_value(shutter.user_key, False)
+    with pytest.raises(ReadOnlyError):
+        await shutter.set(ShutterState.OPEN)
+    await assert_value(shutter.open, False)
+    await assert_value(shutter.close, False)
+
+
+@pytest.mark.asyncio()
 async def test_shutter_check_value(shutter):
     # Check for non-sense values
     with pytest.raises(ValueError):
         await shutter.set(ShutterState.FAULT)
     # Test shutter allow_close
-    shutter._allow_close = False
+    shutter.movable_logic.allow_close = False
     with pytest.raises(ReadOnlyError):
         await shutter.set(ShutterState.CLOSED)
     # Test shutter allow_open
-    shutter._allow_open = False
+    shutter.movable_logic.allow_open = False
     with pytest.raises(ReadOnlyError):
         await shutter.set(ShutterState.OPEN)
 

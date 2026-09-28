@@ -1,16 +1,29 @@
-"""A personnelle safety system shutter as an ophyd-async device."""
+"""A personnelle safety system (PSS) shutter as an ophyd-async
+device.
+
+"""
 
 import asyncio
 import logging
-import warnings
+from dataclasses import dataclass
 from enum import IntEnum, unique
-from typing import Literal
+from functools import cached_property
 
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import derived_signal_r, derived_signal_rw, soft_signal_rw
+from ophyd_async.core import (
+    DeviceMock,
+    MovableLogic,
+    SignalR,
+    SignalRW,
+    StandardMovable,
+    StandardReadable,
+    TimeoutCalculator,
+    callback_on_mock_put,
+    default_mock_class,
+    set_and_wait_for_other_value,
+    set_mock_value,
+)
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
-
-from ..positioner import Positioner
 
 __all__ = ["PssShutter", "ShutterState"]
 
@@ -26,7 +39,114 @@ class ShutterState(IntEnum):
     UNKNOWN = 4  # 0b100
 
 
-class PssShutter(Positioner):
+@dataclass
+class ShutterMovableLogic:
+    """Determines if the shutter can be opened/closed based on various permission signals."""
+
+    allow_open: bool
+    allow_close: bool
+    readback: SignalR[ShutterState]
+    open: SignalRW[bool]
+    close: SignalRW[bool]
+    hutch_search: SignalR[bool]
+    aps_key: SignalR[bool]
+    user_key: SignalR[bool]
+
+    async def stop(self) -> None:
+        """Optional hook to add logic on how to stop the motion."""
+        pass
+
+    async def check_move(self, new_position: ShutterState) -> None:
+        """Optional hook to validate the move.
+
+        Should raise an exception if the move is not valid, e.g. if the new
+        position is outside soft limits.
+        """
+        if new_position not in (ShutterState.OPEN, ShutterState.CLOSED):
+            raise ValueError(new_position)
+        if new_position == ShutterState.OPEN and not (await self.open_allowed()):
+            raise ReadOnlyError(
+                f"Shutter {self.readback.parent.name} is not permitted to be opened. "
+                "Set `allow_open` for this shutter or wait for APS permit."
+            )
+        if new_position == ShutterState.CLOSED and not (await self.close_allowed()):
+            raise ReadOnlyError(
+                f"Shutter {self.readback.parent.name} is not permitted to be closed. "
+                "Set `allow_close` for this shutter."
+            )
+
+    async def open_allowed(self) -> bool:
+        searched, aps_key, user_key = await asyncio.gather(
+            self.hutch_search.get_value(),
+            self.aps_key.get_value(),
+            self.user_key.get_value(),
+        )
+        print(all([searched, aps_key, user_key]))
+        return all([searched, aps_key, user_key, self.allow_open])
+
+    async def close_allowed(self) -> bool:
+        return self.allow_close
+
+    async def calculate_timeout(
+        self, old_position: ShutterState, new_position: ShutterState
+    ) -> float | None:
+        """Optional hook to calculate valid timeout for a move."""
+        return None
+
+    async def get_units_precision(self) -> tuple[str | None, int | None]:
+        """Optional hook to return the units and precision."""
+        datakey = (await self.readback.describe())[self.readback.name]
+        return datakey.get("units"), datakey.get("precision")
+
+    async def move(
+        self, new_position: ShutterState, timeout: TimeoutCalculator
+    ) -> None:
+        """Move the device, waiting for the readback to reach the correct position.
+
+        ```{note}
+        The default implementation waits for the readback to be **exactly**
+        equal to `new_position`. For floating-point positions this may never
+        be satisfied; override this method to use an appropriate tolerance
+        check (e.g. `np.isclose`).
+        ```
+        """
+        if new_position == ShutterState.OPEN:
+            actuator = self.open
+        elif new_position == ShutterState.CLOSED:
+            actuator = self.close
+        else:
+            actuator = None
+        await set_and_wait_for_other_value(
+            actuator,
+            True,
+            self.readback,
+            new_position,
+            timeout=timeout(),
+        )
+
+
+class ShutterMovableMock(DeviceMock["StandardMovable"]):
+    """Mock behaviour that instantly moves readback to setpoint."""
+
+    async def connect(self, device: "StandardMovable") -> None:
+        """Mock signals to do an instant move on setpoint write."""
+
+        def _instant_open(value):
+            set_mock_value(
+                device.movable_logic.readback, ShutterState.OPEN
+            )  # Arrive instantly
+
+        def _instant_close(value):
+            set_mock_value(
+                device.movable_logic.readback, ShutterState.CLOSED
+            )  # Arrive instantly
+
+        callback_on_mock_put(device.movable_logic.open, _instant_open)
+        callback_on_mock_put(device.movable_logic.close, _instant_close)
+
+
+@default_mock_class(ShutterMovableMock)
+class PssShutter(StandardMovable[ShutterState], StandardReadable):
     """A personnelle safety system shutter.
 
     Parameters
@@ -49,7 +169,7 @@ class PssShutter(Positioner):
         name: str,
         hutch_prefix: str,
         *,
-        allow_open: bool | Literal["auto"] = "auto",
+        allow_open: bool = True,
         allow_close: bool = True,
         labels={"shutters"},
         **kwargs,
@@ -57,91 +177,29 @@ class PssShutter(Positioner):
         self._allow_open = allow_open
         self._allow_close = allow_close
         # Actuators for opening/closing the shutter
-        self.open_signal = epics_signal_rw(bool, f"{prefix}OpenEPICSC")
-        self.close_signal = epics_signal_rw(bool, f"{prefix}CloseEPICSC")
-        # Just use convenient values for these since there's no real position
-        self.velocity = soft_signal_rw(float, initial_value=0.5)
-        self.units = soft_signal_rw(str, initial_value="")
-        self.precision = soft_signal_rw(int, initial_value=5)
+        self.open = epics_signal_rw(bool, f"{prefix}OpenEPICSC")
+        self.close = epics_signal_rw(bool, f"{prefix}CloseEPICSC")
         # Positioner signals for moving the shutter
         with self.add_children_as_readables():
             self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
-        self.setpoint = derived_signal_rw(
-            raw_to_derived=self._shutter_setpoint,
-            set_derived=self._actuate_shutter,
-            open_signal=self.open_signal,
-            close_signal=self.close_signal,
-        )
         # Extra signals for checking open/close permissions
-        # C-hutch searched: S25ID-PSS:StaC:SecureM
-        # C-hutch APS key: S25ID-PSS:StaC:APSKeyM
-        # C-hutch user key: S25ID-PSS:StaC:UserKeyM
         self.hutch_searched = epics_signal_r(bool, f"{hutch_prefix}SecureM")
         self.aps_key = epics_signal_r(bool, f"{hutch_prefix}APSKeyM")
         self.user_key = epics_signal_r(bool, f"{hutch_prefix}UserKeyM")
-        self.open_allowed = derived_signal_r(
-            self._open_permission,
-            searched=self.hutch_searched,
-            aps_key=self.aps_key,
-            user_key=self.user_key,
-        )
-        self.close_allowed = derived_signal_r(
-            self._close_permission,
-            searched=self.hutch_searched,
-            aps_key=self.aps_key,
-            user_key=self.user_key,
-        )
         super().__init__(name=name, **kwargs)
 
-    async def check_permissions(self, value: int) -> ShutterState:
-        """Check that the shutter has the right permissions to reach *value*."""
-        # Get current permit values from the PSS system, etc
-        async with asyncio.TaskGroup() as tg:
-            allow_close = tg.create_task(self.close_allowed.get_value())
-            allow_open = tg.create_task(self.open_allowed.get_value())
-        # Logic for deciding whether we can open/close the shutter
-        if value == ShutterState.CLOSED and not allow_close.result():
-            raise ReadOnlyError(
-                f"Shutter {self.name} is not permitted to be closed. "
-                "Set `allow_close` for this shutter or wait for APS permit."
-            )
-        if value == ShutterState.OPEN and not allow_open.result():
-            raise ReadOnlyError(
-                f"Shutter {self.name} is not permitted to be opened "
-                "per iconfig.toml. Set `allow_open` for this shutter."
-            )
-        return ShutterState(value)
-
-    def _open_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
-        return all([self._allow_open, searched, aps_key, user_key])
-
-    def _close_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
-        # Even if the hutch is not searched, we can always still *close* the shutter
-        return all([self._allow_close])
-
-    async def _actuate_shutter(self, setpoint: int) -> None:
-        """Open/close the shutter using derived-from signals."""
-        await self.check_permissions(setpoint)
-        if setpoint == ShutterState.OPEN:
-            await self.open_signal.set(1)
-        elif setpoint == ShutterState.CLOSED:
-            await self.close_signal.set(1)
-        else:
-            raise ValueError(f"Invalid shutter state for {self}")
-
-    def _shutter_setpoint(self, open_signal: int, close_signal: int) -> int:
-        """Determine whether the shutter was last opened or closed."""
-        do_open = open_signal
-        do_close = close_signal
-        if do_open and do_close:
-            # Shutter is both opening and closing??
-            warnings.warn("Unknown shutter setpoint")
-            self._last_setpoint = ShutterState.UNKNOWN
-        elif do_open:
-            self._last_setpoint = ShutterState.OPEN
-        elif do_close:
-            self._last_setpoint = ShutterState.CLOSED
-        return self._last_setpoint
+    @cached_property
+    def movable_logic(self) -> MovableLogic:
+        return ShutterMovableLogic(
+            readback=self.readback,
+            allow_open=self._allow_open,
+            allow_close=self._allow_close,
+            open=self.open,
+            close=self.close,
+            hutch_search=self.hutch_searched,
+            aps_key=self.aps_key,
+            user_key=self.user_key,
+        )
 
 
 # -----------------------------------------------------------------------------
