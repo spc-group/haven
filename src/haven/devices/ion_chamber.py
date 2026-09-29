@@ -643,7 +643,6 @@ class IonChamber(StandardReadable, Triggerable):
                 timeout=scan_time + DEFAULT_TIMEOUT,
             )
 
-    # async def collect_pages(self) -> AsyncGenerator[Mapping[str, Any], Any]:
     async def collect_pages(self) -> AsyncIterator[PartialEventPage]:
         # Prepare the individual signal data-sets
         raw_counts, raw_times, clock_freq, offset_rate, current_channel = (
@@ -656,6 +655,10 @@ class IonChamber(StandardReadable, Triggerable):
             )
         )
         first_channel = self._last_channel_read
+        # Make sure we don't run outside of the buffers
+        current_channel = min(current_channel, len(raw_counts), len(raw_times))
+        raw_counts = raw_counts[:current_channel]
+        raw_times = raw_times[:current_channel]
         this_slice = slice(first_channel, current_channel)
         raw_counts = raw_counts[this_slice]
         times = raw_times / clock_freq
@@ -670,6 +673,7 @@ class IonChamber(StandardReadable, Triggerable):
         )
         timestamps = [t0, *(t0 + elapsed_times)][this_slice]
         # Apply the dark current correction
+        raw_times = raw_times[this_slice]
         times = times[this_slice]
         net_counts = raw_counts - offset_rate * times
         # Build the results dictionary to be sent out
@@ -678,7 +682,7 @@ class IonChamber(StandardReadable, Triggerable):
             self.scaler_channel.raw_count.name: raw_counts,
             self.scaler_channel.net_count.name: net_counts,
             self.mcs.scaler.elapsed_time.name: times,
-            self.mcs.scaler.channels[0].net_count.name: null_data,
+            self.mcs.scaler.channels[0].net_count.name: raw_times,
             self.mcs.scaler.channels[0].raw_count.name: raw_times,
             self.voltmeter_channel.final_value.name: null_data,
             self.net_count_rate.name: net_counts / times,
