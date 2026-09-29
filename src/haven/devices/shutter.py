@@ -81,7 +81,6 @@ class ShutterMovableLogic:
             self.aps_key.get_value(),
             self.user_key.get_value(),
         )
-        print(all([searched, aps_key, user_key]))
         return all([searched, aps_key, user_key, self.allow_open])
 
     async def close_allowed(self) -> bool:

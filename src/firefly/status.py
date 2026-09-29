@@ -1,9 +1,13 @@
+import asyncio
 import logging
+from functools import partial
 
 import qtawesome as qta
-from pydm import PyDMChannel
-from pydm.widgets import PyDMByteIndicator, PyDMPushButton
-from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
+from ophyd_async.core import Device
+from pydm.widgets import PyDMByteIndicator
+from qasync import asyncSlot
+from qtpy.QtCore import QTimer
+from qtpy.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy
 
 from firefly import display
 from haven.devices.shutter import ShutterState
@@ -22,22 +26,30 @@ def name_to_title(name: str):
 
 class StatusDisplay(display.FireflyDisplay):
     first_shutter_row = 3
+    shutter_buttons: list[tuple[QPushButton, QPushButton]]
+    shutter_permit_timer: QTimer
+
+    def __init__(self, *args, shutter_check_period: int | float = 1.0, **kwargs):
+        self.shutter_buttons = []
+        self._shutter_check_period = shutter_check_period
+        super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        timer = getattr(self, "shutter_permit_timer")
+        if timer is not None:
+            timer.stop()
 
     async def update_devices(self, registry):
         await super().update_devices(registry)
         shutters = registry.findall("shutters", allow_none=True)
         shutters = sorted(shutters, key=lambda x: x.name)
-        self.remove_shutter_widgets()
         for shutter in shutters:
             self.add_shutter_widgets(shutter)
+        self.shutters = shutters
 
-    def remove_shutter_widgets(self):
-        # Disconnect existing pydm channels for the openable/closable signals
-        old_channels = [ch for chs in self.shutter_channels for ch in chs]
-        old_channels = [ch for ch in old_channels if ch is not None]
-        for ch in old_channels:
-            ch.disconnect()
-        self.shutter_channels = []
+    @asyncSlot(Device, ShutterState)
+    async def move_shutter(self, shutter: Device, position: ShutterState):
+        await shutter.set(position)
 
     def add_shutter_widgets(self, shutter):
         # Add widgets for shutters
@@ -46,7 +58,7 @@ class StatusDisplay(display.FireflyDisplay):
         # Add a layout with the buttons
         layout = QHBoxLayout()
         label = name_to_title(shutter.name) + ":"
-        row_idx = self.first_shutter_row + len(self.shutter_channels)
+        row_idx = self.first_shutter_row + len(self.shutter_buttons)
         self.beamline_layout.insertRow(row_idx, label, layout)
         # Indicator to show if the shutter is open
         indicator = PyDMByteIndicator(
@@ -60,48 +72,49 @@ class StatusDisplay(display.FireflyDisplay):
         indicator.onColor = off_color
         layout.addWidget(indicator)
         # Button to open the shutter
-        open_btn = PyDMPushButton(
-            parent=self,
-            label="Open",
-            icon=qta.icon("mdi.window-shutter-open"),
-            pressValue=ShutterState.OPEN,
-            relative=False,
-            init_channel=f"haven://{shutter.name}.setpoint",
-        )
+        open_btn = QPushButton(parent=self)
+        open_btn.setText("Open")
+        open_btn.setIcon(qta.icon("mdi.window-shutter-open"))
         layout.addWidget(open_btn)
-        if hasattr(shutter, "open_allowed"):
-            openable_channel = PyDMChannel(
-                address=f"haven://{shutter.name}.open_allowed",
-                value_slot=open_btn.setEnabled,
-            )
-            openable_channel.connect()
-        else:
-            openable_channel = None
+        open_btn.clicked.connect(partial(self.move_shutter, shutter, ShutterState.OPEN))
         # Button to close the shutter
-        close_btn = PyDMPushButton(
-            parent=self,
-            label="Close",
-            icon=qta.icon("mdi.window-shutter"),
-            pressValue=ShutterState.CLOSED,
-            relative=False,
-            init_channel=f"haven://{shutter.name}.setpoint",
-        )
+        close_btn = QPushButton(parent=self)
+        close_btn.setText("Close")
+        close_btn.setIcon(qta.icon("mdi.window-shutter"))
         layout.addWidget(close_btn)
-        if hasattr(shutter, "close_allowed"):
-            closable_channel = PyDMChannel(
-                address=f"haven://{shutter.name}.close_allowed",
-                value_slot=close_btn.setEnabled,
-            )
-            closable_channel.connect()
-        else:
-            closable_channel = None
-        self.shutter_channels.append((openable_channel, closable_channel))
+        close_btn.clicked.connect(
+            partial(self.move_shutter, shutter, ShutterState.CLOSED)
+        )
+        self.shutter_buttons.append([open_btn, close_btn])
 
     def customize_ui(self):
         # Remove existing designer shutter widgets
         self.beamline_layout.removeRow(self.ui.shutter_A_layout)
         self.beamline_layout.removeRow(self.ui.shutter_CD_layout)
-        self.shutter_channels = []
+        # Periodically check if the shutter permissions have changed
+        self.shutter_permit_timer = QTimer(self)
+        self.shutter_permit_timer.timeout.connect(self.update_shutter_permissions)
+        self.shutter_permit_timer.start(int(1000 * self._shutter_check_period))
+
+    @asyncSlot()
+    async def update_shutter_permissions(self):
+        async def get_permissions(shutter):
+            if hasattr(shutter, "movable_logic"):
+                permissions = await asyncio.gather(
+                    shutter.movable_logic.open_allowed(),
+                    shutter.movable_logic.close_allowed(),
+                )
+                return permissions
+            return (True, True)
+
+        coros = [get_permissions(shutter) for shutter in self.shutters]
+        shutter_permissions = await asyncio.gather(*coros)
+
+        for buttons, permissions in zip(self.shutter_buttons, shutter_permissions):
+            open_btn, close_btn = buttons
+            allow_open, allow_close = permissions
+            open_btn.setEnabled(allow_open)
+            close_btn.setEnabled(allow_close)
 
     def ui_filename(self):
         return "status.ui"

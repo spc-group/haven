@@ -276,7 +276,7 @@
            </widget>
           </item>
           <item>
-           <widget class="PyDMPushButton" name="FES_open_button">
+           <widget class="QPushButton" name="FES_open_button">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -366,7 +366,7 @@
            </widget>
           </item>
           <item>
-           <widget class="PyDMPushButton" name="SCDS_open_button">
+           <widget class="QPushButton" name="SCDS_open_button">
             <property name="toolTip">
              <string/>
             </property>
@@ -382,7 +382,7 @@
            </widget>
           </item>
           <item>
-           <widget class="PyDMPushButton" name="SCDS_close_button">
+           <widget class="QPushButton" name="SCDS_close_button">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -432,11 +432,6 @@
    <class>PyDMByteIndicator</class>
    <extends>QWidget</extends>
    <header>pydm.widgets.byte</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMPushButton</class>
-   <extends>QPushButton</extends>
-   <header>pydm.widgets.pushbutton</header>
   </customwidget>
  </customwidgets>
  <resources/>
