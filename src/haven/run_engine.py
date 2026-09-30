@@ -5,8 +5,8 @@ from apsbits.core.run_engine_init import init_RE
 from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
-from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import register_transform
+from bluesky_tiled_plugins import TiledWriter
 
 from haven import load_config
 from haven.iconfig import HavenConfig

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import IntEnum, unique
 from functools import cached_property
 
+from bluesky.protocols import Location
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import (
     DeviceMock,
@@ -199,6 +200,22 @@ class PssShutter(StandardMovable[ShutterState], StandardReadable):
             aps_key=self.aps_key,
             user_key=self.user_key,
         )
+
+    async def locate(self) -> Location[ShutterState]:
+        """Return the current setpoint and readback of the device."""
+        open_reading, close_reading, readback = await asyncio.gather(
+            self.movable_logic.open.read(),
+            self.movable_logic.close.read(),
+            self.movable_logic.readback.get_value(),
+        )
+        open_timestamp = open_reading[self.movable_logic.open.name]["timestamp"]
+        close_timestamp = close_reading[self.movable_logic.close.name]["timestamp"]
+        setpoint = (
+            ShutterState.OPEN
+            if open_timestamp > close_timestamp
+            else ShutterState.CLOSED
+        )
+        return Location(setpoint=setpoint, readback=readback)
 
 
 # -----------------------------------------------------------------------------

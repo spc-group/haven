@@ -130,6 +130,12 @@ async def test_shutter_check_value(shutter):
         await shutter.set(ShutterState.OPEN)
 
 
+@pytest.mark.asyncio()
+async def test_locate(shutter):
+    location = await shutter.locate()
+    assert location == {"readback": ShutterState.OPEN, "setpoint": ShutterState.CLOSED}
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
