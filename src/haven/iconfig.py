@@ -138,6 +138,7 @@ class LoggingConfig(ConfigModel):
 
 class HavenConfig(ConfigModel):
     area_detector_root_path: str = "/tmp"
+    auto_open_shutters: bool = True
     mock_devices: bool = False
     data_management: DataManagementConfig | None = None
     tiled: TiledConfig | None = None

@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Generator, Mapping, Sequence
 from enum import IntEnum
 
@@ -8,6 +9,7 @@ from bluesky.protocols import Movable
 from bluesky.utils import make_decorator
 
 from haven.devices.shutter import ShutterState
+from haven.iconfig import load_config
 
 __all__ = ["open_shutters_wrapper", "open_shutters_decorator"]
 
@@ -45,6 +47,10 @@ def open_shutters_wrapper(
     other shutters will be **opened at the start of the run**. Both
     categories will be closed at the end of the run.
 
+    This functionality can be enabled/disabled in the beamline
+    configuration by setting the `auto_open_shutters` key to
+    `True`/`False`.
+
     Parameters
     ==========
     plan
@@ -57,6 +63,9 @@ def open_shutters_wrapper(
       detectors.
 
     """
+    if not load_config().auto_open_shutters:
+        warnings.warn("Auto open shutters is disabled in the beamline configuration.")
+        return (yield from plan)
     # Check for closed shutters (open shutters just stay open)
     shutters_to_open = []
     for shutter in [*slow_shutters, *fast_shutters]:
