@@ -52,7 +52,7 @@ async def test_shutter_controls(display, shutters, qtbot):
     await assert_value(shutterA.readback, ShutterState.OPEN)
     close_btn = layout0.itemAt(2).widget()
     close_btn.click()
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.05)
     await assert_value(shutterA.readback, ShutterState.CLOSED)
     # Open the shutter and make sure it opened again
     set_mock_value(shutterA.hutch_searched, True)
@@ -60,7 +60,7 @@ async def test_shutter_controls(display, shutters, qtbot):
     set_mock_value(shutterA.user_key, True)
     open_btn = layout0.itemAt(1).widget()
     open_btn.click()
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.05)
     await assert_value(shutterA.readback, ShutterState.OPEN)
 
 

@@ -8,7 +8,6 @@ from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
     inject_metadata_decorator,
-    open_shutters_decorator,
 )
 
 from ._adaptive_xanes import adaptive_xanes as adaptive_xanes
@@ -47,13 +46,11 @@ def chain(*decorators):
 
 
 all_decorators = chain(
-    open_shutters_decorator(),
     baseline_decorator(),
     inject_metadata_decorator(),
 )
 
 # Apply decorators to Haven plans
-auto_gain = open_shutters_decorator()(auto_gain)
 adaptive_xanes = all_decorators(adaptive_xanes)
 count = all_decorators(count)
 emission_map_scan = all_decorators(emission_map_scan)
@@ -67,7 +64,6 @@ scan = all_decorators(scan)
 
 # Remove foreign imports
 del beamline
-del open_shutters_decorator
 del baseline_decorator
 
 __all__ = [

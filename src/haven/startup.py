@@ -52,7 +52,8 @@ from haven.plans import (  # noqa: F401
     set_energy,
     xafs_scan,
 )
-from haven.preprocessors import fixed_offset_wrapper  # noqa: F401
+from haven.preprocessors import fixed_offset_wrapper as fixed_offset_wrapper
+from haven.preprocessors import open_shutters_decorator as open_shutters_decorator
 
 log = logging.getLogger("haven")
 
@@ -106,6 +107,8 @@ devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
 endstation_shutters = devices.findall("endstation_shutter", allow_none=True)
 endstation_shutters = [dev for dev in endstation_shutters if dev.parent is None]
+fast_shutters = devices.findall("fast_shutters", allow_none=True)
+fast_shutters = [dev for dev in fast_shutters if dev.parent is None]
 preamps = devices.findall("preamps", allow_none=True)
 for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
@@ -132,6 +135,14 @@ RE.preprocessors.append(sd)
 #
 # Add plan decorators that require specific devices to be loaded
 plan_decorators: list[Callable] = []
+
+# Automatically open/close the shutters when needed
+plan_decorators.append(
+    open_shutters_decorator(
+        slow_shutters=endstation_shutters,
+        fast_shutters=fast_shutters,
+    )
+)
 
 # Suspenders for if the storage ring goes down
 try:

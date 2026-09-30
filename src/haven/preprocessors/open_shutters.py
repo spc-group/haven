@@ -1,14 +1,13 @@
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, Sequence
 from enum import IntEnum
 
 from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky.preprocessors import finalize_wrapper
+from bluesky.protocols import Movable
 from bluesky.utils import make_decorator
-from guarneri import Registry
 
 from haven.devices.shutter import ShutterState
-from haven.instrument import beamline
 
 __all__ = ["open_shutters_wrapper", "open_shutters_decorator"]
 
@@ -32,7 +31,9 @@ def _set_shutters(shutters, state: int):
         yield from bps.null()
 
 
-def open_shutters_wrapper(plan, registry: Registry | None = None):
+def open_shutters_wrapper(
+    plan, slow_shutters: Sequence[Movable] = [], fast_shutters: Sequence[Movable] = []
+):
     """Wrapper for Bluesky plans that opens and closes shutters as needed.
 
     Only shutters that are closed at the start of the plan are
@@ -48,34 +49,20 @@ def open_shutters_wrapper(plan, registry: Registry | None = None):
     ==========
     plan
       The Bluesky plan instance to decorate.
-    registry
-      An ophyd-registry in which to look for shutters.
+    slow_shutters
+      The shutters that will be opened at the start of the plan
+      and closed at the end.
+    fast_shutters
+      The shutters that will be opened when triggering or flying
+      detectors.
 
     """
-    if registry is None:
-        registry = beamline.devices
-    # Get a list of shutters that could be opened and closed
-    all_shutters = registry.findall(label="shutters", allow_none=True)
-    # yield from _can_open(all_shutters[1])
-    allowed_shutters = []
-    for shutter in all_shutters:
-        # Decide whether each shutter can be opened
-        if not uses_permissions(shutter):
-            # Doesn't use the permissions mechanism, so assume we can open it
-            allowed_shutters.append(shutter)
-        elif (yield from _can_open(shutter)):
-            # Check that the ACIS and PSS systems will let us open
-            allowed_shutters.append(shutter)
     # Check for closed shutters (open shutters just stay open)
     shutters_to_open = []
-    for shutter in allowed_shutters:
+    for shutter in [*slow_shutters, *fast_shutters]:
         initial_state = yield from bps.rd(shutter)
         if initial_state == ShutterState.CLOSED:
             shutters_to_open.append(shutter)
-    # Organize the shutters into fast and slow
-    fast_shutters = registry.findall(label="fast_shutters", allow_none=True)
-    fast_shutters = [shtr for shtr in shutters_to_open if shtr in fast_shutters]
-    slow_shutters = [shtr for shtr in shutters_to_open if shtr not in fast_shutters]
     # Open shutters
     yield from _set_shutters(slow_shutters, ShutterState.OPEN)
     # Add the wrapper for opening fast shutters at every trigger
