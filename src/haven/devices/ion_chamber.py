@@ -657,6 +657,8 @@ class IonChamber(StandardReadable, Triggerable):
         first_channel = self._last_channel_read
         # Make sure we don't run outside of the buffers
         current_channel = min(current_channel, len(raw_counts), len(raw_times))
+        if first_channel == current_channel:
+            return
         raw_counts = raw_counts[:current_channel]
         raw_times = raw_times[:current_channel]
         this_slice = slice(first_channel, current_channel)
