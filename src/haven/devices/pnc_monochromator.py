@@ -18,10 +18,6 @@ from .motor import Motor
 log = logging.getLogger(__name__)
 
 
-class EnergyMoveLogic(MovableLogic[float]):
-    pass
-
-
 class EnergyMovable(StandardMovable, StandardReadable, Device):
 
     def __init__(self, prefix: str, *, name: str = ""):
@@ -32,7 +28,7 @@ class EnergyMovable(StandardMovable, StandardReadable, Device):
 
     @cached_property
     def movable_logic(self) -> MovableLogic:
-        return EnergyMoveLogic(setpoint=self.setpoint, readback=self.readback)
+        return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
 
 class PNCMonochromator(StandardReadable, Device):

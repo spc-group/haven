@@ -99,13 +99,14 @@ class StatusDisplay(display.FireflyDisplay):
     @asyncSlot()
     async def update_shutter_permissions(self):
         async def get_permissions(shutter):
-            if hasattr(shutter, "movable_logic"):
+            try:
                 permissions = await asyncio.gather(
                     shutter.movable_logic.open_allowed(),
                     shutter.movable_logic.close_allowed(),
                 )
-                return permissions
-            return (True, True)
+            except AttributeError:
+                permissions = (True, True)
+            return permissions
 
         coros = [get_permissions(shutter) for shutter in self.shutters]
         shutter_permissions = await asyncio.gather(*coros)

@@ -7,22 +7,23 @@ a filter bank can be used as a shutter.
 
 import logging
 from enum import IntEnum
+from functools import cached_property
 from typing import Sequence
 
 from ophyd_async.core import (
     DeviceVector,
+    MovableLogic,
+    StandardMovable,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
     derived_signal_r,
     derived_signal_rw,
-    soft_signal_rw,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from haven.devices.shutter import ShutterState
-from haven.positioner import Positioner
 
 __all__ = ["PFCUFilterBank", "PFCUFilter", "PFCUShutter"]
 
@@ -84,7 +85,7 @@ def normalize_readback(readback: FilterPosition) -> int:
     }.get(readback, FilterState.UNKNOWN)
 
 
-class PFCUFilter(Positioner):
+class PFCUFilter(StandardMovable, StandardReadable):
     """A single filter in a PFCU filter bank.
 
     E.g. 25idc:pfcu0:filter1_mat
@@ -105,11 +106,11 @@ class PFCUFilter(Positioner):
                 readback=self._readback,
             )
         self.setpoint = epics_signal_rw(FilterSetpoint, prefix)
-        # Just use convenient values for positioner signals since there's no real position
-        self.velocity = soft_signal_rw(float, initial_value=0.5)
-        self.units = soft_signal_rw(str, initial_value="")
-        self.precision = soft_signal_rw(int, initial_value=0)
         super().__init__(name=name)
+
+    @cached_property
+    def movable_logic(self) -> MovableLogic:
+        return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
 
 shutter_state_map = {
@@ -121,7 +122,7 @@ shutter_state_map = {
 }
 
 
-class PFCUFilterBank(StandardReadable):
+class PFCUFilterBank(StandardMovable, StandardReadable):
     """A XIA PFCU4 bank of four filters and/or shutters.
 
     Filters are indexed from 0, even though the EPICS support indexes
@@ -178,8 +179,12 @@ class PFCUFilterBank(StandardReadable):
             )
         super().__init__(name=name)
 
+    @cached_property
+    def movable_logic(self) -> MovableLogic:
+        return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
-class PFCUShutter(Positioner):
+
+class PFCUShutter(StandardMovable, StandardReadable):
     """A shutter made of two PFCU4 filters.
 
     For faster operation, both filters will be moved at the same
@@ -211,7 +216,6 @@ class PFCUShutter(Positioner):
         top_filter: int,
         bottom_filter: int,
         filter_bank: PFCUFilterBank,
-        **kwargs,
     ):
         self._top_filter_idx = top_filter
         self._bottom_filter_idx = bottom_filter
@@ -235,15 +239,11 @@ class PFCUShutter(Positioner):
                 raw_to_derived=self.inverse,
                 **parent_signals,
             )
-        # Just use convenient values for positioner signals since there's no real position
-        self.velocity = soft_signal_rw(float, initial_value=0.5)
-        self.units = soft_signal_rw(str, initial_value="")
-        self.precision = soft_signal_rw(int, initial_value=0)
-        super().__init__(
-            name=name,
-            put_complete=True,
-            **kwargs,
-        )
+        super().__init__(name=name)
+
+    @cached_property
+    def movable_logic(self) -> MovableLogic:
+        return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
     async def forward(self, setpoint: int) -> None:
         """Convert shutter state to filter bank state."""
