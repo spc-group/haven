@@ -25,9 +25,10 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, fields
 from functools import partial
-from typing import Any, Generator, cast
+from types import get_original_bases
+from typing import Any, Generator, cast, get_args
 
-from ophyd_async.core import Device
+from ophyd_async.core import Device, SignalDatatypeT
 from qasync import asyncSlot
 from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtWidgets import (
@@ -50,7 +51,26 @@ class DeviceParameters:
     current_value: float
     units: str
     precision: int
-    is_numeric: bool
+    datatype: type
+
+
+def device_datatype(device: Device):
+    # Figuring out the datatype to display is a little hacky
+    # Straight signals have the datatype explicitly available
+    if hasattr(device, "datatype"):
+        return device.datatype
+    # Compound devices can be trickier, maybe they use types exlicitly…
+    bases = get_original_bases(type(device))
+    possible_types = [dtype for cls in bases for dtype in get_args(cls)]
+    # …but first we need to filter out generic types
+    possible_types = [dtype for dtype in possible_types if dtype is not SignalDatatypeT]
+    # And check if we have enough info to make a decision
+    unique_types = set(possible_types)
+    if len(unique_types) == 1:
+        (datatype,) = unique_types
+    else:
+        datatype = Any
+    return datatype
 
 
 async def device_parameters(device: Device) -> DeviceParameters:
@@ -82,7 +102,7 @@ async def device_parameters(device: Device) -> DeviceParameters:
         current_value=value,
         precision=desc.get("precision", DEFAULT_PRECISION),
         units=units,
-        is_numeric=desc.get("dtype", "number") == "number",
+        datatype=device_datatype(device),
     )
 
 
@@ -125,8 +145,6 @@ async def update_device_parameters(
     params = await device_parameters(device)
     set_limits(widgets=widgets, params=params, is_relative=is_relative)
     for widget in widgets:
-        widget.setEnabled(params.is_numeric)
-        widget.setEnabled(params.is_numeric)
         # Set other metadata
         widget.setDecimals(params.precision)
         # Handle units

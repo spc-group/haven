@@ -72,18 +72,3 @@ async def test_full_motor_parameters(display, motor):
     assert spin_box.decimals() == 5
     assert spin_box.suffix() == "\u202f°"
     assert spin_box.value() == 420
-
-
-async def test_nonnumeric_motor_parameters(display, motor):
-    spin_box = display.regions.row_widgets(1).position_spin_box
-    description = {
-        motor.name: {
-            "dtype": "string",
-            "shape": [],
-            "dtype_numpy": "<f8",
-            "source": "ca://25idc:simMotor:m2.RBV",
-        }
-    }
-    set_mock_attr(motor, "describe", mock.AsyncMock(return_value=description))
-    await display.regions.update_device_parameters(motor, row=1)
-    assert not spin_box.isEnabled()

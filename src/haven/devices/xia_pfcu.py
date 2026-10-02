@@ -122,7 +122,7 @@ shutter_state_map = {
 }
 
 
-class PFCUFilterBank(StandardMovable, StandardReadable):
+class PFCUFilterBank(StandardMovable[ConfigBits], StandardReadable):
     """A XIA PFCU4 bank of four filters and/or shutters.
 
     Filters are indexed from 0, even though the EPICS support indexes
