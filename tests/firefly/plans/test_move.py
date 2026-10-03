@@ -1,13 +1,15 @@
 from unittest import mock
 
 import pytest
+import pytest_asyncio
 from ophyd_async.core import set_mock_attr, set_mock_value
+from qtpy.QtWidgets import QComboBox
 
 from firefly.plans.move import MoveMotorDisplay
-from haven.devices import Motor
+from haven.devices import Motor, PssShutter
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def motor():
     m1 = Motor(prefix="", name="m1")
     await m1.connect(mock=True)
@@ -46,11 +48,11 @@ async def test_plan_args(display):
     # set up a test motor 1
     widgets = display.regions.row_widgets(1)
     widgets.device_selector.combo_box.setCurrentText("async_motor_1")
-    widgets.position_spin_box.setValue(111)
+    widgets.destination_input.setValue(111)
     # set up a test motor 2
     widgets = display.regions.row_widgets(2)
     widgets.device_selector.combo_box.setCurrentText("sync_motor_2")
-    widgets.position_spin_box.setValue(222)
+    widgets.destination_input.setValue(222)
     # Confirm that the correct plan arguments are built
     args, kwargs = display.plan_args()
     assert args == (
@@ -62,12 +64,36 @@ async def test_plan_args(display):
     assert kwargs == {}
 
 
+@pytest.mark.asyncio
+async def test_plan_args_enum(display):
+    display.ui.run_button.setEnabled(True)
+    # uncheck relative
+    display.ui.relative_scan_checkbox.setChecked(False)
+    await display.regions.set_region_count(1)
+    # set up an enum device
+    shutter = PssShutter(prefix="", name="shutter", hutch_prefix="")
+    await shutter.connect(mock=True)
+    row = 1
+    await display.regions.update_device_parameters(shutter, row)
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.combo_box.setCurrentText("shutter")
+    widgets.destination_input.setCurrentIndex(1)
+    assert widgets.destination_input.currentText() == "CLOSED (1)"
+    # Confirm that the correct plan arguments are built
+    args, kwargs = display.plan_args()
+    assert args == (
+        "shutter",
+        1,
+    )
+    assert kwargs == {}
+
+
 async def test_full_motor_parameters(display, motor):
     await display.regions.set_region_count(1)
     display.regions.is_relative = False
     set_mock_value(motor.user_readback, 420)
     await display.regions.update_device_parameters(motor, row=1)
-    spin_box = display.regions.row_widgets(1).position_spin_box
+    spin_box = display.regions.row_widgets(1).destination_input
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
@@ -81,19 +107,33 @@ async def test_relative_positioning(display, motor):
     set_mock_value(motor.user_readback, 410)
     widgets = display.regions.row_widgets(1)
     widgets.device_selector.current_component = mock.MagicMock(return_value=motor)
-    widgets.position_spin_box.setValue(420)
+    widgets.destination_input.setValue(420)
     # Relative positioning mode
     await display.regions.set_relative_position(True)
-    assert widgets.position_spin_box.value() == 10
-    assert widgets.position_spin_box.maximum() == 32000 - 410
-    assert widgets.position_spin_box.minimum() == -32000 - 410
+    assert widgets.destination_input.value() == 10
+    assert widgets.destination_input.maximum() == 32000 - 410
+    assert widgets.destination_input.minimum() == -32000 - 410
     # Absolute positioning mode
     await display.regions.set_relative_position(False)
-    assert widgets.position_spin_box.value() == 420
-    assert widgets.position_spin_box.maximum() == 32000
-    assert widgets.position_spin_box.minimum() == -32000
+    assert widgets.destination_input.value() == 420
+    assert widgets.destination_input.maximum() == 32000
+    assert widgets.destination_input.minimum() == -32000
 
 
+@pytest.mark.asyncio
+async def test_enum_device_widgets(display):
+    """Does passing in a device with an enum type give us a combobox?"""
+    shutter = PssShutter(prefix="", name="shutter", hutch_prefix="")
+    await shutter.connect(mock=True)
+    row = 1
+    await display.regions.set_region_count(1)
+    await display.regions.update_device_parameters(shutter, row)
+    widgets = display.regions.row_widgets(row)
+    assert isinstance(widgets.destination_input, QComboBox)
+    assert widgets.destination_input.itemText(0) == "OPEN (0)"
+
+
+@pytest.mark.asyncio
 async def test_update_devices(display, sim_registry):
     await display.regions.set_region_count(1)
     device_selector = display.regions.row_widgets(1).device_selector
@@ -102,6 +142,7 @@ async def test_update_devices(display, sim_registry):
     assert device_selector.update_devices.called
 
 
+@pytest.mark.asyncio
 async def test_add_row_devices(display, sim_registry):
     """Do the devices get updated when adding rows."""
     await display.update_devices(sim_registry)

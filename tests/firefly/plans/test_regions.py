@@ -8,13 +8,15 @@ from ophyd_async.core import soft_signal_rw
 from qtpy.QtWidgets import QCheckBox, QGridLayout, QLineEdit, QWidget
 
 from firefly.plans.regions import RegionsManager, device_datatype
-from haven.devices import PFCUFilterBank, PssShutter, ShutterState
+from haven.devices import Motor, PFCUFilterBank, PssShutter, ShutterState
 from haven.devices.xia_pfcu import ConfigBits
 
 devices_and_types = [
     (PssShutter("25iddShutter:", name="shutter", hutch_prefix="2345"), ShutterState),
     (soft_signal_rw(float, name="signal"), float),
     (soft_signal_rw(str, name="signal"), str),
+    (soft_signal_rw(int, name="signal"), int),
+    (Motor(prefix="", name="signal"), float),
     (PFCUFilterBank(name="pfcu", prefix="pfcu1:"), ConfigBits),
     (make_fake_device(EpicsMotor)(name="sync_motor"), Any),
 ]

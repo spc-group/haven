@@ -25,14 +25,15 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, fields
 from functools import partial
-from types import get_original_bases
 from typing import Any, Generator, cast, get_args
 
+from bluesky.protocols import Movable
 from ophyd_async.core import Device, SignalDatatypeT
 from qasync import asyncSlot
 from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDoubleSpinBox,
     QGridLayout,
     QSpinBox,
@@ -52,6 +53,7 @@ class DeviceParameters:
     units: str
     precision: int
     datatype: type
+    is_movable: bool
 
 
 def device_datatype(device: Device):
@@ -60,7 +62,7 @@ def device_datatype(device: Device):
     if hasattr(device, "datatype"):
         return device.datatype
     # Compound devices can be trickier, maybe they use types exlicitly…
-    bases = get_original_bases(type(device))
+    bases = getattr(device, "__orig_bases__", ())
     possible_types = [dtype for cls in bases for dtype in get_args(cls)]
     # …but first we need to filter out generic types
     possible_types = [dtype for dtype in possible_types if dtype is not SignalDatatypeT]
@@ -90,8 +92,8 @@ async def device_parameters(device: Device) -> DeviceParameters:
         desc = {}
         value = 0
     else:
-        desc = desc[device.name]
-        value = reading[device.name]["value"]
+        desc = desc.get(device.name, {})
+        value = reading.get(device.name, {}).get("value", None)
     # Build into a new dictionary
     limits = desc.get("limits", {}).get("control", {})
     units = desc.get("units", "")
@@ -102,6 +104,7 @@ async def device_parameters(device: Device) -> DeviceParameters:
         current_value=value,
         precision=desc.get("precision", DEFAULT_PRECISION),
         units=units,
+        is_movable=isinstance(device, Movable),
         datatype=device_datatype(device),
     )
 
@@ -143,17 +146,31 @@ async def update_device_parameters(
 ):
     """Update the *widgets*' properties based on a *device*."""
     params = await device_parameters(device)
-    set_limits(widgets=widgets, params=params, is_relative=is_relative)
     for widget in widgets:
-        # Set other metadata
-        widget.setDecimals(params.precision)
-        # Handle units
-        widget.setSuffix(f"{HALF_SPACE}{params.units}")
+        widget.setEnabled(params.is_movable)
+        is_float = isinstance(widget, QDoubleSpinBox)
+        is_int = isinstance(widget, QSpinBox)
+        if is_int or is_float:
+            set_limits(widget=widget, params=params, is_relative=is_relative)
+            # Handle units
+            widget.setSuffix(f"{HALF_SPACE}{params.units}")
+
+        if is_float:
+            # Set other metadata
+            widget.setDecimals(params.precision)
         # Set starting motor position
-        if is_relative:
+        if (is_float or is_int) and is_relative:
             widget.setValue(0)
-        else:
+        elif is_float or is_int:
             widget.setValue(params.current_value)
+        elif isinstance(widget, QComboBox):
+            # For enums, we look up the combobox item based on the
+            # data not the name
+            current_index = widget.findData(params.current_value)
+            if current_index > -1:
+                widget.setCurrentIndex(current_index)
+        else:
+            widget.setText(str(params.current_value))
 
 
 async def make_relative(
@@ -167,27 +184,37 @@ async def make_relative(
     else:
         new_positions = [widget.value() + params.current_value for widget in widgets]
     # Update the current limits and positions
-    set_limits(widgets=widgets, params=params, is_relative=is_relative)
     for widget, new_position in zip(widgets, new_positions):
+        set_limits(widget=widget, params=params, is_relative=is_relative)
         widget.setValue(new_position)
 
 
 def set_limits(
-    widgets: Sequence[QDoubleSpinBox | QSpinBox],
+    widget: QDoubleSpinBox | QSpinBox,
     params: DeviceParameters,
     is_relative: bool,
 ):
     """Set limits on the spin boxes to match the device limits."""
     # Determine new limits
     if is_relative:
-        minimum = params.minimum - params.current_value
-        maximum = params.maximum - params.current_value
+        try:
+            minimum = params.minimum - params.current_value
+            maximum = params.maximum - params.current_value
+        except TypeError as exc:
+            log.debug(f"Could not calculate relative limits: {exc}")
+            return
     else:
         maximum, minimum = params.maximum, params.minimum
-    # Update the widgets
-    for widget in widgets:
-        widget.setMaximum(maximum)
-        widget.setMinimum(minimum)
+    # Integers can't handle infinity, so pick a really big/small int
+    # instead
+    if isinstance(widget, QSpinBox):
+        maximum = int(min(maximum, 2147483647))
+        minimum = int(max(minimum, -2147483648))
+    else:
+        maximum = float(maximum)
+        minimum = float(minimum)
+    widget.setMaximum(maximum)
+    widget.setMinimum(minimum)
 
 
 class RegionsManager[WidgetsType](QObject):

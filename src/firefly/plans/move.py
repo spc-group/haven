@@ -2,16 +2,26 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QLineEdit,
+    QSpinBox,
+    QWidget,
+)
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import display
 from firefly.plans.regions import (
     RegionsManager,
+    device_parameters,
     make_relative,
     update_device_parameters,
 )
@@ -27,7 +37,7 @@ class MotorRegionsManager(RegionsManager):
     class WidgetSet:
         active_checkbox: QCheckBox
         device_selector: ComponentSelector
-        position_spin_box: QDoubleSpinBox
+        destination_input: QWidget
 
     @dataclass(frozen=True, eq=True)
     class Region:
@@ -38,10 +48,17 @@ class MotorRegionsManager(RegionsManager):
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
         """Take a list of widgets in a row, and build a Region object."""
         device_name = widgets.device_selector.selected_device_path()
+        destination_input = widgets.destination_input
+        if isinstance(destination_input, QComboBox):
+            destination = destination_input.currentData()
+        elif isinstance(destination_input, QLineEdit):
+            destination = destination_input.text()
+        else:
+            destination = destination_input.value()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             device=device_name,
-            position=widgets.position_spin_box.value(),
+            position=destination,
         )
 
     async def create_row_widgets(self, row: int) -> list[QWidget]:
@@ -51,16 +68,16 @@ class MotorRegionsManager(RegionsManager):
             partial(self.update_device_parameters, row=row)
         )
         # start point
-        position_spin_box = QDoubleSpinBox()
-        position_spin_box.lineEdit().setPlaceholderText("Position…")
-        position_spin_box.setMinimum(float("-inf"))
-        position_spin_box.setMaximum(float("inf"))
-        position_spin_box.setMinimumWidth(100)
+        destination_input = QDoubleSpinBox()
+        destination_input.lineEdit().setPlaceholderText("Position…")
+        destination_input.setMinimum(float("-inf"))
+        destination_input.setMaximum(float("inf"))
+        destination_input.setMinimumWidth(100)
 
         # Add widgets to the layout
         return [
             device_selector,
-            position_spin_box,
+            destination_input,
         ]
 
     async def update_devices(self, registry=None, *, rows: Sequence[int] | None = None):
@@ -79,9 +96,33 @@ class MotorRegionsManager(RegionsManager):
     @asyncSlot(Device)
     async def update_device_parameters(self, device: Device, row: int):
         widgets = self.row_widgets(row=row)
+        params = await device_parameters(device)
+        destination_col = 2
+        # Decide what kind of widget we need
+        if issubclass(params.datatype, Enum):
+            new_widget = QComboBox()
+            for item in params.datatype:
+                new_widget.addItem(f"{item.name} ({item.value})", item)
+        elif params.datatype is float:
+            new_widget = QDoubleSpinBox()
+        elif params.datatype is int:
+            new_widget = QSpinBox()
+        else:
+            new_widget = QLineEdit()
+        # Replace the old widget with the new one
+        old_widget = self.layout.itemAtPosition(row, destination_col).widget()
+        if type(old_widget) is not type(new_widget):
+            self.layout.removeWidget(old_widget)
+            old_widget.deleteLater()
+            new_widget.setMinimumWidth(200)
+            self.layout.addWidget(
+                new_widget, row, destination_col, alignment=Qt.AlignTop
+            )
+        else:
+            new_widget = old_widget
         await update_device_parameters(
             device=device,
-            widgets=[widgets.position_spin_box],
+            widgets=[new_widget],
             is_relative=self.is_relative,
         )
 
@@ -96,7 +137,7 @@ class MotorRegionsManager(RegionsManager):
                 continue
             await make_relative(
                 device=device,
-                widgets=[widgets.position_spin_box],
+                widgets=[widgets.destination_input],
                 is_relative=self.is_relative,
             )
 

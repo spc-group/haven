@@ -56,7 +56,7 @@ async def test_plan_args(qtbot, motor, display, sim_registry):
     # set up a test motor
     widgets = display.regions.row_widgets(1)
     widgets.device_selector.combo_box.setCurrentText("motor1")
-    widgets.position_spin_box.setValue(100)
+    widgets.destination_input.setValue(100)
     # Check arguments that will be given to the plan
     args, kwargs = display.plan_args()
     assert args == ("robotA", 8, "motor1", 100)
@@ -66,7 +66,7 @@ async def test_plan_args(qtbot, motor, display, sim_registry):
 async def test_full_motor_parameters(display, motor):
     set_mock_value(motor.user_readback, 420)
     await display.regions.update_device_parameters(motor, row=1)
-    spin_box = display.regions.row_widgets(1).position_spin_box
+    spin_box = display.regions.row_widgets(1).destination_input
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
