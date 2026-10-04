@@ -111,15 +111,10 @@ class MotorRegionsManager(RegionsManager):
             new_widget = QLineEdit()
         # Replace the old widget with the new one
         old_widget = self.layout.itemAtPosition(row, destination_col).widget()
-        if type(old_widget) is not type(new_widget):
-            self.layout.removeWidget(old_widget)
-            old_widget.deleteLater()
-            new_widget.setMinimumWidth(200)
-            self.layout.addWidget(
-                new_widget, row, destination_col, alignment=Qt.AlignTop
-            )
-        else:
-            new_widget = old_widget
+        self.layout.removeWidget(old_widget)
+        old_widget.deleteLater()
+        new_widget.setMinimumWidth(200)
+        self.layout.addWidget(new_widget, row, destination_col, alignment=Qt.AlignTop)
         await update_device_parameters(
             device=device,
             widgets=[new_widget],
