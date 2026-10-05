@@ -3,21 +3,32 @@
 import logging
 import uuid
 from collections.abc import Generator, Sequence
+from dataclasses import dataclass
+from functools import cached_property
 from typing import Any, Hashable
 
 from bluesky import Msg
 from bluesky import plan_stubs as bps
-from ophyd_async.core import StandardReadable, StandardReadableFormat, soft_signal_rw
+from ophyd_async.core import (
+    MovableLogic,
+    StandardMovable,
+    StandardReadable,
+    StandardReadableFormat,
+    soft_signal_rw,
+)
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
-from haven.positioner import Positioner
-
-__all__ = ["BladeSlits", "BladePair", "SlitsPositioner"]
+__all__ = ["BladeSlits", "BladePair"]
 
 log = logging.getLogger(__name__)
 
 
-class SlitsPositioner(Positioner):
+@dataclass
+class SlitsLogic(MovableLogic[float]):
+    pass
+
+
+class Slits(StandardMovable[float], StandardReadable):
     def __init__(self, prefix: str, readback: str, name: str = ""):
         self.setpoint = epics_signal_rw(float, f"{prefix}.VAL")
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
@@ -28,14 +39,21 @@ class SlitsPositioner(Positioner):
         self.velocity = soft_signal_rw(int, initial_value=100)
         super().__init__(name=name)
 
+    @cached_property
+    def movable_logic(self):
+        return SlitsLogic(
+            setpoint=self.setpoint,
+            readback=self.readback,
+        )
+
 
 class BladePair(StandardReadable):
     """A set of blades controlling beam size in one direction."""
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.size = SlitsPositioner(f"{prefix}size", readback=f"{prefix}t2.C")
-            self.center = SlitsPositioner(f"{prefix}center", readback=f"{prefix}t2.D")
+            self.size = Slits(f"{prefix}size", readback=f"{prefix}t2.C")
+            self.center = Slits(f"{prefix}center", readback=f"{prefix}t2.D")
         super().__init__(name=name)
 
 
