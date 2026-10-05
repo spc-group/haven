@@ -210,8 +210,8 @@ async def test_energy_setpoint(xtal):
     set_mock_value(xtal.crystal_pitch.high_limit_travel, 100)
     set_mock_value(xtal.chord.velocity, 1)
     set_mock_value(xtal.crystal_pitch.velocity, 1)
-    await xtal.energy.set(8333)
-    assert await xtal.chord.user_setpoint.get_value() != 0
+    await xtal.energy.setpoint.set(8333)
+    await assert_value(xtal.chord.user_setpoint, 47.6731)
 
 
 async def test_readings(xtal):
@@ -263,13 +263,13 @@ async def test_multiple_analyzers():
     await assert_value(analyzer0.chord.user_setpoint, 0)
     await assert_value(analyzer1.chord.user_setpoint, 0)
 
-    await analyzer0.energy.set(8000)
-    assert (await analyzer0.chord.locate())["setpoint"] == pytest.approx(47.673129)
-    assert (await analyzer1.chord.locate())["setpoint"] == 0
+    await analyzer0.energy.setpoint.set(8000)
+    await assert_value(analyzer0.chord.user_setpoint, 47.673129)
+    await assert_value(analyzer1.chord.user_setpoint, 0)
 
-    await analyzer1.energy.set(8000)
-    assert (await analyzer0.chord.locate())["setpoint"] == pytest.approx(47.673129)
-    assert (await analyzer1.chord.locate())["setpoint"] == pytest.approx(47.673129)
+    await analyzer1.energy.setpoint.set(8000)
+    await assert_value(analyzer0.chord.user_setpoint, 47.673129)
+    await assert_value(analyzer1.chord.user_setpoint, 47.673129)
 
 
 # -----------------------------------------------------------------------------

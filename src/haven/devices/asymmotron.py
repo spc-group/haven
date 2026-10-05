@@ -16,6 +16,7 @@ Some sane values for converting hkl and [HKL] to α:
 
 import asyncio
 import logging
+from functools import cached_property
 from typing import TypedDict
 
 import numpy as np
@@ -25,19 +26,19 @@ from ophyd_async.core import (
     DerivedSignalFactory,
     Device,
     LazyMock,
+    MovableLogic,
     SignalR,
+    StandardMovable,
     StandardReadable,
     StandardReadableFormat,
     Transform,
     derived_signal_r,
-    soft_signal_r_and_setter,
 )
 from ophyd_async.epics.core import epics_signal_rw
 from pint import Quantity
 from pydantic import ConfigDict
 
 from haven.devices.motor import Motor
-from haven.positioner import Positioner
 from haven.units import (
     bragg_to_energy,
     energy_to_bragg,
@@ -146,7 +147,7 @@ class Analyzer(StandardReadable):
                 hkl=self.surface_plane,
             )
         # The actual energy signal that controls the analyzer
-        self.energy = EnergyPositioner(xtal=self)
+        self.energy = EnergyMovable(xtal=self)
         # Decide which signals should be readable/config/etc.
         self.add_readables([self.energy.readback], StandardReadableFormat.HINTED_SIGNAL)
         self.add_readables(
@@ -284,7 +285,7 @@ class EnergyTransform(Transform):
         return derived
 
 
-class EnergyPositioner(Positioner):
+class EnergyMovable(StandardMovable[float], StandardReadable):
     """Positions the energy of an analyzer crystal."""
 
     def __init__(self, *, xtal: Analyzer, name: str = ""):
@@ -320,12 +321,14 @@ class EnergyPositioner(Positioner):
                 "energy",
                 units="eV",
             )
+        super().__init__(name=name)
 
-        # Metadata
-        self.velocity, _ = soft_signal_r_and_setter(float, initial_value=0.001)
-        self.units, _ = soft_signal_r_and_setter(str, initial_value=xtal.energy_unit)
-        self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
-        super().__init__(name=name, put_complete=True)
+    @cached_property
+    def movable_logic(self):
+        return MovableLogic(
+            setpoint=self.setpoint,
+            readback=self.readback,
+        )
 
     async def _set_from_energy(self, value: float):
         transform = await self._setpoint_factory.transform()

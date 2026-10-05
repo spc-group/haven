@@ -448,7 +448,7 @@ async def test_flyscan_prepare_external_trigger(ion_chamber):
     await assert_value(ion_chamber.mcs.erase_all, False)
     # Prepare the ion chamber
     prepare_status = ion_chamber.prepare(trigger_info)
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.05)
     # Check that the device was properly configured for fly-scanning
     await assert_value(ion_chamber.mcs.erase_all, True)
     await assert_value(ion_chamber.mcs.channel_advance_source, "External")
