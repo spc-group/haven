@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from bluesky import plan_stubs as bps
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     DetectorTriggerLogic,
@@ -18,7 +19,10 @@ from ophyd_async.epics.adcore import (
     ADBaseIO,
     ADWriterFactory,
     AreaDetector,
+    NDAttributeDataType,
+    NDAttributeParam,
     NDPluginBaseIO,
+    ndattributes_to_xml,
     prepare_exposures,
 )
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_rw_rbv
@@ -142,6 +146,21 @@ class LambdaTriggerLogic(DetectorTriggerLogic):
         ):
             if num_images == num:
                 break
+
+
+def setup_ndattributes(detector):
+    raise RuntimeError("This is not yet ready for this IOC. Need to upgrade it first.")
+    params = [
+        NDAttributeParam(
+            name=f"ts_{detector.name}",
+            param="NDArrayTimeStamp",
+            datatype=NDAttributeDataType.DOUBLE,
+            addr=0,
+            description=f"Timestamps",
+        ),
+    ]
+    xml = ndattributes_to_xml(params)
+    yield from bps.mv(detector.driver.nd_attributes_file, xml)
 
 
 class LambdaDetector(AreaDetector):

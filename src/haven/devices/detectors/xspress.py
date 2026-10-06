@@ -297,7 +297,19 @@ def ndattribute_params(
     XML.
 
     """
-    params = []
+    params = [
+        # For some reason, the IOC sets the NDAttribute as a 32-bit
+        # float instead of a 64-bit float. But NDAttributes can't be
+        # 32-bit floats, so this causes trouble for bluesky/tiled down
+        # the road. Leave this disabled until that is fixed.
+        # NDAttributeParam(
+        #     name=f"ts_{device_name}",
+        #     param="NDTimeStamp",
+        #     datatype=NDAttributeDataType.DOUBLE,
+        #     addr=0,
+        #     description=f"Timestamps",
+        # ),
+    ]
     for idx in elements:
         new_params = [
             NDAttributeParam(
