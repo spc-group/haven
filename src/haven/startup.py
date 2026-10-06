@@ -57,6 +57,8 @@ from haven.preprocessors import open_shutters_decorator as open_shutters_decorat
 
 log = logging.getLogger("haven")
 
+console_messages = []
+
 # Configure logging
 config = haven.load_config()
 try:
@@ -148,7 +150,9 @@ plan_decorators.append(
 try:
     aps = haven.beamline.devices["synchrotrons"]
 except ComponentNotFound:
-    log.info("APS device not found, suspenders not installed.")
+    msg = "APS device not found, suspenders not installed."
+    log.warning(msg)
+    console_messages.append(f"\n[bold yellow]:warning: {msg}[/]")
 else:
     sd.monitors.append(aps.current)
     # Suspend when shutter permit is disabled or storage ring current is too low
@@ -192,6 +196,7 @@ if is_re_worker_active:
         }
     )
     console = rich.console.Console(theme=custom_theme)
+
     motd = (
         "[bold]Devices[/bold] are available directly by name or though the [italic]devices[/italic].\n"
         " ┣━ [code]m2 = sim_motor_2[/]\n"
@@ -221,7 +226,8 @@ if is_re_worker_active:
             expand=False,
         )
     )
-
+    for msg in console_messages:
+        console.print(msg)
     # Make an alert in case devices did not connect properly
     if loader_exception is not None:
         msg = "Some devices did not connect properly! See logs for details."
