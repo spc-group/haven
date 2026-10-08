@@ -99,6 +99,7 @@ class MotorRegionsManager(RegionsManager):
         params = await device_parameters(device)
         destination_col = 2
         # Decide what kind of widget we need
+        print(device)
         if issubclass(params.datatype, Enum):
             new_widget = QComboBox()
             for item in params.datatype:

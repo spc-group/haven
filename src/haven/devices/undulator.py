@@ -3,36 +3,43 @@ import logging
 import math
 import warnings
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from enum import IntEnum
+from functools import cached_property
 from pathlib import Path
 from typing import IO
 from typing import Annotated as A
-from typing import Sequence, cast
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from bluesky.protocols import Preparable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     Array1D,
-    AsyncStatus,
-    Signal,
+    DeviceMock,
+    FlyableLogic,
+    MovableLogic,
     SignalR,
     SignalRW,
+    StandardFlyable,
+    StandardMovable,
     StandardReadable,
 )
 from ophyd_async.core import StandardReadableFormat as Format
 from ophyd_async.core import (
     StrictEnum,
     SubsetEnum,
-    WatchableAsyncStatus,
-    WatcherUpdate,
+    TimeoutCalculator,
+    TriggerableCommand,
+    callback_on_mock_put,
+    default_mock_class,
     derived_signal_r,
     derived_signal_rw,
-    observe_signals_value,
     observe_value,
-    soft_signal_rw,
+    set_and_wait_for_other_value,
+    set_mock_value,
+    wait_for_value,
 )
 from ophyd_async.core._utils import (
     CALCULATE_TIMEOUT,
@@ -52,7 +59,6 @@ from pydantic import Field
 from scanspec.core import Path as ScanPath
 
 from haven import exceptions
-from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
 
@@ -96,84 +102,136 @@ class TrajectoryMotorInfo(ConfinedModel):
     Defaults to `time_for_move` + run up and run down times + 10s."""
 
 
-class BasePositioner(Positioner):
-    done_value: int = BusyStatus.DONE
-    # Measured by moving the undulator a bunch and measure the time taken
-    gap_velocity = 0.3
+@dataclass
+class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
+    setpoint: SignalRW
+    readback: SignalR
+    deadband: SignalRW
+    start_signal: TriggerableCommand
+    stop_signal: TriggerableCommand
+    undulator: "PlanarUndulator"
 
-    def __init__(
-        self,
-        *,
-        prefix: str,
-        done_signal: Signal,
-        name: str = "",
-        **kwargs,
-    ):
-        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
-            self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
-        self.velocity = soft_signal_rw(
-            float, initial_value=1
-        )  # Need to figure out what this value is
-        # Add control signals that depend on the parent
-        # if actuate_signal is not None:
-        #     self.actuate = derived_triggerable_command(
-        #         derived_from={"parent_signal": actuate_signal}
-        #     )
-        if done_signal is not None:
-            self.done = derived_signal_r(self._done_to_done, done=done_signal)
-        super().__init__(name=name, **kwargs)
-
-    @property
-    def actuate(self):
-        return self.parent.start_button
-
-    @property
-    def stop_signal(self):
-        return self.parent.stop_button
-
-    @staticmethod
-    def _done_to_done(done: bool) -> bool:
-        """No-op so we can turn the *done_signal* into a child of this
-        device.
-
-        """
-        return done
-
-    async def calculate_timeout(self, value: float):
-        """Estimate how long it will take to move to the given energy.
-
-        This is not a simple calculation because we need to know how
-        far the gap will need to move. So instead of the doing the
-        calculation, we just set the positioner setpoint and see where
-        the gap will go, even though we won't move it.
-
-        """
-        current_gap, current_setpoint = await asyncio.gather(
-            self.parent.gap.setpoint.get_value(), self.setpoint.get_value()
+    async def stop(self) -> None:
+        """Optional hook to add logic on how to stop the motion."""
+        await self.stop_signal.trigger()
+        # Erase any leftover scanning mode setup
+        await asyncio.gather(
+            self.undulator.clear_scan_array.set(True),
+            self.undulator.scan_mode.set(UndulatorScanMode.NORMAL),
         )
-        await self.setpoint.set(value)
-        new_gap = await self.parent.gap.setpoint.get_value()
-        move_time = abs(new_gap - current_gap) / self.gap_velocity
-        # Go back to where we started
-        await self.setpoint.set(current_setpoint)
-        return move_time + DEFAULT_TIMEOUT
 
-    async def _set(
-        self,
-        value: float,
-        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
-    ):
-        gap_deadband = await self.parent.gap_deadband.get_value()
+    async def check_move(self, new_position: float) -> None:
+        """Optional alidate the move.
+
+        Also checks that the gap deadband is zero, since we can't deal
+        with gap deadbands yet
+
+        Should raise an exception if the move is not valid, e.g. if the new
+        position is outside soft limits.
+
+        """
+        gap_deadband = await self.deadband.get_value()
         if gap_deadband != 0:
             msg = f"This device cannot be set properly if the gap deadband is not zero: {gap_deadband}"
             raise exceptions.InvalidUndulatorDeadband(msg)
-        if timeout == "CALCULATE_TIMEOUT":
-            timeout = await self.calculate_timeout(value)
-        async for update in super()._set(value=value, timeout=timeout):
-            yield update
+
+    async def calculate_timeout(
+        self, old_position: float, new_position: float
+    ) -> float | None:
+        """Optional hook to calculate valid timeout for a move."""
+        return None
+
+    async def move(self, new_position: float, timeout: TimeoutCalculator) -> None:
+        """Move the device, waiting for the readback to reach the correct position.
+
+        If a scan-mode has been previously prepared, then this will
+        move to the next scan mode position if the new position
+        matches the previously set position.
+
+        """
+        scan_mode = await self.undulator.scan_mode.get_value()
+        is_scanning = scan_mode != UndulatorScanMode.NORMAL
+        if not is_scanning:
+            await self.setpoint.set(new_position)
+            await self.start_signal.trigger()
+            await wait_for_value(self.readback, new_position, timeout=timeout())
+            return
+        next_gap = next(self._gap_iter)
+        next_energy = next(self._energy_iter)
+        current_index, current_mode = await asyncio.gather(
+            self.undulator.scan_current_index.get_value(),
+            self.undulator.scan_mode.get_value(),
+        )
+        is_first_point = current_index == 0 and not getattr(
+            self, "scan_has_moved", False
+        )
+        log.debug(f"Moving to scan point {current_index} ({is_first_point=}).")
+        if is_first_point:
+            # The scan controls don't actually move the gap to the first position
+            # so we have to do it manually
+            await self.undulator.scan_mode.set(UndulatorScanMode.NORMAL)
+            await self.undulator.gap.set(next_gap, timeout=timeout())
+            await self.undulator.scan_mode.set(current_mode)
+            self.scan_has_moved = True
+            return
+        # Use the scanning mode controls
+        axis = self.undulator.gap
+        target = float(next_gap)
+        # Track the gap for completion since the energy precision is
+        # not linear
+        log.debug(f"Waiting for {axis.readback.name} to move to {target} ({timeout=}).")
+        await set_and_wait_for_other_value(
+            self.undulator.scan_next_point,
+            True,
+            axis.readback,
+            target,
+            timeout=timeout(),
+        )
+
+    async def scan_setup_successful(self, timeout):
+        gap_ok, energy_ok = await asyncio.gather(
+            self.undulator.scan_gap_array_check.get_value(),
+            self.undulator.scan_energy_array_check.get_value(),
+        )
+        if not gap_ok or not energy_ok:
+            raise SetupFailed(f"{gap_ok=}, {energy_ok=}")
+        # Make sure there are no mismatched arrays
+        async for value in observe_value(
+            self.undulator.scan_mismatch_count, done_timeout=timeout
+        ):
+            if value == 0:
+                break
+        return True
+
+    @asynccontextmanager
+    async def prepare_scan_mode(self):
+        """Preliminary set up to ensure scanning can be prepared.
+
+        This context manager can be used by concrete sub-classes to
+        make sure the undulator controls are in a valid state for
+        defining a trajectory.
+
+        """
+        await asyncio.gather(
+            self.undulator.scan_mode.set(UndulatorScanMode.NORMAL),
+            self.undulator.clear_scan_array.set(True),
+        )
+        async with asyncio.TaskGroup() as tg:
+            # Each individual positioner can prepare here
+            yield tg
+        # Scanning is set up, now get ready for executing the steps
+        async with asyncio.TaskGroup() as tg:
+            scan_gaps = tg.create_task(self.undulator.scan_gap_array.get_value())
+            num_points = tg.create_task(self.undulator.scan_array_length.get_value())
+        num_points = int(num_points.result())
+        scan_gaps = scan_gaps.result()[:num_points]
+        scan_gaps = scan_gaps / UM_PER_MM
+        self._gap_iter = iter(scan_gaps)
+        await self.undulator.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
 
-class UndulatorPositioner(BasePositioner):
+class UndulatorMovable(StandardReadable, StandardMovable[float]):
+
     def __init__(
         self,
         *,
@@ -184,13 +242,180 @@ class UndulatorPositioner(BasePositioner):
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.precision = epics_signal_r(int, f"{prefix}M.PREC")
+            self.units = epics_signal_r(int, f"{prefix}M.EGU")
         self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
-        super().__init__(prefix=prefix, **kwargs)
+        super().__init__(**kwargs)
+
+    @cached_property
+    def movable_logic(self):
+        return UndulatorLogic(
+            readback=self.readback,
+            setpoint=self.setpoint,
+            deadband=self.parent.gap_deadband,
+            start_signal=self.parent.start_button,
+            stop_signal=self.parent.stop_button,
+            undulator=self.parent,
+        )
 
 
-class EnergyPositioner(BasePositioner, Preparable):
-    scan_has_moved: bool
+@dataclass
+class GapLogic(UndulatorLogic):
+    gap_velocity: float = 2.0  # Not measured, just a guess
 
+    async def calculate_timeout(
+        self, old_position: float, new_position: float
+    ) -> float | None:
+        """Optional hook to calculate valid timeout for a move."""
+        return abs((new_position - old_position) / self.gap_velocity) + DEFAULT_TIMEOUT
+
+
+class GapMovable(UndulatorMovable):
+    @cached_property
+    def movable_logic(self):
+        return GapLogic(
+            readback=self.readback,
+            setpoint=self.setpoint,
+            deadband=self.parent.gap_deadband,
+            start_signal=self.parent.start_button,
+            stop_signal=self.parent.stop_button,
+            undulator=self.parent,
+        )
+
+
+@dataclass
+class EnergyLogic(UndulatorLogic):
+    """Logic for moving and flying the undulator energy.
+
+    This logic has the special ability to navigate the energy <-> gap
+    calculations when necessary (e.g. when calculating timeouts).
+
+    """
+
+    offset: SignalRW
+    gap_velocity: float = 2.0  # Not measured, just a guess. In mm/s.
+    _offset_table: IO | str | Path = ""
+
+    @property
+    def offset_table(self):
+        if self._offset_table == "":
+            raise ValueError(
+                "Cannot create an offset table, please provide *offset_table* parameter to constructor."
+            )
+        else:
+            return pd.read_csv(self._offset_table, sep="\t")
+
+    def auto_offset(self, energy: float) -> float:
+        """Calculate an offset for a given energy based on a calibration lookup table."""
+        xp, fp = self.offset_table.T.to_numpy()
+        new_offset = np.interp(energy, xp, fp, right=float("nan"), left=float("nan"))
+        if math.isnan(new_offset):
+            raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
+        return float(new_offset)
+
+    async def on_prepare(self, value: ScanPath) -> None:
+        """Move to the start of the fly scan, set it up, and return its context.
+
+        :param value: the per-scan info for this fly scan.
+        """
+        path = value
+        frames = path.consume()
+        energies = np.asarray(frames.midpoints[self.setpoint.parent])
+        offset = await self.offset.get_value()
+        energies_kev = _energy_to_keV(energies, offset=offset)
+        exceptions = []
+        async with self.prepare_scan_mode() as tg:
+            gap_taper = tg.create_task(self.undulator.gap_taper.readback.get_value())
+            for _ in range(SCAN_SETUP_RETRIES):
+                await self.undulator.scan_array_length.set(len(energies_kev))
+                await self.undulator.scan_energy_array.set(energies_kev)
+                try:
+                    await self.scan_setup_successful(timeout=DEFAULT_TIMEOUT)
+                except (SetupFailed, TimeoutError) as exc:
+                    exceptions.append(exc)
+                    continue
+                else:
+                    break
+            else:
+                raise ExceptionGroup(
+                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts.",
+                    exceptions,
+                )
+        # Stash the requested ranges so we can check them later
+        self._energy_iter = iter(energies)
+        # The energy->gap calcuations in the IOC don't work right with a taper
+        if gap_taper.result() != 0:
+            warnings.warn("Setting energy array with non-zero taper.")
+        self.scan_has_moved = False
+        # Wait for the undulator scan controls to be ready
+        await wait_for_value(
+            self.undulator.scan_current_index, 0, timeout=DEFAULT_TIMEOUT
+        )
+
+    async def on_kickoff(self, ctx: None) -> None:
+        """Start the fly scan.
+
+        :param ctx: the context returned by `on_prepare`.
+
+        Return the (possibly updated) context to be passed to `on_complete`.
+        """
+
+    async def on_complete(self, ctx: None) -> None:
+        """Block until the fly scan is done.
+
+        :param ctx: the context returned by `on_kickoff`.
+        """
+
+    async def calculate_timeout(
+        self, old_position: float, new_position: float
+    ) -> float | None:
+        """Estimate how long it will take to move to the given energy.
+
+        This is not a simple calculation because we need to know how
+        far the gap will need to move. So instead of the doing the
+        calculation, we just set the positioner setpoint and see where
+        the gap will go, even though we won't move it.
+
+        """
+        gap = self.setpoint.parent.parent.gap
+        current_gap_setpoint, current_gap_readback, current_energy_setpoint = (
+            await asyncio.gather(
+                gap.setpoint.get_value(),
+                gap.readback.get_value(),
+                self.setpoint.get_value(),
+            )
+        )
+        try:
+            await self.setpoint.set(new_position)
+            new_gap = await gap.setpoint.get_value()
+            move_time = abs(new_gap - current_gap_readback) / self.gap_velocity
+        finally:
+            # Go back to where we started
+            await asyncio.gather(
+                self.setpoint.set(current_energy_setpoint),
+                gap.setpoint.set(current_gap_setpoint),
+            )
+        return move_time + DEFAULT_TIMEOUT
+
+        return None
+
+
+class EnergyMovableMock(DeviceMock["EnergyMovable"]):
+    """Mock behaviour that instantly moves readback to setpoint."""
+
+    async def connect(self, device: "EnergyMovable") -> None:
+        """Mock signals to do an instant move on setpoint write."""
+
+        def _instant_move(value):
+            offset = 0  # To-do figure out how to read the offset PV without await
+            set_mock_value(
+                device.dial_readback, (value - offset) / 1000
+            )  # Arrive instantly
+
+        callback_on_mock_put(device.movable_logic.setpoint, _instant_move)
+
+
+@default_mock_class(EnergyMovableMock)
+class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
     def __init__(
         self,
         *,
@@ -198,10 +423,10 @@ class EnergyPositioner(BasePositioner, Preparable):
         offset_pv: str,
         **kwargs,
     ):
-
         with self.add_children_as_readables():
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
+            self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.dial_precision = epics_signal_r(int, f"{prefix}M.PREC")
             self.precision = derived_signal_r(
                 _keV_to_energy_precision,
@@ -220,9 +445,29 @@ class EnergyPositioner(BasePositioner, Preparable):
                 derived_units="eV",
             )
         self.setpoint = derived_signal_rw(
-            _keV_to_energy, self._set_raw, keV=self.dial_readback, offset=self.offset
+            _keV_to_energy, self._set_raw, keV=self.dial_setpoint, offset=self.offset
         )
-        super().__init__(prefix=prefix, **kwargs)
+        super().__init__(**kwargs)
+
+    @cached_property
+    def _movable_flyable_logic(self):
+        return EnergyLogic(
+            readback=self.readback,
+            setpoint=self.setpoint,
+            deadband=self.parent.gap_deadband,
+            start_signal=self.parent.start_button,
+            stop_signal=self.parent.stop_button,
+            offset=self.offset,
+            undulator=self.parent,
+        )
+
+    @property
+    def movable_logic(self):
+        return self._movable_flyable_logic
+
+    @property
+    def flyable_logic(self):
+        return self._movable_flyable_logic
 
     async def _set_raw(self, value: float):
         """Set the dial value based on the user setpoint, converting units and
@@ -232,154 +477,6 @@ class EnergyPositioner(BasePositioner, Preparable):
         offset = await self.offset.get_value()
         raw = _energy_to_keV(value, offset=offset)
         await self.dial_setpoint.set(raw)
-
-    async def _advance_scan_point(self):
-        """Move to the next point in a scan array."""
-        await self.parent.scan_next_point.set(True)
-
-    @WatchableAsyncStatus.wrap
-    async def set(
-        self,
-        value: float,
-        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
-    ):
-        scan_mode = await self.parent.scan_mode.get_value()
-        is_scanning = scan_mode != UndulatorScanMode.NORMAL
-        if not is_scanning:
-            # No scan array is active, so just move as normal
-            async for update in super()._set(value, timeout=timeout):
-                yield update
-            return
-        next_gap = next(self.parent._gap_iter)
-        next_energy = next(self.parent._energy_iter)
-        current_index, current_mode = await asyncio.gather(
-            self.parent.scan_current_index.get_value(),
-            self.parent.scan_mode.get_value(),
-        )
-        is_first_point = current_index == 0 and not self.scan_has_moved
-        log.debug(f"Moving to scan point {current_index} ({is_first_point=}).")
-        if is_first_point:
-            # The scan controls don't actually move the gap to the first position
-            # so we have to do it manually
-            await self.parent.scan_mode.set(UndulatorScanMode.NORMAL)
-            await self.parent.gap.set(next_gap, timeout=timeout)
-            await self.parent.scan_mode.set(current_mode)
-            self.scan_has_moved = True
-            return
-        # Use the scanning mode controls
-        axis = self.parent.gap
-        old_position, units, precision, velocity = await asyncio.gather(
-            axis.readback.get_value(),
-            axis.units.get_value(),
-            axis.precision.get_value(),
-            axis.velocity.get_value(),
-        )
-        target = float(next_gap)
-        next_scan_task = asyncio.ensure_future(self._advance_scan_point())
-        # Decide how long we should wait
-        timeout_: float
-        if timeout == CALCULATE_TIMEOUT:
-            assert velocity > 0, "Mover has zero velocity"
-            timeout_ = abs(target - old_position) / velocity + DEFAULT_TIMEOUT
-        else:
-            timeout_ = cast(float, timeout)
-        # Monitor the scanning PVs to see when the move is done
-        is_done = {
-            axis.readback: False,
-            self.parent.done: False,
-        }
-        # Track the gap for completion since the energy precision is
-        # not linear
-        log.debug(
-            f"Waiting for {axis.readback.name} to move from {old_position} to {target} ({timeout=})."
-        )
-        async for signal, value in observe_signals_value(
-            axis.readback, self.parent.done, timeout=timeout_
-        ):
-            if signal is axis.readback:
-                yield WatcherUpdate(
-                    current=value,
-                    initial=old_position,
-                    target=target,
-                    name=self.name,
-                    unit=units,
-                    precision=int(precision),
-                )
-                # Check if the move has finished.  Use less precision
-                # than normal since sometimes the ID doesn't quite hit
-                # the target
-                tolerance = 3 * 10 ** (-precision)
-                is_done[signal] = bool(
-                    value is not None
-                    and np.isclose(
-                        value,
-                        target,
-                        atol=tolerance,
-                    )
-                )
-                log.debug(
-                    f"{axis.readback.name} at {value=}, {target=}, {precision=}, {tolerance=}, {is_done[signal]=}"
-                )
-            elif signal is self.parent.done:
-                is_done[signal] = bool(value)
-            # Check if we're done with the move now
-            if all(is_done.values()):
-                log.debug("Undulator has arrived.")
-                break
-            else:
-                # Log which signals we're still waiting on so we can
-                # troubleshoot timeout errors
-                still_moving_signals = {
-                    sig.name for sig, done in is_done.items() if not done
-                }
-                log.debug(f"Waiting for {still_moving_signals}")
-        # Make sure the next_scan_point PV has had time to reset
-        await next_scan_task
-
-    @AsyncStatus.wrap
-    async def prepare(self, path: ScanPath, timeout=DEFAULT_TIMEOUT):
-        """Prepare for a scan using ASD's undulator scan controls."""
-        frames = path.consume()
-        energies = np.asarray(frames.midpoints[self])
-        offset = await self.offset.get_value()
-        energies_kev = _energy_to_keV(energies, offset=offset)
-        exceptions = []
-        async with self.parent.prepare_scan_mode() as tg:
-            gap_taper = tg.create_task(self.parent.gap_taper.readback.get_value())
-            for _ in range(SCAN_SETUP_RETRIES):
-                await self.parent.scan_array_length.set(len(energies_kev))
-                await self.parent.scan_energy_array.set(energies_kev)
-                try:
-                    await self.parent.scan_setup_successful(timeout=timeout)
-                except (SetupFailed, TimeoutError) as exc:
-                    exceptions.append(exc)
-                    continue
-                else:
-                    break
-            else:
-                raise ExceptionGroup(
-                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts.",
-                    exceptions,
-                )
-        # Stash the requested ranges so we can check them later
-        self.parent._energy_iter = iter(energies)
-        # The energy->gap calcuations in the IOC don't work right with a taper
-        if gap_taper.result() != 0:
-            warnings.warn("Setting energy array with non-zero taper.")
-        self.scan_has_moved = False
-        # Wait for the undulator scan controls to be ready
-        async for value in observe_value(
-            self.parent.scan_current_index, done_timeout=timeout
-        ):
-            if value == 0:
-                break
-
-    @AsyncStatus.wrap
-    async def unstage(self):
-        await asyncio.gather(
-            self.parent.clear_scan_array.set(True),
-            self.parent.scan_mode.set(UndulatorScanMode.NORMAL),
-        )
 
 
 def _keV_to_energy(keV: float, offset: float) -> float:
@@ -435,7 +532,6 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
     """
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
-    _offset_table: IO | str | Path
 
     gap_device_setpoint: A[SignalRW[float], PV("GapSetDeviceC")]
 
@@ -486,81 +582,24 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
             self.version_hpmu = epics_signal_r(str, f"{prefix}HPMUVersionM.VAL")
         # X-ray spectrum positioners
         with self.add_children_as_readables():
-            self.energy = EnergyPositioner(
+            self.energy = EnergyMovable(
                 prefix=f"{prefix}Energy",
-                done_signal=self.busy,
                 offset_pv=offset_pv,
-                minimum_move=minimum_move,
             )
-            self.energy_taper = UndulatorPositioner(
+            self.energy_taper = UndulatorMovable(
                 prefix=f"{prefix}TaperEnergy",
-                done_signal=self.busy,
             )
-            self.gap = UndulatorPositioner(
+            self.gap = GapMovable(
                 prefix=f"{prefix}Gap",
-                done_signal=self.busy,
             )
-            self.gap_taper = UndulatorPositioner(
+            self.gap_taper = UndulatorMovable(
                 prefix=f"{prefix}TaperGap",
-                done_signal=self.busy,
             )
         # Miscellaneous control signals
         self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
         self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
         self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
         super().__init__(prefix=prefix, name=name)
-
-    @property
-    def offset_table(self):
-        if self._offset_table == "":
-            raise ValueError(
-                "Cannot create an offset table, please provide *offset_table* parameter to constructor."
-            )
-        else:
-            return pd.read_csv(self._offset_table, sep="\t")
-
-    def auto_offset(self, energy: float) -> float:
-        """Calculate an offset for a given energy based on a calibration lookup table."""
-        xp, fp = self.offset_table.T.to_numpy()
-        new_offset = np.interp(energy, xp, fp, right=float("nan"), left=float("nan"))
-        if math.isnan(new_offset):
-            raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
-        return float(new_offset)
-
-    async def scan_setup_successful(self, timeout):
-        gap_ok, energy_ok = await asyncio.gather(
-            self.scan_gap_array_check.get_value(),
-            self.scan_energy_array_check.get_value(),
-        )
-        if not gap_ok or not energy_ok:
-            raise SetupFailed(f"{gap_ok=}, {energy_ok=}")
-        # Make sure there are no mismatched arrays
-        async for value in observe_value(
-            self.scan_mismatch_count, done_timeout=timeout
-        ):
-            if value == 0:
-                break
-        return True
-
-    @asynccontextmanager
-    async def prepare_scan_mode(self):
-        # Preliminary set up to ensure scanning can be prepared
-        await asyncio.gather(
-            self.scan_mode.set(UndulatorScanMode.NORMAL),
-            self.clear_scan_array.set(True),
-        )
-        async with asyncio.TaskGroup() as tg:
-            # Each individual positioner can prepare here
-            yield tg
-        # Scanning is set up, now get ready for executing the steps
-        async with asyncio.TaskGroup() as tg:
-            scan_gaps = tg.create_task(self.scan_gap_array.get_value())
-            num_points = tg.create_task(self.scan_array_length.get_value())
-        num_points = int(num_points.result())
-        scan_gaps = scan_gaps.result()[:num_points]
-        scan_gaps = scan_gaps / UM_PER_MM
-        self._gap_iter = iter(scan_gaps)
-        await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
 
 # -----------------------------------------------------------------------------

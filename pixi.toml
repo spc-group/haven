@@ -67,8 +67,8 @@ guarneri = ">=0.5.0"
 hatchling = ">=1.29.0, <2"
 hatch-vcs = ">=0.5.0, <0.6"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.20.1", extras = ["ca"] }
-scanspec = "==1.0a2"
+ophyd-async = { version = "==0.21.3", extras = ["ca"] }
+scanspec = ">=1.0.0, <2"
 p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"
 

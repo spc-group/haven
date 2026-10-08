@@ -28,7 +28,8 @@ from functools import partial
 from typing import Any, Generator, cast, get_args
 
 from bluesky.protocols import Movable
-from ophyd_async.core import Device, SignalDatatypeT
+from ophyd_async.core import Device, FlyMotorInfo, SignalDatatypeT
+from ophyd_async.epics.motor import MotorFlyCtx
 from qasync import asyncSlot
 from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtWidgets import (
@@ -65,7 +66,9 @@ def device_datatype(device: Device):
     bases = getattr(device, "__orig_bases__", ())
     possible_types = [dtype for cls in bases for dtype in get_args(cls)]
     # …but first we need to filter out generic types
-    possible_types = [dtype for dtype in possible_types if dtype is not SignalDatatypeT]
+    ignored_types = [SignalDatatypeT, FlyMotorInfo, MotorFlyCtx]
+    possible_types = [dtype for dtype in possible_types if dtype not in ignored_types]
+    print(possible_types)
     # And check if we have enough info to make a decision
     unique_types = set(possible_types)
     if len(unique_types) == 1:

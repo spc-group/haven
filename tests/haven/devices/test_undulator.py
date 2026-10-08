@@ -1,11 +1,12 @@
 import asyncio
 from io import StringIO
 from unittest import mock
+from unittest.mock import call
 
 import numpy as np
 import pytest
-from ophyd_async.core import set_mock_attr, set_mock_value
-from ophyd_async.testing import assert_value
+from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.testing import assert_has_calls, assert_value
 from scanspec.core import Path
 from scanspec.specs import Line
 
@@ -20,8 +21,8 @@ async def undulator():
         prefix="PSS:255ID:", offset_pv="255idNP:id_offset", name="undulator"
     )
     await undulator.connect(mock=True)
-    await undulator.energy.setpoint.connect(mock=False)
-    await undulator.energy.readback.connect(mock=False)
+    # await undulator.energy.setpoint.connect(mock=False)
+    # await undulator.energy.readback.connect(mock=False)
     return undulator
 
 
@@ -61,19 +62,33 @@ async def test_data_keys(undulator):
 
 
 async def test_stop_energy(undulator):
-    stop_mock = set_mock_attr(undulator, "stop_button", mock.AsyncMock())
-    assert not stop_mock.trigger.called
     await undulator.energy.stop()
-    assert stop_mock.trigger.called
+    assert_has_calls(
+        undulator.stop_button,
+        [
+            mock.call.execute(),
+        ],
+    )
 
 
-async def test_actuate_signal(undulator):
-    start_mock = set_mock_attr(undulator, "start_button", mock.AsyncMock())
-    assert not start_mock.trigger.called
-    aw = undulator.energy.set(1000)
-    await asyncio.sleep(0.05)  # Sleep to let the move start
-    set_mock_value(undulator.busy, 0)
-    assert start_mock.trigger.called
+async def test_gap_actuate_signal(undulator):
+    await undulator.gap.set(1000)
+    assert_has_calls(
+        undulator.start_button,
+        [
+            mock.call.execute(),
+        ],
+    )
+
+
+async def test_energy_actuate_signal(undulator):
+    await undulator.energy.set(1000)
+    assert_has_calls(
+        undulator.start_button,
+        [
+            mock.call.execute(),
+        ],
+    )
 
 
 # Work-around to make a mocker async iterable
@@ -91,13 +106,25 @@ class AsyncIterator:
             raise StopAsyncIteration
 
 
+async def test_set_gap_timeout(undulator, mocker):
+    """Check that the gap set timeout depends on the distance being moved."""
+    setter = mocker.AsyncMock()
+    mocker.patch("haven.devices.undulator.wait_for_value", setter)
+    await undulator.gap.set(20)
+    expected_timeout = 20  # 2 egu/sec + 10 seconds
+    call_args = setter.call_args
+    assert call_args.kwargs["timeout"] == pytest.approx(20, rel=0.001)
+
+
 async def test_set_energy_timeout(undulator, mocker):
-    """Check that the energy setpoint depends on the distance being moved."""
-    setter = mocker.MagicMock(return_value=AsyncIterator([]))
-    mocker.patch("haven.devices.undulator.Positioner._set", setter)
-    await undulator.energy.set(20)
-    # Winds up being only 10 seconds since the mocked gap doesn't really move
-    setter.assert_called_once_with(value=20, timeout=10)
+    """Check that the energy set timeout depends on the distance being moved."""
+    set_mock_value(undulator.gap.setpoint, 20)
+    setter = mocker.AsyncMock()
+    mocker.patch("haven.devices.undulator.wait_for_value", setter)
+    await undulator.energy.set(300)
+    assert (await undulator.energy.setpoint.get_value()) == 300
+    call_args = setter.call_args
+    assert call_args.kwargs["timeout"] == pytest.approx(20, rel=0.001)
 
 
 async def test_energy_unit_conversion(undulator):
@@ -118,17 +145,18 @@ async def test_energy_unit_offset(undulator):
 
 
 def test_auto_offset_lookup(undulator):
+    logic = undulator.energy.movable_logic
     # Should fail without a lookup table
     with pytest.raises(ValueError):
-        undulator.auto_offset(1500)
+        logic.auto_offset(1500)
     # Now try again with a lookup table
-    undulator._offset_table = StringIO(
+    logic._offset_table = StringIO(
         "# energy\toffset\n" "1000\t10\n" "2000\t20\n" "3000\t30\n"
     )
-    assert undulator.auto_offset(1500) == 15
+    assert logic.auto_offset(1500) == 15
     # Out-of-bounds interpolation should fail
     with pytest.raises(ValueError):
-        undulator.auto_offset(500)
+        logic.auto_offset(500)
 
 
 async def test_prepare_energy_scan(undulator, mocker):
@@ -145,8 +173,9 @@ async def test_prepare_energy_scan(undulator, mocker):
     gaps = [35800, 3600, 37100]
     set_mock_value(undulator.scan_gap_array, gaps + [0] * (array_size - len(gaps)))
     # Prepare and check end point
-    mocker.patch.object(undulator, "auto_offset", mocker.MagicMock(return_value=20))
+    # mocker.patch.object(undulator.energy.movable_logic, "auto_offset", mocker.MagicMock(return_value=20))
     await undulator.energy.prepare(path)
+    print(undulator.energy.movable_logic._gap_iter)
     # set_mock_value(undulator.busy, 1)
     # await asyncio.sleep(0.1)
     # assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
@@ -163,8 +192,10 @@ async def test_prepare_energy_scan(undulator, mocker):
     # assert await undulator.gap.setpoint.get_value() == 35.8
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE_RETRIES
     # Confirm that the energy and gap iterators are set so we can move later
-    np.testing.assert_equal(list(undulator._gap_iter), np.divide(gaps, 1000))
-    np.testing.assert_equal(list(undulator._energy_iter), energies)
+    np.testing.assert_equal(
+        list(undulator.energy.flyable_logic._gap_iter), np.divide(gaps, 1000)
+    )
+    np.testing.assert_equal(list(undulator.energy.flyable_logic._energy_iter), energies)
 
 
 async def test_move_first_energy_scan(undulator):
@@ -173,19 +204,20 @@ async def test_move_first_energy_scan(undulator):
 
     """
     # Pretend we already prepared it
-    undulator._energy_iter = iter([1000, 1100, 1200])
-    undulator._gap_iter = iter([35.8, 36, 37.1])
+    undulator.energy.flyable_logic._energy_iter = iter([1000, 1100, 1200])
+    undulator.energy.flyable_logic._gap_iter = iter([35.8, 36, 37.1])
     set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
     undulator.energy.scan_has_moved = False
     # Now do the actual move
     set_status = undulator.energy.set(1000)
     set_mock_value(undulator.busy, 1)
     await asyncio.sleep(0.05)  # Sleep to let the move start
-    assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
-    assert await undulator.gap.setpoint.get_value() == 35.8
-    # Simulate the undulator having been moved
-    set_mock_value(undulator.busy, 0)
-    await undulator.gap.readback.set(35.8)
+    scan_mode_mock = get_mock_put(undulator.scan_mode)
+    scan_mode_mock.assert_has_calls(
+        [call(UndulatorScanMode.NORMAL), call(UndulatorScanMode.SOFTWARE_RETRIES)]
+    )
+    await assert_value(undulator.gap.setpoint, 35.8)
+    # await undulator.gap.readback.set(35.8)
     await asyncio.wait_for(set_status, timeout=3)
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE_RETRIES
     # Should not update the next scan point
@@ -200,12 +232,10 @@ async def test_move_next_energy_scan(undulator):
     set_mock_value(undulator.energy.dial_precision, 3)
     set_mock_value(undulator.gap.precision, 3)
     # Pretend we already prepared it
-    undulator._energy_iter = iter([1000, 1100, 1200])
-    undulator._gap_iter = iter([35.8, 36, 37.1])
+    undulator.energy.flyable_logic._energy_iter = iter([1000, 1100, 1200])
+    undulator.energy.flyable_logic._gap_iter = iter([35.8, 36, 37.1])
     set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
     set_mock_value(undulator.scan_current_index, 1)
-    set_mock_value(undulator.energy.velocity, 1000)  # Make timeouts reasonable
-    set_mock_value(undulator.busy, DoneStatus.MOVING)
     # Now do the actual move
     set_status = undulator.energy.set(1000)
     await asyncio.sleep(0.05)
