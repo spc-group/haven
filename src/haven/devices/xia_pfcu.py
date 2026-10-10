@@ -11,6 +11,10 @@ from functools import cached_property
 from typing import Sequence
 
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
+    AsyncStatus,
+    CalculatableTimeout,
+    DeviceMock,
     DeviceVector,
     MovableLogic,
     StandardMovable,
@@ -18,8 +22,11 @@ from ophyd_async.core import (
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
+    callback_on_mock_put,
+    default_mock_class,
     derived_signal_r,
     derived_signal_rw,
+    set_mock_value,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
@@ -77,15 +84,34 @@ class Material(SubsetEnum):
 
 
 def normalize_readback(readback: FilterPosition) -> int:
-    return {
-        FilterPosition.OUT: FilterState.OUT,
-        FilterPosition.IN: FilterState.IN,
-        FilterPosition.SHORT_CIRCUIT: FilterState.FAULT,
-        FilterPosition.OPEN_CIRCUIT: FilterState.FAULT,
-    }.get(readback, FilterState.UNKNOWN)
+    return int(
+        {
+            FilterPosition.OUT: FilterState.OUT,
+            FilterPosition.IN: FilterState.IN,
+            FilterPosition.SHORT_CIRCUIT: FilterState.FAULT,
+            FilterPosition.OPEN_CIRCUIT: FilterState.FAULT,
+        }.get(readback, FilterState.UNKNOWN)
+    )
 
 
-class PFCUFilter(StandardMovable, StandardReadable):
+class FilterMovableMock(DeviceMock["StandardMovable"]):
+    """Mock behaviour that instantly moves readback to setpoint."""
+
+    async def connect(self, device: "StandardMovable") -> None:
+        """Mock signals to do an instant move on setpoint write."""
+
+        def _instant_move(value):
+            # Kind of a hack, what if the other filters are set?
+            if value == FilterState.IN:
+                set_mock_value(device._readback, FilterPosition.IN)
+            else:
+                set_mock_value(device._readback, FilterPosition.OUT)
+
+        callback_on_mock_put(device.movable_logic.setpoint, _instant_move)
+
+
+@default_mock_class(FilterMovableMock)
+class PFCUFilter(StandardMovable[FilterState], StandardReadable):
     """A single filter in a PFCU filter bank.
 
     E.g. 25idc:pfcu0:filter1_mat
@@ -183,8 +209,17 @@ class PFCUFilterBank(StandardMovable[ConfigBits], StandardReadable):
     def movable_logic(self) -> MovableLogic:
         return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
+    @AsyncStatus.wrap
+    async def set(
+        self, new_position: ConfigBits, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ):
+        # Watching an open/closed movable is a bit silly, this method
+        # exists to remove to watchable part of the super class
+        # method.
+        return await super().set(new_position, timeout)
 
-class PFCUShutter(StandardMovable, StandardReadable):
+
+class PFCUShutter(StandardMovable[ShutterState], StandardReadable):
     """A shutter made of two PFCU4 filters.
 
     For faster operation, both filters will be moved at the same
@@ -245,6 +280,15 @@ class PFCUShutter(StandardMovable, StandardReadable):
     def movable_logic(self) -> MovableLogic:
         return MovableLogic(setpoint=self.setpoint, readback=self.readback)
 
+    @AsyncStatus.wrap
+    async def set(
+        self, new_position: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ):
+        # Watching an open/closed movable is a bit silly, this method
+        # exists to remove to watchable part of the super class
+        # method.
+        return await super().set(new_position, timeout)
+
     async def forward(self, setpoint: int) -> None:
         """Convert shutter state to filter bank state."""
         # Bit masking to set both blades together
@@ -269,7 +313,7 @@ class PFCUShutter(StandardMovable, StandardReadable):
         # Determine which filters are open and closed
         top_position = FilterState(int(bool(bits & self.top_mask())))
         bottom_position = FilterState(int(bool(bits & self.bottom_mask())))
-        result = shutter_state_map[(top_position, bottom_position)]
+        result = int(shutter_state_map[(top_position, bottom_position)])
         return result
 
     def _mask(self, pos):

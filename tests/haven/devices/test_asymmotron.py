@@ -1,6 +1,10 @@
 import math
 
 import pytest
+import pytest_asyncio
+from bluesky import RunEngine
+from bluesky import plan_stubs as bps
+from bluesky.utils import ProgressBarManager
 from ophyd_async.core import set_mock_value, soft_signal_rw
 from ophyd_async.testing import assert_value
 
@@ -111,7 +115,7 @@ async def build_analyzer(name="analyzer"):
     return xtal
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def xtal(sim_registry):
     return await build_analyzer()
 
@@ -270,6 +274,18 @@ async def test_multiple_analyzers():
     await analyzer1.energy.setpoint.set(8000)
     await assert_value(analyzer0.chord.user_setpoint, 47.673129)
     await assert_value(analyzer1.chord.user_setpoint, 47.673129)
+
+
+@pytest.mark.asyncio()
+async def test_progress_bar_compatibility(xtal, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    updates = []
+    RE(bps.mv(xtal.energy, 100))
+    assert update_mock.call_count == 2
 
 
 # -----------------------------------------------------------------------------

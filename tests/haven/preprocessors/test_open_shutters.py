@@ -1,3 +1,5 @@
+from itertools import islice
+
 import pytest
 from bluesky.plan_stubs import (
     collect,
@@ -119,7 +121,10 @@ def test_on_kickoff_wrapper(sim_registry, detector, fast_shutter):
     # Build the wrapped plan
     plan = fly_plan(detector)
     plan = open_on_kickoff_wrapper(plan, shutters=[fast_shutter])
-    msgs = list(plan)
+    msgs = list(islice(plan, 0, 9))
+    # Inform the wrapper that the "wait" was successful
+    msgs.append(plan.send(True))
+    msgs.extend(list(plan))
     # Check that the shutter opens before kickoff
     set_msg = msgs[1]
     assert set_msg.command == "set"

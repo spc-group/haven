@@ -4,6 +4,8 @@ Includes some standard bluesky plans with decorators.
 
 """
 
+from bluesky.plans import list_scan as list_scan
+
 from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
@@ -61,6 +63,7 @@ grid_scan = all_decorators(grid_scan)
 rel_grid_scan = all_decorators(rel_grid_scan)
 rel_scan = all_decorators(rel_scan)
 scan = all_decorators(scan)
+list_scan = all_decorators(list_scan)
 
 # Remove foreign imports
 del beamline
@@ -82,7 +85,6 @@ __all__ = [
     "grid_scan",
     "list_scan",
     "rel_grid_scan",
-    "rel_list_scan",
     "rel_scan",
     "scan",
     "scan_nd",

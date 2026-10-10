@@ -48,6 +48,7 @@ from haven.plans import (  # noqa: F401
     record_dark_current,
     rel_grid_scan,
     rel_scan,
+    list_scan,
     scan,
     set_energy,
     xafs_scan,
@@ -58,6 +59,8 @@ from haven.preprocessors import open_shutters_decorator as open_shutters_decorat
 log = logging.getLogger("haven")
 
 console_messages = []
+
+is_qserver = is_re_worker_active()
 
 # Configure logging
 config = haven.load_config()
@@ -75,7 +78,7 @@ if config.tiled is not None:
 
 RE = haven.run_engine(
     tiled_writer=writer,
-    call_returns_result=not is_re_worker_active(),
+    call_returns_result=not is_qserver,
 )
 try:
     autoawait_in_bluesky_event_loop()
@@ -110,7 +113,6 @@ ion_chambers = devices.findall("ion_chambers", allow_none=True)
 endstation_shutters = devices.findall("endstation_shutter", allow_none=True)
 endstation_shutters = [dev for dev in endstation_shutters if dev.parent is None]
 fast_shutters = devices.findall("fast_shutters", allow_none=True)
-fast_shutters = [dev for dev in fast_shutters if dev.parent is None]
 preamps = devices.findall("preamps", allow_none=True)
 for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
@@ -172,6 +174,7 @@ grid_fly_scan = plan_decorator(grid_fly_scan)
 rel_grid_scan = plan_decorator(rel_grid_scan)
 rel_scan = plan_decorator(rel_scan)
 scan = plan_decorator(scan)
+list_scan = plan_decorator(list_scan)
 xafs_scan = plan_decorator(xafs_scan)
 
 
@@ -189,7 +192,7 @@ else:
     RE.preprocessors.append(wrapper)
 
 # Print helpful information to the console
-if is_re_worker_active:
+if is_qserver:
     custom_theme = rich.theme.Theme(
         {
             "code": "white on grey27",
@@ -249,5 +252,5 @@ del NotConnectedError
 del ComponentNotFound
 del rich
 del fixed_offset_wrapper
-if is_re_worker_active:
+if is_qserver:
     del rd

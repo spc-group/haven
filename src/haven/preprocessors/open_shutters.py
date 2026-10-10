@@ -67,18 +67,24 @@ def open_shutters_wrapper(
         warnings.warn("Auto open shutters is disabled in the beamline configuration.")
         return (yield from plan)
     # Check for closed shutters (open shutters just stay open)
-    shutters_to_open = []
-    for shutter in [*slow_shutters, *fast_shutters]:
+    slow_shutters_, fast_shutters_ = [], []
+    for shutter in slow_shutters:
         initial_state = yield from bps.rd(shutter)
         if initial_state == ShutterState.CLOSED:
-            shutters_to_open.append(shutter)
+            slow_shutters_.append(shutter)
+    for shutter in fast_shutters:
+        initial_state = yield from bps.rd(shutter)
+        if initial_state == ShutterState.CLOSED:
+            fast_shutters_.append(shutter)
     # Open shutters
-    yield from _set_shutters(slow_shutters, ShutterState.OPEN)
+    yield from _set_shutters(slow_shutters_, ShutterState.OPEN)
     # Add the wrapper for opening fast shutters at every trigger
-    new_plan = open_on_trigger_wrapper(plan, fast_shutters)
-    new_plan = open_on_kickoff_wrapper(plan, fast_shutters)
+    new_plan = open_on_trigger_wrapper(plan, fast_shutters_)
+    new_plan = open_on_kickoff_wrapper(new_plan, fast_shutters_)
     # Add a wrapper to close all the shutters once the measurement is done
-    close_shutters = _set_shutters(shutters_to_open, ShutterState.CLOSED)
+    close_shutters = _set_shutters(
+        [*slow_shutters_, *fast_shutters_], ShutterState.CLOSED
+    )
     new_plan = finalize_wrapper(new_plan, close_shutters)
     # Execute the wrapped plan
     return_val = yield from new_plan
@@ -130,6 +136,7 @@ def open_on_kickoff_wrapper(plan, shutters):
     response = None
     state = FlyStates.IDLE  # Should probably be re-factored into a state machine
     completing_groups = set()
+    msg = None
     while True:
         # Loop through the messages and get the next one in the queue
         try:
@@ -158,7 +165,7 @@ def open_on_kickoff_wrapper(plan, shutters):
         if msg.command == "complete":
             completing_groups.add(group)
             state = FlyStates.COMPLETING
-        elif msg.command == "wait" and group in completing_groups:
+        elif msg.command == "wait" and group in completing_groups and response is True:
             completing_groups.remove(group)
     return return_val
 

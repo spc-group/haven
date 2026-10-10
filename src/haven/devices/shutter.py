@@ -12,6 +12,9 @@ from functools import cached_property
 from bluesky.protocols import Location
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
+    AsyncStatus,
+    CalculatableTimeout,
     DeviceMock,
     MovableLogic,
     SignalR,
@@ -21,6 +24,7 @@ from ophyd_async.core import (
     TimeoutCalculator,
     callback_on_mock_put,
     default_mock_class,
+    derived_signal_r,
     set_and_wait_for_other_value,
     set_mock_value,
 )
@@ -38,6 +42,20 @@ class ShutterState(IntEnum):
     CLOSED = 1  # 0b001
     FAULT = 3  # 0b011
     UNKNOWN = 4  # 0b100
+
+
+def _beam_blocking_to_state(beam_blocking: bool) -> int:
+    """Map the BeamBlocking readback onto a ShutterState value.
+
+    The PV is an EPICS enum, so ophyd-async will only hand us a bool or a
+    string for it. Neither works as a positioner readback: ``set()`` reports
+    progress as ``WatcherUpdate(current=<readback>, initial=<readback>,
+    target=ShutterState)``, and bluesky's progress bar subtracts ``current``
+    from ``initial``, which numpy refuses to do for two bools. Deriving an
+    int keeps the whole triple numeric.
+
+    """
+    return ShutterState.CLOSED.value if beam_blocking else ShutterState.OPEN.value
 
 
 @dataclass
@@ -132,14 +150,10 @@ class ShutterMovableMock(DeviceMock["StandardMovable"]):
         """Mock signals to do an instant move on setpoint write."""
 
         def _instant_open(value):
-            set_mock_value(
-                device.movable_logic.readback, ShutterState.OPEN
-            )  # Arrive instantly
+            set_mock_value(device.beam_blocking, False)  # Arrive instantly
 
         def _instant_close(value):
-            set_mock_value(
-                device.movable_logic.readback, ShutterState.CLOSED
-            )  # Arrive instantly
+            set_mock_value(device.beam_blocking, True)  # Arrive instantly
 
         callback_on_mock_put(device.movable_logic.open, _instant_open)
         callback_on_mock_put(device.movable_logic.close, _instant_close)
@@ -180,8 +194,11 @@ class PssShutter(StandardMovable[ShutterState], StandardReadable):
         self.open = epics_signal_rw(bool, f"{prefix}OpenEPICSC")
         self.close = epics_signal_rw(bool, f"{prefix}CloseEPICSC")
         # Positioner signals for moving the shutter
+        self.beam_blocking = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
         with self.add_children_as_readables():
-            self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
+            self.readback = derived_signal_r(
+                _beam_blocking_to_state, beam_blocking=self.beam_blocking
+            )
         # Extra signals for checking open/close permissions
         self.hutch_searched = epics_signal_r(bool, f"{hutch_prefix}SecureM")
         self.aps_key = epics_signal_r(bool, f"{hutch_prefix}APSKeyM")
@@ -200,6 +217,15 @@ class PssShutter(StandardMovable[ShutterState], StandardReadable):
             aps_key=self.aps_key,
             user_key=self.user_key,
         )
+
+    @AsyncStatus.wrap
+    async def set(
+        self, new_position: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ):
+        # Watching an open/closed movable is a bit silly, this method
+        # exists to remove to watchable part of the super class
+        # method.
+        return await super().set(new_position, timeout)
 
     async def locate(self) -> Location[ShutterState]:
         """Return the current setpoint and readback of the device."""

@@ -1,5 +1,8 @@
 import pytest
 import pytest_asyncio
+from bluesky import RunEngine
+from bluesky import plan_stubs as bps
+from bluesky.utils import ProgressBarManager
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import set_mock_value
 from ophyd_async.testing import assert_value
@@ -134,6 +137,19 @@ async def test_shutter_check_value(shutter):
 async def test_locate(shutter):
     location = await shutter.locate()
     assert location == {"readback": ShutterState.OPEN, "setpoint": ShutterState.CLOSED}
+
+
+@pytest.mark.asyncio()
+async def test_progress_bar_compatibility(shutter, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    reset_actuators(shutter)
+    updates = []
+    RE(bps.mv(shutter, ShutterState.OPEN))
+    assert update_mock.call_count == 0
 
 
 # -----------------------------------------------------------------------------

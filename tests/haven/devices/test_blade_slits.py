@@ -1,4 +1,7 @@
 import pytest
+from bluesky import RunEngine
+from bluesky import plan_stubs as bps
+from bluesky.utils import ProgressBarManager
 
 from haven.devices import BladeSlits, setup_blade_slits
 
@@ -49,6 +52,18 @@ async def test_setup_plan(slits):
     assert msgs[0].command == "set"
     assert msgs[0].obj is slits.horizontal.center.precision
     assert msgs[0].args == (3,)
+
+
+@pytest.mark.asyncio()
+async def test_progress_bar_compatibility(slits, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    updates = []
+    RE(bps.mv(slits.horizontal.center, 100))
+    assert update_mock.call_count == 2
 
 
 # -----------------------------------------------------------------------------

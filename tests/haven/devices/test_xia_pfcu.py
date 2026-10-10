@@ -1,9 +1,14 @@
 import asyncio
 
 import pytest
+from bluesky import RunEngine
+from bluesky import plan_stubs as bps
+from bluesky.utils import ProgressBarManager
 from ophyd_async.core import set_mock_value
 
 from haven.devices.xia_pfcu import (
+    ConfigBits,
+    FilterSetpoint,
     FilterState,
     PFCUFilter,
     PFCUFilterBank,
@@ -115,6 +120,42 @@ async def test_shutter_close(filter_bank, shutter):
 async def test_filter_readback(filter):
     set_mock_value(filter._readback, "In")
     assert await filter.readback.get_value() == FilterState.IN
+
+
+@pytest.mark.asyncio()
+async def test_filter_bank_progress_bar_compatibility(filter_bank, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    updates = []
+    RE(bps.mv(filter_bank, ConfigBits.ONE))
+    assert update_mock.call_count == 0
+
+
+@pytest.mark.asyncio()
+async def test_shutter_progress_bar_compatibility(shutter, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    updates = []
+    RE(bps.mv(shutter, ShutterState.CLOSED))
+    assert update_mock.call_count == 0
+
+
+@pytest.mark.asyncio()
+async def test_filter_progress_bar_compatibility(filter_bank, mocker):
+    """The progress reported by set() must survive bluesky's progress bar."""
+    RE = RunEngine({})
+    update_mock = mocker.patch("bluesky.utils.TerminalProgressBar.update")
+    pbar_manager = ProgressBarManager()
+    RE.waiting_hook = pbar_manager
+    updates = []
+    RE(bps.mv(filter_bank.filters[0], FilterSetpoint.IN))
+    assert update_mock.call_count == 0
 
 
 # -----------------------------------------------------------------------------

@@ -298,13 +298,11 @@ def ndattribute_params(
 
     """
     params = [
-        # For some reason, the IOC sets the NDAttribute as a 32-bit
-        # float instead of a 64-bit float. But NDAttributes can't be
-        # 32-bit floats, so this causes trouble for bluesky/tiled down
-        # the road. Leave this disabled until that is fixed.
+        # This NDAttribute doesn't get set properly by the ADCore
+        # driver. Leave this disabled until that is fixed.
         # NDAttributeParam(
         #     name=f"ts_{device_name}",
-        #     param="NDTimeStamp",
+        #     param="TIME_STAMP",
         #     datatype=NDAttributeDataType.DOUBLE,
         #     addr=0,
         #     description=f"Timestamps",

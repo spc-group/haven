@@ -19,6 +19,7 @@ def baseline_wrapper(
         "vacuum",
         "baseline",
         "slits",
+        "attenuators",
     ],
     name: str = "baseline",
 ):
