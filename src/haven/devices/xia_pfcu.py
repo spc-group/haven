@@ -60,18 +60,6 @@ class ConfigBits(StrictEnum):
     FIFTEEN = "1111"
 
 
-class FilterSetpoint(StrictEnum):
-    OUT = "OUT"
-    IN = "IN"
-
-
-class FilterPosition(SubsetEnum):
-    OUT = "Out"
-    IN = "In"
-    SHORT_CIRCUIT = "Short Circuit"
-    OPEN_CIRCUIT = "Open Circuit"
-
-
 class FilterState(IntEnum):
     OUT = 0  # 0b000
     IN = 1  # 0b001
@@ -85,17 +73,6 @@ class Material(SubsetEnum):
     TITANIUM = "Ti"
     GLASS = "Glass"
     OTHER = "Other"
-
-
-# def normalize_readback(readback: FilterPosition) -> int:
-#     return int(
-#         {
-#             FilterPosition.OUT: FilterState.OUT,
-#             FilterPosition.IN: FilterState.IN,
-#             FilterPosition.SHORT_CIRCUIT: FilterState.FAULT,
-#             FilterPosition.OPEN_CIRCUIT: FilterState.FAULT,
-#         }.get(readback, FilterState.UNKNOWN)
-#     )
 
 
 def filter_state(bits: int, position: int) -> int:
@@ -183,51 +160,6 @@ class PFCUFilter(
         # method exists to remove to watchable part of the super class
         # method.
         return await super().set(new_position, timeout)
-
-    # def check_value(self, value: FilterState) -> bool:
-    #     return value in [FilterState.OUT, FilterState.IN]
-
-    # @AsyncStatus.wrap
-    # async def set(
-    #     self,
-    #     new_position: FilterState,
-    #     timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
-    # ):
-    #     pass
-
-    # def set_name(self, name: str, *, child_name_separator: str | None = None) -> None:
-    #     super().set_name(name, child_name_separator=child_name_separator)
-    #     # Readback should be named the same as its parent in read()
-    #     self.movable_logic.readback.set_name(name)
-
-    # async def locate(self) -> Location[FilterState]:
-    #     """Return the current setpoint and readback of the device."""
-    #     setpoint, readback = await asyncio.gather(
-    #         self.movable_logic.setpoint.get_value(),
-    #         self.movable_logic.readback.get_value(),
-    #     )
-    #     return Location(setpoint=setpoint, readback=readback)
-
-    # def subscribe_reading(
-    #     self, function: Callback[dict[str, Reading[FilterState]]]
-    # ) -> None:
-    #     """Subscribe to reading."""
-    #     self.movable_logic.readback.subscribe_reading(function)
-
-    # subscribe = subscribe_reading
-
-    # def clear_sub(self, function: Callback[dict[str, Reading[FilterState]]]) -> None:
-    #     """Unsubscribe."""
-    #     self.movable_logic.readback.clear_sub(function)
-
-
-shutter_state_map = {
-    # (top filter, bottom filter): state
-    (FilterState.OUT, FilterState.IN): ShutterState.OPEN,
-    (FilterState.IN, FilterState.OUT): ShutterState.CLOSED,
-    (FilterState.OUT, FilterState.OUT): ShutterState.FAULT,
-    (FilterState.IN, FilterState.IN): ShutterState.FAULT,
-}
 
 
 class FilterBankMovableMock(DeviceMock["StandardMovable"]):
@@ -349,47 +281,6 @@ class PFCUFilterBank(StandardMovable[ConfigBits], StandardReadable):
         return await super().set(new_position, timeout)
 
 
-# @dataclass()
-# class ShutterLogic(MovableLogic[ShutterState]):
-#     filter_bank_setpoint: SignalRW
-#     filter_bank_readback: SignalR
-#     _top_filter_idx: int
-#     _bottom_filter_idx: int
-
-#     def _mask(self, pos):
-#         num_filters = 4
-#         return 1 << (num_filters - pos - 1)
-
-#     def top_mask(self):
-#         return self._mask(self._top_filter_idx)
-
-#     def bottom_mask(self):
-#         return self._mask(self._bottom_filter_idx)
-
-#     def state_from_bits(self, value: str):
-#         pass
-
-#     async def move(
-#         self, new_position: ShutterState, timeout: TimeoutCalculator
-#     ) -> None:
-#         """Move the device, waiting for the readback to reach the correct position."""
-#         # Bit masking to set both blades together
-#         readback = await self.filter_bank_readback.get_value()
-#         num_bits = len(readback)
-#         old_bits = int(readback, 2)
-#         if new_position == ShutterState.OPEN:
-#             open_bits = self.bottom_mask()
-#             close_bits = self.top_mask()
-#         elif new_position == ShutterState.CLOSED:
-#             close_bits = self.bottom_mask()
-#             open_bits = self.top_mask()
-#         else:
-#             raise ValueError(bin(new_position))
-#         new_bits = (old_bits | open_bits) & (0b1111 - close_bits)
-#         log.debug(f"{old_bits=:b}, {open_bits=:b}, {close_bits=:b}, {new_bits=:b}")
-#         await self.filter_bank_setpoint.set(f"{new_bits:0b}".zfill(num_bits))
-
-
 class PFCUShutter(StandardMovable[ShutterState], StandardReadable):
     """A shutter made of two PFCU4 filters.
 
@@ -469,24 +360,6 @@ class PFCUShutter(StandardMovable[ShutterState], StandardReadable):
         # method exists to remove to watchable part of the super class
         # method.
         return await super().set(new_position, timeout)
-
-    # async def forward(self, setpoint: int) -> None:
-    #     """Convert shutter state to filter bank state."""
-    #     # Bit masking to set both blades together
-    #     readback = await self.parent.parent.readback.get_value()
-    #     num_bits = len(readback)
-    #     old_bits = int(readback, 2)
-    #     if setpoint == ShutterState.OPEN:
-    #         open_bits = self.bottom_mask()
-    #         close_bits = self.top_mask()
-    #     elif setpoint == ShutterState.CLOSED:
-    #         close_bits = self.bottom_mask()
-    #         open_bits = self.top_mask()
-    #     else:
-    #         raise ValueError(bin(setpoint))
-    #     new_bits = (old_bits | open_bits) & (0b1111 - close_bits)
-    #     log.debug(f"{old_bits=:b}, {open_bits=:b}, {close_bits=:b}, {new_bits=:b}")
-    #     await self.parent.parent.setpoint.set(f"{new_bits:0b}".zfill(num_bits))
 
     async def set_filters(self, new_position: int) -> None:
         if new_position == ShutterState.OPEN:
