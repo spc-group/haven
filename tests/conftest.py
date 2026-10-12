@@ -14,7 +14,7 @@ from haven.devices.aps import ApsMachine
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
-from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
+from haven.devices.xia_pfcu import PFCUFilterBank
 
 top_dir = Path(__file__).parent.parent.resolve()
 haven_dir = top_dir / "src" / "haven"
@@ -144,17 +144,6 @@ async def shutters(sim_registry):
     [sim_registry.register(s) for s in shutters]
     await asyncio.gather(*[shutter.connect(mock=True) for shutter in shutters])
     yield shutters
-
-
-@pytest.fixture()
-async def filters(sim_registry):
-    filters = [
-        PFCUFilter(name="Filter A", prefix="filter1"),
-        PFCUFilter(name="Filter B", prefix="filter2"),
-    ]
-    [sim_registry.register(f) for f in filters]
-    await asyncio.gather(*(filter.connect(mock=True) for filter in filters))
-    return filters
 
 
 # -----------------------------------------------------------------------------

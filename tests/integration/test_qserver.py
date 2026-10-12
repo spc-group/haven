@@ -93,6 +93,7 @@ def test_plans_available(api):
         "auto_gain",
         "calibrate",
         "count",
+        "list_scan",
     }
     plans_allowed = set(api.plans_allowed()["plans_allowed"].keys())
     assert plans_allowed == expected_plans

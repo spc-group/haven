@@ -1,23 +1,37 @@
+import pytest
+import pytest_asyncio
+
 from firefly.devices.attenuators import AttenuatorsDisplay
+from haven.devices import PFCUFilterBank
 
 
-def test_embedded_display_widgets(qtbot, filters):
-    """Test the the voltmeters creates a new embedded display widget for
-    each ion chamber.
+@pytest_asyncio.fixture()
+async def filters(sim_registry):
+    filter_bank = PFCUFilterBank("255id:PFCU0:", name="filter_bank")
+    await filter_bank.connect(mock=True)
+    sim_registry.register(filter_bank)
+    return [filter_bank.filters[0], filter_bank.filters[1]]
+
+
+@pytest.mark.asyncio
+async def test_embedded_display_widgets(qtbot, filters, sim_registry):
+    """Test that the display creates a new embedded display widget for
+    each filter.
 
     """
     # Load the display
     display = AttenuatorsDisplay()
     qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
     # Check that the embedded display widgets get added correctly
     assert hasattr(display, "_filter_displays")
-    assert len(display._filter_displays) == 2
-    assert display.filters_layout.count() == 2
+    assert len(display._filter_displays) == 4
+    assert display.filters_layout.count() == 4
     # Check that the embedded display widgets have the correct macros
     emb_disp = display._filter_displays[0]
     disp = emb_disp.open_file(force=True)
     macros = disp.macros()
-    assert macros["DEV"].startswith("Filter ")
+    assert macros["DEV"].startswith("filter_bank-filters-")
 
 
 # -----------------------------------------------------------------------------

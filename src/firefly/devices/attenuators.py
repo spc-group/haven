@@ -1,6 +1,7 @@
 import json
 from typing import Sequence
 
+from guarneri import Registry
 from pydm.widgets import PyDMEmbeddedDisplay
 
 from firefly import display
@@ -13,11 +14,9 @@ class AttenuatorsDisplay(display.FireflyDisplay):
     def ui_filename(self):
         return "devices/attenuators.ui"
 
-    def customize_device(self):
+    async def update_devices(self, registry: Registry):
         filters = beamline.devices.findall(label="attenuators", allow_none=True)
         self.filters = sorted(filters, key=lambda dev: dev.name)
-
-    def customize_ui(self):
         # Delete existing filter widgets
         for idx in reversed(range(self.filters_layout.count())):
             self.filters_layout.takeAt(idx).widget().deleteLater()

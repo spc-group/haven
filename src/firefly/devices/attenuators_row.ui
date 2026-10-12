@@ -46,7 +46,7 @@
     </widget>
    </item>
    <item>
-    <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
+    <widget class="PyDMByteIndicator" name="PyDMByteIndicator" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -79,7 +79,7 @@
     </widget>
    </item>
    <item>
-    <widget class="PyDMPushButton" name="PyDMPushButton">
+    <widget class="PyDMPushButton" name="move_in_button">
      <property name="toolTip">
       <string/>
      </property>
@@ -96,12 +96,12 @@
       <string>arrow-left</string>
      </property>
      <property name="pressValue" stdset="0">
-      <string>IN</string>
+      <string>1</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="PyDMPushButton" name="PyDMPushButton_2">
+    <widget class="PyDMPushButton" name="move_out_button">
      <property name="toolTip">
       <string/>
      </property>
@@ -118,7 +118,7 @@
       <string>arrow-right</string>
      </property>
      <property name="pressValue" stdset="0">
-      <string>OUT</string>
+      <string>0</string>
      </property>
     </widget>
    </item>
@@ -244,7 +244,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="resources/beamline_components.qrc"/>
+  <include location="../resources/beamline_components.qrc"/>
  </resources>
  <connections/>
 </ui>
