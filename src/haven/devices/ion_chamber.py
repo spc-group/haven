@@ -687,10 +687,20 @@ class IonChamber(StandardReadable, Triggerable):
             self.mcs.scaler.channels[0].net_count.name: raw_times,
             self.mcs.scaler.channels[0].raw_count.name: raw_times,
             self.voltmeter_channel.final_value.name: null_data,
-            self.net_count_rate.name: net_counts / times,
+            self.net_count_rate.name: np.divide(
+                net_counts,
+                times,
+                out=np.full_like(times, float("nan")),
+                where=times != 0,
+            ),
             self.net_current.name: null_data,
             self.raw_current.name: null_data,
-            self.raw_count_rate.name: raw_counts / times,
+            self.raw_count_rate.name: np.divide(
+                raw_counts,
+                times,
+                out=np.full_like(times, float("nan")),
+                where=times != 0,
+            ),
         }
         results = {
             "time": time.time(),

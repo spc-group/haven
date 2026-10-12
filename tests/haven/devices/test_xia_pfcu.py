@@ -1,23 +1,24 @@
 import asyncio
 
 import pytest
+import pytest_asyncio
 from bluesky import RunEngine
 from bluesky import plan_stubs as bps
 from bluesky.utils import ProgressBarManager
 from ophyd_async.core import set_mock_value
+from ophyd_async.testing import assert_value
 
 from haven.devices.xia_pfcu import (
-    ConfigBits,
-    FilterSetpoint,
     FilterState,
     PFCUFilter,
     PFCUFilterBank,
     PFCUShutter,
     ShutterState,
+    update_filter_state,
 )
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def filter_bank(sim_registry):
     bank = PFCUFilterBank(
         prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[(1, 2)]
@@ -27,23 +28,54 @@ async def filter_bank(sim_registry):
     yield bank
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def shutter(filter_bank):
     shutter = filter_bank.shutters[0]
     await asyncio.gather(
-        shutter.setpoint.connect(mock=False),
-        shutter.readback.connect(mock=False),
+        # shutter.setpoint.connect(mock=False),
+        # shutter.readback.connect(mock=False),
         shutter.top_filter.readback.connect(mock=False),
         shutter.bottom_filter.readback.connect(mock=False),
     )
     yield shutter
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def filter(filter_bank):
     filter = filter_bank.filters[0]
     await filter.readback.connect(mock=False)
     yield filter
+
+
+@pytest.mark.asyncio()
+async def test_filter_bank_location(filter_bank):
+    await filter_bank.set(0b0101)
+    # String representation is LSB first so reverse the order
+    await assert_value(filter_bank.raw_setpoint, "1010")
+    await assert_value(filter_bank.raw_readback, "1010")
+    assert await filter_bank.locate() == {"readback": 0b0101, "setpoint": 0b0101}
+
+
+@pytest.mark.asyncio()
+async def test_filter_location(filter_bank):
+    """Check that a filter can be located."""
+    filter = filter_bank.filters[0]
+    assert filter._position == 0
+    await filter_bank.setpoint.set(0b0001)
+    location = await filter.locate()
+    assert location == {"setpoint": FilterState.IN, "readback": FilterState.IN}
+
+
+@pytest.mark.asyncio()
+async def test_shutter_location(filter_bank):
+    """Check that a shutter can be located."""
+    shutter = filter_bank.shutters[0]
+    print(shutter._top_filter_idx, shutter._bottom_filter_idx)
+    assert shutter._top_filter_idx == 1
+    assert shutter._bottom_filter_idx == 2
+    await filter_bank.setpoint.set(0b0101)
+    location = await shutter.locate()
+    assert location == {"setpoint": ShutterState.OPEN, "readback": ShutterState.OPEN}
 
 
 def test_shutter_devices(filter_bank):
@@ -65,23 +97,7 @@ def test_shutter_devices(filter_bank):
     assert 2 not in filter_bank.filters.keys()
 
 
-async def test_shutter_signals(shutter):
-    # Check initial state
-    assert await shutter.top_filter.setpoint.get_value() == "OUT"
-    assert await shutter.bottom_filter.setpoint.get_value() == "OUT"
-
-
-async def test_shutter_readback(filter_bank, shutter):
-    # Set the shutter position
-    set_mock_value(filter_bank.readback, "0010")
-    # Check that the readback signal gets updated
-    assert await shutter.readback.get_value() == ShutterState.OPEN
-    # Set the shutter position
-    set_mock_value(filter_bank.readback, "0100")
-    # Check that the readback signal gets updated
-    assert await shutter.readback.get_value() == ShutterState.CLOSED
-
-
+@pytest.mark.asyncio()
 async def test_shutter_reading(shutter):
     """Ensure the shutter can be read.
 
@@ -93,32 +109,58 @@ async def test_shutter_reading(shutter):
     assert shutter.name in reading
 
 
-def test_pfcu_shutter_mask(shutter):
-    """A bit-mask used for determining how to set the filter bank."""
-    assert shutter.top_mask() == 0b0100
-    assert shutter.bottom_mask() == 0b0010
+@pytest.mark.parametrize(
+    "original, position, state, expected",
+    [
+        (0b0000, 0, 1, 0b0001),
+        (0b0000, 1, 1, 0b0010),
+        (0b0100, 2, 0, 0b0000),
+        (0b1111, 1, 0, 0b1101),
+    ],
+)
+def test_update_filter_state(original, position, state, expected):
+    assert update_filter_state(original, position, state) == expected
 
 
-async def test_shutter_open(filter_bank, shutter):
+@pytest.mark.asyncio()
+async def test_move_filter(filter_bank):
     """If the PFCU filter bank is available, open both blades simultaneously."""
+    filter = filter_bank.filters[0]
     # Set the other filters on the filter bank
-    set_mock_value(filter_bank.readback, "1001")
+    set_mock_value(filter_bank.raw_readback, "1001")
     # Open the shutter, and check that the filterbank was set
-    await shutter.setpoint.set(ShutterState.OPEN)
-    assert await filter_bank.setpoint.get_value() == "1011"
+    await filter.set(FilterState.OUT.value)
+    # (LSB first)
+    assert await filter_bank.raw_setpoint.get_value() == "0001"
 
 
+@pytest.mark.asyncio()
+async def test_shutter_open(filter_bank):
+    """If the PFCU filter bank is available, open both blades simultaneously."""
+    shutter = filter_bank.shutters[0]
+    # Set the other filters on the filter bank
+    set_mock_value(filter_bank.raw_readback, "1001")
+    # Open the shutter, and check that the filterbank was set
+    await shutter.set(ShutterState.OPEN.value)
+    # (LSB first)
+    assert await filter_bank.raw_setpoint.get_value() == "1011"
+
+
+@pytest.mark.asyncio()
 async def test_shutter_close(filter_bank, shutter):
     """If the PFCU filter bank is available, open both blades simultaneously."""
     # Set the other filters on the filter bank
-    set_mock_value(filter_bank.readback, "1001")
+    set_mock_value(filter_bank.raw_readback, "1001")
     # Open the shutter, and check that the filterbank was set
-    await shutter.setpoint.set(ShutterState.CLOSED)
-    assert await filter_bank.setpoint.get_value() == "1101"
+    await shutter.set(ShutterState.CLOSED)
+    # (LSB first)
+    assert await filter_bank.raw_setpoint.get_value() == "1101"
 
 
-async def test_filter_readback(filter):
-    set_mock_value(filter._readback, "In")
+@pytest.mark.asyncio()
+async def test_filter_readback(filter_bank):
+    filter = filter_bank.filters[0]
+    set_mock_value(filter_bank.raw_readback, "1000")  # LSB first
     assert await filter.readback.get_value() == FilterState.IN
 
 
@@ -130,7 +172,7 @@ async def test_filter_bank_progress_bar_compatibility(filter_bank, mocker):
     pbar_manager = ProgressBarManager()
     RE.waiting_hook = pbar_manager
     updates = []
-    RE(bps.mv(filter_bank, ConfigBits.ONE))
+    RE(bps.mv(filter_bank, 0b0001))
     assert update_mock.call_count == 0
 
 
@@ -154,7 +196,7 @@ async def test_filter_progress_bar_compatibility(filter_bank, mocker):
     pbar_manager = ProgressBarManager()
     RE.waiting_hook = pbar_manager
     updates = []
-    RE(bps.mv(filter_bank.filters[0], FilterSetpoint.IN))
+    RE(bps.mv(filter_bank.filters[0], FilterState.IN))
     assert update_mock.call_count == 0
 
 

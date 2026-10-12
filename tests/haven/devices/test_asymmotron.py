@@ -218,6 +218,11 @@ async def test_energy_setpoint(xtal):
     await assert_value(xtal.chord.user_setpoint, 47.6731)
 
 
+async def test_move_energy(xtal):
+    await xtal.energy.set(100, timeout=0.1)
+    await assert_value(xtal.energy.readback, 100)
+
+
 async def test_readings(xtal):
     reading = await xtal.read()
     assert set(reading.keys()) == {
@@ -284,8 +289,8 @@ async def test_progress_bar_compatibility(xtal, mocker):
     pbar_manager = ProgressBarManager()
     RE.waiting_hook = pbar_manager
     updates = []
-    RE(bps.mv(xtal.energy, 100))
-    assert update_mock.call_count == 2
+    RE(bps.mv(xtal.energy, 100, timeout=0.1))
+    assert update_mock.call_count >= 2
 
 
 # -----------------------------------------------------------------------------

@@ -16,7 +16,7 @@ Some sane values for converting hkl and [HKL] to α:
 
 import asyncio
 import logging
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TypedDict
 
 import numpy as np
@@ -31,8 +31,10 @@ from ophyd_async.core import (
     StandardMovable,
     StandardReadable,
     StandardReadableFormat,
+    TimeoutCalculator,
     Transform,
     derived_signal_r,
+    set_and_wait_for_other_value,
 )
 from ophyd_async.epics.core import epics_signal_rw
 from pint import Quantity
@@ -285,6 +287,21 @@ class EnergyTransform(Transform):
         return derived
 
 
+class EnergyMovableLogic(MovableLogic[float]):
+    async def move(self, new_position: float, timeout: TimeoutCalculator) -> None:
+        """Move the device, waiting for the readback to reach close to
+        the correct position.
+
+        """
+        await set_and_wait_for_other_value(
+            self.setpoint,
+            new_position,
+            self.readback,
+            partial(np.isclose, new_position, atol=1e-2),
+            timeout=timeout(),
+        )
+
+
 class EnergyMovable(StandardMovable[float], StandardReadable):
     """Positions the energy of an analyzer crystal."""
 
@@ -308,6 +325,7 @@ class EnergyMovable(StandardMovable[float], StandardReadable):
             float,
             "energy",
             units="eV",
+            precision=3,
         )
         self._readback_factory = DerivedSignalFactory(
             this_transform,
@@ -320,12 +338,13 @@ class EnergyMovable(StandardMovable[float], StandardReadable):
                 float,
                 "energy",
                 units="eV",
+                precision=3,
             )
         super().__init__(name=name)
 
     @cached_property
     def movable_logic(self):
-        return MovableLogic(
+        return EnergyMovableLogic(
             setpoint=self.setpoint,
             readback=self.readback,
         )
