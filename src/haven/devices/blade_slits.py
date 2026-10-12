@@ -4,9 +4,10 @@ import logging
 import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cached_property, partial
 from typing import Any, Hashable
 
+import numpy as np
 from bluesky import Msg
 from bluesky import plan_stubs as bps
 from ophyd_async.core import (
@@ -14,6 +15,8 @@ from ophyd_async.core import (
     StandardMovable,
     StandardReadable,
     StandardReadableFormat,
+    TimeoutCalculator,
+    set_and_wait_for_other_value,
     soft_signal_rw,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
@@ -25,11 +28,28 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class SlitsLogic(MovableLogic[float]):
-    pass
+    precision: int
+
+    async def move(self, new_position: float, timeout: TimeoutCalculator) -> None:
+        """Move the device, waiting for the readback to approximately
+        reach the correct position.
+
+        """
+        atol = 10 ** (-self.precision)
+        await set_and_wait_for_other_value(
+            self.setpoint,
+            new_position,
+            self.readback,
+            partial(np.isclose, new_position, atol=atol),
+            timeout=timeout(),
+        )
 
 
 class Slits(StandardMovable[float], StandardReadable):
-    def __init__(self, prefix: str, readback: str, name: str = ""):
+    def __init__(
+        self, prefix: str, readback: str, name: str = "", movable_precision: int = 0
+    ):
+        self.movable_precision = movable_precision
         self.setpoint = epics_signal_rw(float, f"{prefix}.VAL")
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = epics_signal_r(float, readback)
@@ -42,6 +62,7 @@ class Slits(StandardMovable[float], StandardReadable):
     @cached_property
     def movable_logic(self):
         return SlitsLogic(
+            precision=self.movable_precision,
             setpoint=self.setpoint,
             readback=self.readback,
         )
@@ -50,11 +71,19 @@ class Slits(StandardMovable[float], StandardReadable):
 class BladePair(StandardReadable):
     """A set of blades controlling beam size in one direction."""
 
-    def __init__(self, prefix: str, name: str = ""):
+    def __init__(self, prefix: str, name: str = "", movable_precision: int = 0):
         with self.add_children_as_readables():
-            self.size = Slits(f"{prefix}size", readback=f"{prefix}t2.C")
-            self.center = Slits(f"{prefix}center", readback=f"{prefix}t2.D")
-        super().__init__(name=name)
+            self.size = Slits(
+                f"{prefix}size",
+                readback=f"{prefix}t2.C",
+                movable_precision=movable_precision,
+            )
+            self.center = Slits(
+                f"{prefix}center",
+                readback=f"{prefix}t2.D",
+                movable_precision=movable_precision,
+            )
+            super().__init__(name=name)
 
 
 class BladeSlits(StandardReadable):
@@ -65,10 +94,12 @@ class BladeSlits(StandardReadable):
 
     _ophyd_labels_ = {"slits"}
 
-    def __init__(self, prefix: str, name: str = ""):
+    def __init__(self, prefix: str, name: str = "", movable_precision: int = 0):
         with self.add_children_as_readables():
-            self.horizontal = BladePair(f"{prefix}H")
-            self.vertical = BladePair(f"{prefix}V")
+            self.horizontal = BladePair(
+                f"{prefix}H", movable_precision=movable_precision
+            )
+            self.vertical = BladePair(f"{prefix}V", movable_precision=movable_precision)
         super().__init__(name=name)
 
 

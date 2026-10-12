@@ -86,9 +86,6 @@
      <property name="text">
       <string>In</string>
      </property>
-     <property name="rules" stdset="0">
-      <string>[{&quot;name&quot;: &quot;Filter is out&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] == \&quot;OUT\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
-     </property>
      <property name="channel" stdset="0">
       <string>haven://${DEV}.setpoint</string>
      </property>
@@ -107,9 +104,6 @@
      </property>
      <property name="text">
       <string>Out</string>
-     </property>
-     <property name="rules" stdset="0">
-      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] == \&quot;IN\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
      </property>
      <property name="channel" stdset="0">
       <string>haven://${DEV}.setpoint</string>

@@ -242,7 +242,7 @@ class UndulatorMovable(StandardReadable, StandardMovable[float]):
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.precision = epics_signal_r(int, f"{prefix}M.PREC")
-            self.units = epics_signal_r(int, f"{prefix}M.EGU")
+            self.units = epics_signal_r(str, f"{prefix}M.EGU")
         self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         super().__init__(**kwargs)
 
