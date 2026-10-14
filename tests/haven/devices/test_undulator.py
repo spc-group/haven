@@ -111,9 +111,9 @@ async def test_set_gap_timeout(undulator, mocker):
     setter = mocker.AsyncMock()
     mocker.patch("haven.devices.undulator.wait_for_value", setter)
     await undulator.gap.set(20)
-    expected_timeout = 20  # 2 egu/sec + 10 seconds
+    expected_timeout = 47  # 0.625 egu/sec + 15 seconds
     call_args = setter.call_args
-    assert call_args.kwargs["timeout"] == pytest.approx(20, rel=0.001)
+    assert call_args.kwargs["timeout"] == pytest.approx(expected_timeout, rel=0.001)
 
 
 async def test_set_energy_timeout(undulator, mocker):
@@ -123,8 +123,9 @@ async def test_set_energy_timeout(undulator, mocker):
     mocker.patch("haven.devices.undulator.wait_for_value", setter)
     await undulator.energy.set(300)
     assert (await undulator.energy.setpoint.get_value()) == 300
+    expected_timeout = 47  # 0.625 egu/sec + 15 seconds
     call_args = setter.call_args
-    assert call_args.kwargs["timeout"] == pytest.approx(20, rel=0.001)
+    assert call_args.kwargs["timeout"] == pytest.approx(expected_timeout, rel=0.001)
 
 
 async def test_energy_unit_conversion(undulator):

@@ -102,6 +102,30 @@ class TrajectoryMotorInfo(ConfinedModel):
     Defaults to `time_for_move` + run up and run down times + 10s."""
 
 
+@dataclass()
+class PrecisionMatcher:
+    target: float
+    precision: int
+
+    @property
+    def atol(self):
+        return 10 ** (-self.precision)
+
+    @property
+    def __name__(self):
+        return str(self)
+
+    def __str__(self):
+        return f"{self.target} ±{self.atol}"
+
+    def __repr__(self):
+        return f"<Match: {self.target} ±{self.atol}>"
+
+    def __call__(self, position: float):
+        atol = 10 ** (-self.precision)
+        return np.isclose(position, self.target, atol=atol)
+
+
 @dataclass
 class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
     setpoint: SignalRW
@@ -110,6 +134,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
     start_signal: TriggerableCommand
     stop_signal: TriggerableCommand
     undulator: "PlanarUndulator"
+    precision: int
 
     async def stop(self) -> None:
         """Optional hook to add logic on how to stop the motion."""
@@ -153,8 +178,12 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
         is_scanning = scan_mode != UndulatorScanMode.NORMAL
         if not is_scanning:
             await self.setpoint.set(new_position)
-            await self.start_signal.trigger()
-            await wait_for_value(self.readback, new_position, timeout=timeout())
+            await self.start_signal.trigger(timeout=timeout())
+            await wait_for_value(
+                self.readback,
+                PrecisionMatcher(new_position, precision=self.precision),
+                timeout=timeout(),
+            )
             return
         next_gap = next(self._gap_iter)
         next_energy = next(self._energy_iter)
@@ -184,7 +213,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
             self.undulator.scan_next_point,
             True,
             axis.readback,
-            target,
+            PrecisionMatcher(target, precision=3),
             timeout=timeout(),
         )
 
@@ -252,6 +281,7 @@ class UndulatorMovable(StandardReadable, StandardMovable[float]):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
+            precision=3,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             undulator=self.parent,
@@ -260,13 +290,15 @@ class UndulatorMovable(StandardReadable, StandardMovable[float]):
 
 @dataclass
 class GapLogic(UndulatorLogic):
-    gap_velocity: float = 2.0  # Not measured, just a guess
+    gap_velocity: float = 0.625  # Not measured, just a guess
 
     async def calculate_timeout(
         self, old_position: float, new_position: float
     ) -> float | None:
         """Optional hook to calculate valid timeout for a move."""
-        return abs((new_position - old_position) / self.gap_velocity) + DEFAULT_TIMEOUT
+        timeout = abs((new_position - old_position) / self.gap_velocity)
+        timeout += 5  # Accounts for the slower movement when ID gets close to target
+        return timeout + DEFAULT_TIMEOUT
 
 
 class GapMovable(UndulatorMovable):
@@ -276,6 +308,7 @@ class GapMovable(UndulatorMovable):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
+            precision=3,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             undulator=self.parent,
@@ -292,7 +325,7 @@ class EnergyLogic(UndulatorLogic):
     """
 
     offset: SignalRW
-    gap_velocity: float = 2.0  # Not measured, just a guess. In mm/s.
+    gap_velocity: float = 0.625  # Not measured, just a guess. In mm/s.
     _offset_table: IO | str | Path = ""
 
     @property
@@ -343,7 +376,7 @@ class EnergyLogic(UndulatorLogic):
         # Stash the requested ranges so we can check them later
         self._energy_iter = iter(energies)
         # The energy->gap calcuations in the IOC don't work right with a taper
-        if gap_taper.result() != 0:
+        if abs(gap_taper.result()) >= 0.1:
             warnings.warn("Setting energy array with non-zero taper.")
         self.scan_has_moved = False
         # Wait for the undulator scan controls to be ready
@@ -388,6 +421,9 @@ class EnergyLogic(UndulatorLogic):
             await self.setpoint.set(new_position)
             new_gap = await gap.setpoint.get_value()
             move_time = abs(new_gap - current_gap_readback) / self.gap_velocity
+            move_time += (
+                5  # Accounts for the slower movement when ID gets close to target
+            )
         finally:
             # Go back to where we started
             await asyncio.gather(
@@ -443,6 +479,7 @@ class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
                 keV=self.dial_readback,
                 offset=self.offset,
                 derived_units="eV",
+                derived_precision=2,
             )
         self.setpoint = derived_signal_rw(
             _keV_to_energy, self._set_raw, keV=self.dial_setpoint, offset=self.offset
@@ -455,6 +492,7 @@ class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
+            precision=0,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             offset=self.offset,
