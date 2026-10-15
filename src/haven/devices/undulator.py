@@ -105,11 +105,8 @@ class TrajectoryMotorInfo(ConfinedModel):
 @dataclass()
 class PrecisionMatcher:
     target: float
-    precision: int
-
-    @property
-    def atol(self):
-        return 10 ** (-self.precision)
+    atol: float = 1e-08
+    rtol: float = 1e-05
 
     @property
     def __name__(self):
@@ -122,8 +119,7 @@ class PrecisionMatcher:
         return f"<Match: {self.target} ±{self.atol}>"
 
     def __call__(self, position: float):
-        atol = 10 ** (-self.precision)
-        return np.isclose(position, self.target, atol=atol)
+        return np.isclose(position, self.target, atol=self.atol, rtol=self.rtol)
 
 
 @dataclass
@@ -181,7 +177,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
             await self.start_signal.trigger(timeout=timeout())
             await wait_for_value(
                 self.readback,
-                PrecisionMatcher(new_position, precision=self.precision),
+                PrecisionMatcher(new_position, atol=10 ** (-self.precision)),
                 timeout=timeout(),
             )
             return
@@ -213,7 +209,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
             self.undulator.scan_next_point,
             True,
             axis.readback,
-            PrecisionMatcher(target, precision=3),
+            PrecisionMatcher(target, atol=0.002),
             timeout=timeout(),
         )
 
