@@ -130,7 +130,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
     start_signal: TriggerableCommand
     stop_signal: TriggerableCommand
     undulator: "PlanarUndulator"
-    precision: int
+    atol: int | float
 
     async def stop(self) -> None:
         """Optional hook to add logic on how to stop the motion."""
@@ -177,7 +177,7 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
             await self.start_signal.trigger(timeout=timeout())
             await wait_for_value(
                 self.readback,
-                PrecisionMatcher(new_position, atol=10 ** (-self.precision)),
+                PrecisionMatcher(new_position, atol=self.atol),
                 timeout=timeout(),
             )
             return
@@ -205,11 +205,12 @@ class UndulatorLogic(FlyableLogic[Path, None], MovableLogic[float]):
         # Track the gap for completion since the energy precision is
         # not linear
         log.debug(f"Waiting for {axis.readback.name} to move to {target} ({timeout=}).")
+        gap_atol = self.undulator.gap.movable_logic.atol
         await set_and_wait_for_other_value(
             self.undulator.scan_next_point,
             True,
             axis.readback,
-            PrecisionMatcher(target, atol=0.002),
+            PrecisionMatcher(target, atol=gap_atol),
             timeout=timeout(),
         )
 
@@ -277,7 +278,7 @@ class UndulatorMovable(StandardReadable, StandardMovable[float]):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
-            precision=3,
+            atol=0.001,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             undulator=self.parent,
@@ -304,7 +305,7 @@ class GapMovable(UndulatorMovable):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
-            precision=3,
+            atol=0.010,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             undulator=self.parent,
@@ -334,7 +335,10 @@ class EnergyLogic(UndulatorLogic):
             return pd.read_csv(self._offset_table, sep="\t")
 
     def auto_offset(self, energy: float) -> float:
-        """Calculate an offset for a given energy based on a calibration lookup table."""
+        """Calculate an offset for a given energy based on a calibration
+        lookup table.
+
+        """
         xp, fp = self.offset_table.T.to_numpy()
         new_offset = np.interp(energy, xp, fp, right=float("nan"), left=float("nan"))
         if math.isnan(new_offset):
@@ -422,10 +426,7 @@ class EnergyLogic(UndulatorLogic):
             )
         finally:
             # Go back to where we started
-            await asyncio.gather(
-                self.setpoint.set(current_energy_setpoint),
-                gap.setpoint.set(current_gap_setpoint),
-            )
+            await gap.setpoint.set(current_gap_setpoint)
         return move_time + DEFAULT_TIMEOUT
 
         return None
@@ -488,7 +489,7 @@ class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
             readback=self.readback,
             setpoint=self.setpoint,
             deadband=self.parent.gap_deadband,
-            precision=0,
+            atol=5,
             start_signal=self.parent.start_button,
             stop_signal=self.parent.stop_button,
             offset=self.offset,
