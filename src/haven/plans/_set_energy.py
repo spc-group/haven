@@ -82,7 +82,10 @@ def set_energy(
         harmonic_signals = [undulator.harmonic_value for undulator in _undulators]
         mv_args.extend(arg for signal in harmonic_signals for arg in (signal, harmonic))
     if undulator_offset == "auto":
-        offsets = [undulator.auto_offset(energy) for undulator in _undulators]
+        offsets = [
+            undulator.energy.movable_logic.auto_offset(energy)
+            for undulator in _undulators
+        ]
     elif undulator_offset is not None:
         offsets = [undulator_offset for undulator in _undulators]
     else:
