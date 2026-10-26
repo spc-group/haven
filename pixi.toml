@@ -53,7 +53,9 @@ lint-all = [
 [feature.bluesky.pypi-dependencies]
 aioca = ">=2.0"
 apsbits = ">=2.0.2"
-apstools = ">=1.7.8"
+# Use the main branch of apstools so we can get migrated ophyd-async devices
+# apstools = ">=1.7.8"
+apstools = {git="https://github.com/BCDA-APS/apstools.git", extras=['async'], rev="99324ee5cf2c029f480cd6b8b572c61e27d7ca78"}
 # We need development branch so we can get `collect_all` plan stub
 bluesky = { git = "https://github.com/bluesky/bluesky.git" }
 # bluesky = "==1.15.1"

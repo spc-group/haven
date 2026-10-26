@@ -9,8 +9,7 @@ from ophyd.sim import instantiate_fake_device
 
 import haven
 from haven import devices
-from haven.devices import Xspress3Detector
-from haven.devices.aps import ApsMachine
+from haven.devices import ApsMachine, Xspress3Detector
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter

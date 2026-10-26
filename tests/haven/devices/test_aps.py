@@ -1,6 +1,6 @@
 import pytest
 
-from haven.devices.aps import ApsMachine
+from haven.devices import ApsMachine
 
 
 @pytest.mark.asyncio

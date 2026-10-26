@@ -196,6 +196,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: ./
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -412,7 +413,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b4/0b/3c3bb7cbe757279e693a0be6049048012f794d01f81099609ecd53b899f0/dateparser-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl
@@ -694,6 +694,7 @@ environments:
       - pypi: ./
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -994,7 +995,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b5/09/6ea3ea725f82e1e76684f0708bbedd871fc96da89945adeba65c3835a64c/nvidia_nvshmem_cu12-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/b6/70/c419a361b09ccb618b5165daa919003ccdd9c148356f7ff71a710db6bcf0/gpytorch-1.15.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/46/f5af3402b579fd5e11573ce652019a67074317e18c1935cc0b4ba9b35552/secretstorage-3.5.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c6/6f124bcfbbfb20fba22c939b4e43a06dccfc0e1ca20e5634ca573cb1e271/authlib-1.8.0-py2.py3-none-any.whl
@@ -1334,6 +1334,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: ./
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -1592,7 +1593,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b4/0b/3c3bb7cbe757279e693a0be6049048012f794d01f81099609ecd53b899f0/dateparser-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b5/40/23569737873cc9637fd488606347e9dd92b9fa37ba4fcda1f98ee5219a97/latexcodec-3.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl
@@ -1883,6 +1883,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: ./
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -2099,7 +2100,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b4/0b/3c3bb7cbe757279e693a0be6049048012f794d01f81099609ecd53b899f0/dateparser-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl
@@ -2380,6 +2380,7 @@ environments:
       - pypi: ./
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl
@@ -2443,7 +2444,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/21/91/d8f19f0b8fc9c5585b50fda44c05415da0bdc5fa9c9c69011015dac27880/ndindex-1.10.1-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/21/bd/4d1f59c9287ec5f93f9d879db3ac06785ba7c4d04a7120678d894e0c53d0/caproto-1.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/22/07/e68e293de059a2c32e356ab708f5ce43d636ef5ea40fc5dbc9f04ccefd48/anyqt-0.2.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/22/a7/45631de97e98be9603c21a36913977738e73ca6e860b4dc8c972405283fe/apstools-1.7.12-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/23/93/4e45e37f26c820216704b36b8e67cc55c490a7abd287a78a26a2c0e21386/lazy_loader-0.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/23/d3/996332fe24f3c2458b9c353b998570dfa2631763e9a8674ba3f94c0877d0/jupyterlab_server-2.28.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/23/e5/688703d357e5393f708d98eb189fd415ae69e39f6de03c6bd4005aef6118/scikit_learn-1.9.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -3046,6 +3046,7 @@ environments:
       - pypi: ./
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-core#b05ab168e667613afdc815fd2f830c8f47faf80e
       - pypi: git+https://github.com/AdvancedPhotonSource/EAA.git?subdirectory=packages%2Feaa-spectroscopy#b05ab168e667613afdc815fd2f830c8f47faf80e
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -3359,7 +3360,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b6/70/c419a361b09ccb618b5165daa919003ccdd9c148356f7ff71a710db6bcf0/gpytorch-1.15.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/28/180bfc5c95e83d40cb2abce512684ccad44e4819ec899fc36cb404a19061/python_engineio-4.13.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/46/f5af3402b579fd5e11573ce652019a67074317e18c1935cc0b4ba9b35552/secretstorage-3.5.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl
@@ -3679,6 +3679,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.7.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - pypi: ./
+      - pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
       - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
       - pypi: git+https://github.com/spc-group/bluesky-adaptive.git?rev=ed0c036dd583f082a393dc84f7b76b2063f4b4aa#ed0c036dd583f082a393dc84f7b76b2063f4b4aa
       - pypi: https://files.pythonhosted.org/packages/00/8d/7f362c2fb8ef4decd2160bc24d4292c6ca658cc6d9a161b89ca5122bbdbf/cyclopts-4.16.1-py3-none-any.whl
@@ -3895,7 +3896,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b4/0b/3c3bb7cbe757279e693a0be6049048012f794d01f81099609ecd53b899f0/dateparser-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
       - pypi: https://files.pythonhosted.org/packages/b8/42/cf027b4ac873b076189d935b135397675dac80cb29acb13e1ab86ad6c631/json5-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl
@@ -9693,6 +9693,64 @@ packages:
   - pytest ; extra == 'dev'
   - ruff ; extra == 'dev'
   requires_python: '>=3.11'
+- pypi: git+https://github.com/BCDA-APS/apstools.git?rev=99324ee5cf2c029f480cd6b8b572c61e27d7ca78#99324ee5cf2c029f480cd6b8b572c61e27d7ca78
+  name: apstools
+  version: 1.7.13.dev12+g99324ee5c
+  requires_dist:
+  - area-detector-handlers
+  - bluesky-live
+  - bluesky>=1.6.2,!=1.11.0
+  - databroker<=1.999
+  - deprecated
+  - entrypoints
+  - h5py
+  - intake<=1
+  - ipython
+  - matplotlib
+  - mongoquery>=1.3.6
+  - numpy>=2
+  - openpyxl
+  - ophyd>=1.6.1
+  - pandas
+  - pint
+  - psutil
+  - pyepics>=3.4.3
+  - pyresttable>=2020.0.8
+  - pysumreg
+  - scipy
+  - spec2nexus>=2021.1.7
+  - toolz>=0.12.1
+  - xlrd
+  - build ; extra == 'dev'
+  - coverage ; extra == 'dev'
+  - coveralls ; extra == 'dev'
+  - ipykernel ; extra == 'dev'
+  - mypy ; extra == 'dev'
+  - ophyd-registry ; extra == 'dev'
+  - pre-commit ; extra == 'dev'
+  - pytest ; extra == 'dev'
+  - pytest-asyncio ; extra == 'dev'
+  - ruff ; extra == 'dev'
+  - doct ; extra == 'dev'
+  - humanize ; extra == 'dev'
+  - mongomock ; extra == 'dev'
+  - pymongo ; extra == 'dev'
+  - ipython ; extra == 'doc'
+  - jinja2>=3.0 ; extra == 'doc'
+  - markupsafe==2.0.1 ; extra == 'doc'
+  - myst-nb ; extra == 'doc'
+  - myst-parser ; extra == 'doc'
+  - nbsphinx ; extra == 'doc'
+  - pydata-sphinx-theme ; extra == 'doc'
+  - pygments>=2.12 ; extra == 'doc'
+  - pygments-ipython-console ; extra == 'doc'
+  - setuptools-scm ; extra == 'doc'
+  - sphinx ; extra == 'doc'
+  - sphinx-autoapi ; extra == 'doc'
+  - sphinx-design ; extra == 'doc'
+  - ophyd-async[ca] ; extra == 'async'
+  - apstools[async,dev,doc] ; extra == 'all'
+  requires_python: '>=3.10'
 - pypi: git+https://github.com/bluesky/bluesky.git#cc5e48c768c3642f777a3a1e4c3dba6f2fe91970
   name: bluesky
   version: 1.15.2.dev225+gcc5e48c76
@@ -11766,63 +11824,6 @@ packages:
   name: ptyprocess
   version: 0.7.0
   sha256: 4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35
-- pypi: https://files.pythonhosted.org/packages/22/a7/45631de97e98be9603c21a36913977738e73ca6e860b4dc8c972405283fe/apstools-1.7.12-py3-none-any.whl
-  name: apstools
-  version: 1.7.12
-  sha256: c930addcfdbb8cd113d6cf4d3c99ec91fce9ff254e2bb86014b664dead82d3fb
-  requires_dist:
-  - area-detector-handlers
-  - bluesky-live
-  - bluesky>=1.6.2,!=1.11.0
-  - databroker<=1.999
-  - deprecated
-  - entrypoints
-  - h5py
-  - intake<=1
-  - ipython
-  - matplotlib
-  - mongoquery>=1.3.6
-  - numpy>=2
-  - openpyxl
-  - ophyd>=1.6.1
-  - pandas
-  - pint
-  - psutil
-  - pyepics>=3.4.3
-  - pyresttable>=2020.0.8
-  - pysumreg
-  - scipy
-  - spec2nexus>=2021.1.7
-  - toolz>=0.12.1
-  - xlrd
-  - build ; extra == 'dev'
-  - coverage ; extra == 'dev'
-  - coveralls ; extra == 'dev'
-  - ipykernel ; extra == 'dev'
-  - mypy ; extra == 'dev'
-  - ophyd-registry ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - ruff ; extra == 'dev'
-  - doct ; extra == 'dev'
-  - humanize ; extra == 'dev'
-  - mongomock ; extra == 'dev'
-  - pymongo ; extra == 'dev'
-  - ipython ; extra == 'doc'
-  - jinja2>=3.0 ; extra == 'doc'
-  - markupsafe==2.0.1 ; extra == 'doc'
-  - myst-nb ; extra == 'doc'
-  - myst-parser ; extra == 'doc'
-  - nbsphinx ; extra == 'doc'
-  - pydata-sphinx-theme ; extra == 'doc'
-  - pygments>=2.12 ; extra == 'doc'
-  - pygments-ipython-console ; extra == 'doc'
-  - setuptools-scm ; extra == 'doc'
-  - sphinx ; extra == 'doc'
-  - sphinx-autoapi ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - apstools[dev,doc] ; extra == 'all'
-  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/23/85/968c88a63e32a59b3e5c68afd2fe114ce0708a125db0be1a85efc25fb2ea/langsmith-0.8.5-py3-none-any.whl
   name: langsmith
   version: 0.8.5
@@ -18336,63 +18337,6 @@ packages:
   name: rpds-py
   version: 0.30.0
   sha256: 9027da1ce107104c50c81383cae773ef5c24d296dd11c99e2629dbd7967a20c6
-  requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/b7/f9/99dff1374c3b7940e2cbe675d99c66560b32f34d0fc42b00bcbc44d56e00/apstools-1.7.10-py3-none-any.whl
-  name: apstools
-  version: 1.7.10
-  sha256: ee6ec7506f9a92c684ebc5c46edbaec20f65c7b62d615a15def485713515b5d2
-  requires_dist:
-  - area-detector-handlers
-  - bluesky-live
-  - bluesky>=1.6.2,!=1.11.0
-  - databroker<=1.999
-  - deprecated
-  - entrypoints
-  - h5py
-  - intake<=1
-  - ipython
-  - matplotlib
-  - mongoquery>=1.3.6
-  - numpy>=2
-  - openpyxl
-  - ophyd>=1.6.1
-  - pandas
-  - pint
-  - psutil
-  - pyepics>=3.4.3
-  - pyresttable>=2020.0.8
-  - pysumreg
-  - scipy
-  - spec2nexus>=2021.1.7
-  - toolz>=0.12.1
-  - xlrd
-  - build ; extra == 'dev'
-  - coverage ; extra == 'dev'
-  - coveralls ; extra == 'dev'
-  - ipykernel ; extra == 'dev'
-  - mypy ; extra == 'dev'
-  - ophyd-registry ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - ruff ; extra == 'dev'
-  - doct ; extra == 'dev'
-  - humanize ; extra == 'dev'
-  - mongomock ; extra == 'dev'
-  - pymongo ; extra == 'dev'
-  - ipython ; extra == 'doc'
-  - jinja2>=3.0 ; extra == 'doc'
-  - markupsafe==2.0.1 ; extra == 'doc'
-  - myst-nb ; extra == 'doc'
-  - myst-parser ; extra == 'doc'
-  - nbsphinx ; extra == 'doc'
-  - pydata-sphinx-theme ; extra == 'doc'
-  - pygments>=2.12 ; extra == 'doc'
-  - pygments-ipython-console ; extra == 'doc'
-  - setuptools-scm ; extra == 'doc'
-  - sphinx ; extra == 'doc'
-  - sphinx-autoapi ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - apstools[dev,doc] ; extra == 'all'
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/b8/02/5bf3639f5b77e9b183011c08541c5039ba3d04f5316c70312b48a8e003a9/pims-0.7.tar.gz
   name: pims

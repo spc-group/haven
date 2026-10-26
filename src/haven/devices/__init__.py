@@ -1,6 +1,7 @@
+from apstools._devices_async.aps_machine import ApsMachine as ApsMachine
+
 from .aerotech import AerotechStage as AerotechStage
 from .aperture_slits import ApertureSlits  # noqa: F401
-from .aps import ApsMachine as ApsMachine
 from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator as AxilonMonochromator
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
