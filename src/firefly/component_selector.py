@@ -24,8 +24,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from haven.positioner import Positioner
-
 log = logging.getLogger(__name__)
 
 
@@ -125,7 +123,7 @@ class TreeNode(OphydNode):
         column = 1
         parent.setChild(row, column, self.type_item)
         # Make the component item bold if it's a positioner
-        positioner_classes = (PositionerBase, EpicsAsyncMotor, Positioner)
+        positioner_classes = (PositionerBase, EpicsAsyncMotor, Movable)
         is_positioner = any(
             issubclass(self.device_class, Klass) for Klass in positioner_classes
         )
