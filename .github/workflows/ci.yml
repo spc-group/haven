@@ -24,9 +24,9 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v7
-    - uses: prefix-dev/setup-pixi@v0.10.0
+    - uses: prefix-dev/setup-pixi@v0.11.3
       with:
-        pixi-version: v0.73.0
+        pixi-version: v0.84.0
         cache: true
     - run: |
         pixi run lint
@@ -43,9 +43,9 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v7
-    - uses: prefix-dev/setup-pixi@v0.10.0
+    - uses: prefix-dev/setup-pixi@v0.11.3
       with:
-        pixi-version: v0.73.0
+        pixi-version: v0.84.0
         cache: true
     - run: |
         pixi run check-types
@@ -60,9 +60,9 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v7
-    - uses: prefix-dev/setup-pixi@v0.10.0
+    - uses: prefix-dev/setup-pixi@v0.11.3
       with:
-        pixi-version: v0.73.0
+        pixi-version: v0.84.0
         cache: true
     - name: Tests
       run: |
@@ -78,9 +78,9 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v7
-    - uses: prefix-dev/setup-pixi@v0.10.0
+    - uses: prefix-dev/setup-pixi@v0.11.3
       with:
-        pixi-version: v0.73.0
+        pixi-version: v0.84.0
         cache: true
     - run: |
         pixi run make-docs
