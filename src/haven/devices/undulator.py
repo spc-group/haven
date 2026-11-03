@@ -454,8 +454,10 @@ class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
         *,
         prefix: str,
         offset_pv: str,
+        offset_table: IO | str | Path = "",
         **kwargs,
     ):
+        self._offset_table = offset_table
         with self.add_children_as_readables():
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
         with self.add_children_as_readables(Format.CONFIG_SIGNAL):
@@ -494,6 +496,7 @@ class EnergyMovable(StandardReadable, StandardFlyable, StandardMovable[float]):
             stop_signal=self.parent.stop_button,
             offset=self.offset,
             undulator=self.parent,
+            _offset_table=self._offset_table,
         )
 
     @property
@@ -596,7 +599,6 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
         offset_table: IO | str | Path = "",
         minimum_move: float | int = 0,
     ):
-        self._offset_table = offset_table
         # Signals for moving the undulator
         self.start_button = epics_triggerable_command(f"{prefix}StartC.VAL")
         self.stop_button = epics_triggerable_command(f"{prefix}StopC.VAL")
@@ -620,6 +622,7 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
             self.energy = EnergyMovable(
                 prefix=f"{prefix}Energy",
                 offset_pv=offset_pv,
+                offset_table=offset_table,
             )
             self.energy_taper = UndulatorMovable(
                 prefix=f"{prefix}TaperEnergy",

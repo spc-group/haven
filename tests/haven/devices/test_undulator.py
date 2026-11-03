@@ -21,8 +21,6 @@ async def undulator():
         prefix="PSS:255ID:", offset_pv="255idNP:id_offset", name="undulator"
     )
     await undulator.connect(mock=True)
-    # await undulator.energy.setpoint.connect(mock=False)
-    # await undulator.energy.readback.connect(mock=False)
     return undulator
 
 
@@ -145,16 +143,38 @@ async def test_energy_unit_offset(undulator):
     assert await undulator.energy.readback.get_value() == 8573
 
 
-def test_auto_offset_lookup(undulator):
+def test_auto_offset_no_table(undulator):
     logic = undulator.energy.movable_logic
     # Should fail without a lookup table
     with pytest.raises(ValueError):
         logic.auto_offset(1500)
-    # Now try again with a lookup table
-    logic._offset_table = StringIO(
-        "# energy\toffset\n" "1000\t10\n" "2000\t20\n" "3000\t30\n"
+
+
+@pytest.mark.asyncio
+async def test_auto_offset_lookup():
+    offset_table = StringIO("# energy\toffset\n" "1000\t10\n" "2000\t20\n" "3000\t30\n")
+    undulator = PlanarUndulator(
+        prefix="PSS:255ID:",
+        offset_pv="255idNP:id_offset",
+        name="undulator",
+        offset_table=offset_table,
     )
-    assert logic.auto_offset(1500) == 15
+    await undulator.connect(mock=True)
+    logic = undulator.energy.movable_logic
+    assert 10 < logic.auto_offset(1500) < 20
+
+
+@pytest.mark.asyncio
+async def test_auto_offset_out_of_bounds():
+    offset_table = StringIO("# energy\toffset\n" "1000\t10\n" "2000\t20\n" "3000\t30\n")
+    undulator = PlanarUndulator(
+        prefix="PSS:255ID:",
+        offset_pv="255idNP:id_offset",
+        name="undulator",
+        offset_table=offset_table,
+    )
+    await undulator.connect(mock=True)
+    logic = undulator.energy.movable_logic
     # Out-of-bounds interpolation should fail
     with pytest.raises(ValueError):
         logic.auto_offset(500)
