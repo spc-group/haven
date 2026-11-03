@@ -6,7 +6,7 @@ platforms = ["linux-64"]
 PYDM_DEFAULT_PROTOCOL = "ca"
 
 [dependencies]
-python = "3.13.*"
+python = "3.14.*"
 
 [pypi-dependencies]
 haven-spc = { path = ".", editable = true }
@@ -75,7 +75,7 @@ p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"
 
 [feature.ipython]
-dependencies = { python = "3.13.*", ipython = "*" }
+dependencies = { python = "3.14.*", ipython = "*" }
 pypi-dependencies = { rich = "*" }
 tasks = {haven = "ipython -i ./src/haven/startup.py"}
 
@@ -147,7 +147,6 @@ qtawesome = ">=1.4.2"
 pyqtgraph = "*"
 pydm = ">=1.28.1"
 qasync = "*"
-pandas = "<3"  # Otherwise aps-dm-api will preempt tiled's dependencies
 aps-dm-api = ">=10.1.0,<11"
 font-otf-fontawesome = ">=7.2.0,<8"
 
