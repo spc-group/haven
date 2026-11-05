@@ -53,9 +53,9 @@ lint-all = [
 [feature.bluesky.pypi-dependencies]
 aioca = ">=2.0"
 apsbits = ">=2.0.2"
-# Use the main branch of apstools so we can get migrated ophyd-async devices
-# apstools = ">=1.7.8"
-apstools = {git="https://github.com/BCDA-APS/apstools.git", extras=['async'], rev="99324ee5cf2c029f480cd6b8b572c61e27d7ca78"}
+# Use the main branch of apstools to get migrated ophyd-async devices
+apstools = ">=1.7.13"
+# apstools = {git="https://github.com/BCDA-APS/apstools.git", extras=['async'], rev="99324ee5cf2c029f480cd6b8b572c61e27d7ca78"}
 # We need development branch so we can get `collect_all` plan stub
 bluesky = { git = "https://github.com/bluesky/bluesky.git" }
 # bluesky = "==1.15.1"
@@ -94,10 +94,10 @@ mirakuru = ">=3.0.2, <4"
 pytest-dependency = ">=0.6.1, <0.7"
 
 [feature.dev.pypi-dependencies]
-"black" = "*"
+"black" = ">=26.10.1"
 "twine" = "*"
 "ruff" = "*"
-"isort" = "*"
+"isort" = ">=9.0.2"
 "sphinx" = "*"
 "nbsphinx" = "*"
 "graphviz" = "*"
@@ -215,7 +215,7 @@ tiled-server = "tiled serve config"
 [feature.ai.pypi-dependencies]
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
-aps-ai-beamline-controller = "==0.0.82"
+aps-ai-beamline-controller = "==0.0.102"
 # This package will eventually be available on PyPI, but for now it
 # breaks CI so is being removed
 # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }

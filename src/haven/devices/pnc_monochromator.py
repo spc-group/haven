@@ -8,9 +8,7 @@ from ophyd_async.core import (
     StandardReadable,
 )
 from ophyd_async.core import StandardReadableFormat as Format
-from ophyd_async.core import (
-    soft_signal_r_and_setter,
-)
+from ophyd_async.core import soft_signal_r_and_setter
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from .motor import Motor

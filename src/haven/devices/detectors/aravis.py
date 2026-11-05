@@ -3,9 +3,7 @@ from typing import Annotated as A
 
 from ophyd_async.core import SignalR, SignalRW, SubsetEnum
 from ophyd_async.epics.adaravis import AravisDriverIO as AravisDriverIOBase
-from ophyd_async.epics.adaravis import (
-    AravisTriggerLogic,
-)
+from ophyd_async.epics.adaravis import AravisTriggerLogic
 from ophyd_async.epics.adcore import (
     ADAcquireLogic,
     ADWriterFactory,
