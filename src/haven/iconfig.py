@@ -15,7 +15,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import tomli
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 log = logging.getLogger(__name__)
 
@@ -42,17 +42,8 @@ class FeatureFlagConfig(ConfigModel):
 
 class DataManagementConfig(ConfigModel):
     # API URI's taken from the data management environmental variables
-    scheduling_uri: str  # DM_APS_DB_WEB_SERVICE_URL
-    data_transfer_uri: str  # DM_DAQ_WEB_SERVICE_URL
-    workflow_uri: str  # DM_PROC_WEB_SERVICE_URL
-    data_storage_uri: str  # DM_DS_WEB_SERVICE_URL
-    catalog_uri: str  # DM_CAT_WEB_SERVICE_URL
-    beamline: str  # DM_BEAMLINE_NAME
+    web_portal_uri: str
     station_name: str  # DM_STATION_NAME
-    username: str | None = None
-    password: SecretStr | None = None
-    admin_account: str | None = None
-    beamline_managers: Sequence[str] = []  # DM_BEAMLINE_MANAGERS
 
 
 class RunEngineMetadata(ConfigModel):

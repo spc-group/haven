@@ -258,8 +258,11 @@ def test_include_axes_as_detectors(xspress, ion_chamber, mono):
     read_msgs = [
         m for m in msgs if m.command == "read" and m.obj in [ion_chamber, mono]
     ]
-    read_devices = {m.obj for m in read_msgs}
-    assert read_devices == {ion_chamber, mono}
+    read_devices = []
+    for msg in read_msgs:
+        read_devices.append(msg.obj)
+        read_devices.extend(msg.args)
+    assert set(read_devices) == {ion_chamber, mono}
 
 
 def test_remove_duplicate_energies(mono, ion_chamber):

@@ -204,7 +204,7 @@ class FireflyMainWindow(PyDMMainWindow):
             undulator_actions=actions.undulators,
             xrf_detector_actions=actions.xrf_detectors,
             status_window_action=actions.status,
-            dm_station_window_action=actions.dm_station,
+            dm_portal_action=actions.dm_portal,
             prefect_action=actions.prefect,
         )
 
@@ -232,7 +232,7 @@ class FireflyMainWindow(PyDMMainWindow):
         undulator_actions,
         xrf_detector_actions,
         status_window_action,
-        dm_station_window_action,
+        dm_portal_action,
         prefect_action,
     ):
         # Log viewer window
@@ -337,8 +337,8 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         if status_window_action is not None:
             self.ui.menuView.addAction(status_window_action)
-        if dm_station_window_action is not None:
-            self.ui.setup_menu.addAction(dm_station_window_action)
+        if dm_portal_action is not None:
+            self.ui.setup_menu.addAction(dm_portal_action)
         if prefect_action is not None:
             self.ui.setup_menu.addAction(prefect_action)
         # Make tooltips show up for menu actions

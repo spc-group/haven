@@ -131,7 +131,7 @@ class ActionsRegistry:
     ptz_cameras: Mapping[str, BrowserAction]
 
     # Actions for showing specific windows
-    dm_station: WindowAction = None
+    dm_portal: WindowAction = None
     energy: WindowAction = None
     log: WindowAction = None
     status: WindowAction = None
@@ -202,7 +202,7 @@ class ActionsRegistry:
         return [
             self.prefect,
             *self.ptz_cameras,
-            self.dm_station,
+            self.dm_portal,
             self.energy,
             self.log,
             self.status,

@@ -51,15 +51,8 @@ def test_config_metadata():
 
     config = HavenConfig(
         data_management=DataManagementConfig(
-            scheduling_uri="",
-            data_transfer_uri="",
-            workflow_uri="",
-            data_storage_uri="",
-            catalog_uri="",
-            beamline="255-ID-Z",
+            web_portal_uri="http://example.com",
             station_name="255IDZ",
-            username="s255idzuser",
-            password="password1",
         ),
         run_engine=RunEngineConfig(
             default_metadata=RunEngineMetadata(
@@ -75,8 +68,6 @@ def test_config_metadata():
 
     RE(bps.open_run())
     start_doc = docs[0][1]
-    # Make sure that secret passwords don't get stored in plain text
-    assert start_doc["iconfig"]["data_management"]["password"] == "**********"
 
 
 def test_subscribe_tiled_writer(mocker):

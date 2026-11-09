@@ -83,15 +83,8 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16", prepend=False)
     config = HavenConfig(
         data_management=DataManagementConfig(
-            scheduling_uri="",
-            data_transfer_uri="",
-            workflow_uri="",
-            data_storage_uri="",
-            catalog_uri="",
-            beamline="255-ID-Z",
+            web_portal_uri="http://example.com",
             station_name="255IDZ",
-            username="s255idzuser",
-            password="password1",
         ),
         run_engine=RunEngineConfig(
             default_metadata=RunEngineMetadata(

@@ -17,11 +17,11 @@ from qtpy.QtWidgets import QAction, QErrorMessage
 
 from haven import beamline, load_config
 from haven.exceptions import InvalidConfiguration
+from haven.iconfig import HavenConfig
 from haven.utils import titleize
 
 from .action import Action, ActionsRegistry, BrowserAction, WindowAction
 from .display import FireflyDisplay, SampleMetadata
-from .dm_tools.gui.dmStationUi import DmStationUi
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
 
@@ -95,7 +95,9 @@ class FireflyController(QtCore.QObject):
         setattr(self, action_name, action)
         return action
 
-    async def setup_instrument(self, load_instrument=True):
+    async def setup_instrument(
+        self, load_instrument=True, config: HavenConfig | None = None
+    ):
         """Set up the application to use a previously loaded instrument.
 
         Parameters
@@ -111,8 +113,9 @@ class FireflyController(QtCore.QObject):
           new list of instruments.
 
         """
-        if load_instrument:
+        if config is None:
             config = load_config()
+        if load_instrument:
             for device_file in config.device_files:
                 beamline.load(device_file)
             try:
@@ -125,7 +128,7 @@ class FireflyController(QtCore.QObject):
                 self.error_message.showMessage(msg)
             self.registry_changed.emit(beamline.devices)
         # Make actions for launching other windows
-        self.setup_window_actions()
+        self.setup_window_actions(config)
         # Actions for controlling the bluesky run engine
         self.setup_queue_actions()
         # Inject menu actions into the various windows
@@ -150,14 +153,13 @@ class FireflyController(QtCore.QObject):
         #   This is not compatible with pyside6
         # pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
 
-    def setup_window_actions(self):
+    def setup_window_actions(self, config: HavenConfig):
         """Create QActions for clicking on menu items, shortcuts, etc.
 
         These actions should be usable by multiple
         windows. Window-specific actions belong with the window.
 
         """
-        config = load_config()
         # Setup actions for the various categories of devices
         self.actions.motors = self.device_actions(
             device_label="extra_motors",
@@ -287,13 +289,13 @@ class FireflyController(QtCore.QObject):
             ),
         }
         # Action for showing the beamline scheduling window
-        self.actions.dm_station = WindowAction(
-            name="show_dm_station_window_action",
-            text="&Data Management",
-            display_file=None,
-            WindowClass=DmStationUi,
-            icon=qta.icon("fa6s.database"),
-        )
+        if getattr(config.data_management, "web_portal_uri", ""):
+            self.actions.dm_portal = BrowserAction(
+                name="dm_portal_action",
+                text="&Data Management",
+                uri=config.data_management.web_portal_uri,
+                icon=qta.icon("fa6s.database"),
+            )
         self.actions.prefect = BrowserAction(
             name="prefect_action",
             text="&Prefect Dashboard",

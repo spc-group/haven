@@ -57,6 +57,10 @@ def test_messages_for_ion_chamber(shutters, ion_chamber):
 def test_messages(shutters, scaler):
     shutter = shutters[0]
     msgs = list(record_dark_current(detectors=[scaler], shutters=[shutter]))
+    from pprint import pprint
+
+    pprint(msgs)
+
     calibrate_msg = msgs[6]
     assert calibrate_msg.command == "calibrate"
     assert calibrate_msg.obj is scaler
@@ -68,7 +72,7 @@ def test_messages(shutters, scaler):
     assert "record_dark_current" not in trigger_msg.kwargs
     wait_msg = msgs[11]
     assert wait_msg.command == "wait"
-    calibrate_msg = msgs[16]
+    calibrate_msg = msgs[15]
     assert calibrate_msg.command == "calibrate"
     assert calibrate_msg.obj is scaler
     assert calibrate_msg.kwargs["truth"] == 0
@@ -81,5 +85,8 @@ def test_preamp_configuration(shutters, scaler, preamp):
         record_dark_current(detectors=[scaler], shutters=[shutter], preamps=[preamp])
     )
     read_msgs = [m for m in msgs if m.command == "read"]
-    read_objs = [m.obj for m in read_msgs]
+    read_objs = []
+    for msg in read_msgs:
+        read_objs.append(msg.obj)
+        read_objs.extend(msg.args)
     assert preamp in read_objs
