@@ -53,7 +53,7 @@ from ophyd_async.epics.core import (
     epics_triggerable_command,
 )
 
-from .area_detectors import default_path_provider
+from .area_detectors import data_management_path_provider, default_path_provider
 
 
 class XspressTriggerMode(StrictEnum):
@@ -192,6 +192,7 @@ class Xspress3Detector(AreaDetector):
         name: str = "",
         ev_per_bin: float = 10.0,
         elements: int | Sequence[int] = 1,
+        use_dm_path_provider: bool = False,
     ):
         # Per-element MCA devices
         if isinstance(elements, SupportsIndex):
@@ -210,8 +211,13 @@ class Xspress3Detector(AreaDetector):
         # Area detector IO and control
         driver = XspressDriverIO(f"{prefix}{driver_suffix}")
         if len(writer_factories) == 0:
+            path_provider = (
+                data_management_path_provider()
+                if use_dm_path_provider
+                else default_path_provider()
+            )
             writer_factories = (
-                ADWriterFactory.hdf(default_path_provider(), writer_suffix="HDF1:"),
+                ADWriterFactory.hdf(path_provider, writer_suffix="HDF1:"),
             )
         config_sigs = (
             self.ev_per_bin,
