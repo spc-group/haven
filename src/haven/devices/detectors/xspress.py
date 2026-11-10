@@ -30,7 +30,7 @@ from ophyd_async.core import (
     Device,
     DeviceVector,
     SignalR,
-    StrictEnum,
+    SubsetEnum,
     TriggerInfo,
     derived_signal_r,
     soft_signal_r_and_setter,
@@ -56,7 +56,7 @@ from ophyd_async.epics.core import (
 from .area_detectors import data_management_path_provider, default_path_provider
 
 
-class XspressTriggerMode(StrictEnum):
+class XspressTriggerMode(SubsetEnum):
     SOFTWARE = "Software"
     INTERNAL = "Internal"
     IDC = "IDC"

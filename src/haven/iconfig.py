@@ -44,7 +44,7 @@ class DataManagementConfig(ConfigModel):
     # API URI's taken from the data management environmental variables
     web_portal_uri: str = ""
     station_name: str  # DM_STATION_NAME
-    area_detector_path: str | None = None
+    area_detector_path: str | None
     area_detector_uri: str | None = None
 
 
