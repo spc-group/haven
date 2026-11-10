@@ -3,8 +3,8 @@ from pathlib import Path
 
 from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider
 
-from ...data_management_path_provider import DataManagementPathProvider
 from ...iconfig import HavenConfig, load_config
+from ...path_provider import DataManagementPathProvider
 
 
 def default_path_provider(path: Path | None = None, config: HavenConfig | None = None):

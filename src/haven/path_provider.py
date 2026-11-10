@@ -41,12 +41,12 @@ class DataManagementPathProvider(PathProvider):
                 "Configuration key 'data_management.area_detector_path' not set."
             )
         else:
-            dir_path = Path(dir_path)
+            dir_path = Path(dir_path) / datakey_name
         dir_uri = getattr(config, "area_detector_uri", None)
 
         return PathInfo(
             directory_path=dir_path,
             filename=filename,
-            create_dir_depth=0,
+            create_dir_depth=-1,
             directory_uri=dir_uri or generate_directory_uri(dir_path),
         )

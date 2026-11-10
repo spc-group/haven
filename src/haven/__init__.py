@@ -20,9 +20,6 @@ from ._tiled_writer import TiledWriter, tiled_writer  # noqa: F401
 #  Top-level imports
 from .bss import BssApi  # noqa: F401
 from .constants import edge_energy  # noqa: F401
-from .data_management_path_provider import (
-    DataManagementPathProvider as DataManagementPathProvider,
-)
 from .energy_ranges import (  # noqa: F401
     ERange,
     KRange,
@@ -34,6 +31,7 @@ from .iconfig import HavenConfig as HavenConfig
 from .iconfig import load_config as load_config
 from .instrument import beamline  # noqa: F401
 from .logging import setup_logging as setup_logging
+from .path_provider import DataManagementPathProvider as DataManagementPathProvider
 from .preprocessors import (  # noqa: F401
     aps_suspenders_decorator,
     aps_suspenders_wrapper,

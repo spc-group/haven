@@ -16,4 +16,5 @@ def test_gets_path_from_config():
     provider = DataManagementPathProvider(
         filename_provider=filename_provider, config_provider=lambda: cfg
     )
-    assert provider("bdet").directory_path == Path("/tmp/ad_files")
+    assert provider("bdet").directory_path == Path("/tmp/ad_files/bdet/")
+    assert provider("bdet").create_dir_depth == -1
