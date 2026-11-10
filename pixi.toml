@@ -215,7 +215,7 @@ tiled-server = "tiled serve config"
 [feature.ai.pypi-dependencies]
 eaa-core = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-core", extras = ["bo"] }
 eaa-spectroscopy = { git = "https://github.com/AdvancedPhotonSource/EAA.git", subdirectory = "packages/eaa-spectroscopy" }
-aps-ai-beamline-controller = "==0.0.102"
+aps-ai-beamline-controller = "==0.0.104"
 # This package will eventually be available on PyPI, but for now it
 # breaks CI so is being removed
 # aps-ai-beamline-25id = { path = "../AI-Beamline-25ID", editable = true }
