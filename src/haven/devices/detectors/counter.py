@@ -261,7 +261,7 @@ class CounterDataProvider(PageableDataProvider):
         self.collections_written_signal = self.driver.mcs.current_channel
         super().__init__()
 
-    async def make_datakeys(self, collections_per_event: int) -> dict[str, DataKey]:
+    async def make_datakeys(self, collections_per_event: int = 1) -> dict[str, DataKey]:
         """Return a DataKey for each field this provider produces.
 
         Called before the first exposure is taken.
@@ -274,6 +274,23 @@ class CounterDataProvider(PageableDataProvider):
             *(mca.describe() for mca in mcas),
         )
         return {key: val for desc in descriptions for key, val in desc.items()}
+
+    async def make_readings(self) -> dict[str, Reading]:
+        """Read the Signals and return their values."""
+        mcas = self.driver.mcs.mcas.values()
+        coros = [
+            self.driver.scaler.clock_frequency.get_value(),
+            self.driver.mcs.clock.count.get_value(),
+            self.driver.mcs.clock.read(),
+            *(mca.read() for mca in mcas),
+        ]
+        freq, clock, *mca_readings = await asyncio.gather(*coros)
+        # Calculate timestamps,
+        readings = mca_readings
+        # Restructure the readings so that they are a valid reading object
+        reading = {k: v for rd in readings for k, v in rd.items()}
+        reading = {k: {**v, "value": int(v['value'][0])} for k, v in reading.items()}
+        return reading
 
     async def make_pages(
         self, collections_written: int, collections_per_event: int
@@ -317,6 +334,10 @@ class CounterDataProvider(PageableDataProvider):
 @dataclass
 class CounterDataLogic(DetectorDataLogic):
     driver: CounterDriverIO
+
+    async def prepare_single(self, datakey_name: str) -> PageableDataProvider:
+        return CounterDataProvider(driver=self.driver)
+
 
     async def prepare_bounded(
         self, datakey_name: str, num_collections: int, period: float
