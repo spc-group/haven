@@ -66,7 +66,7 @@ def test_beam_offset():
     assert beam_offset(bragg, gap=gap).magnitude == pytest.approx(offset.magnitude)
 
 
-@pytest.mark.parametrize("idx, row", df.iloc[1::10].iterrows())
+@pytest.mark.parametrize("idx, row", [*df.iloc[1::10].iterrows()])
 def test_bragg_tracking(primary_mono, secondary_mono, idx, row):
     row0 = df.iloc[0]
     bragg = row["secondary_bragg_angle"]
@@ -100,7 +100,7 @@ def test_bragg_tracking(primary_mono, secondary_mono, idx, row):
     assert len(other_msgs) == 2
 
 
-@pytest.mark.parametrize("idx, row", df.iloc[1::10].iterrows())
+@pytest.mark.parametrize("idx, row", [*df.iloc[1::10].iterrows()])
 def test_energy_tracking(primary_mono, secondary_mono, idx, row):
     # E = hc/2/d/sin(θ)
     #

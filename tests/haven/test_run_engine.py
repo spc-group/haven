@@ -53,6 +53,7 @@ def test_config_metadata():
         data_management=DataManagementConfig(
             web_portal_uri="http://example.com",
             station_name="255IDZ",
+            area_detector_path="/tmp",
         ),
         run_engine=RunEngineConfig(
             default_metadata=RunEngineMetadata(

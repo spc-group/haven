@@ -8,6 +8,7 @@ from typing import Annotated as A
 from typing import NotRequired, TypedDict
 
 import numpy as np
+from bluesky.protocols import Reading
 from event_model import DataKey
 from event_model.documents import PartialEventPage
 from ophyd_async.core import (
@@ -289,7 +290,7 @@ class CounterDataProvider(PageableDataProvider):
         readings = mca_readings
         # Restructure the readings so that they are a valid reading object
         reading = {k: v for rd in readings for k, v in rd.items()}
-        reading = {k: {**v, "value": int(v['value'][0])} for k, v in reading.items()}
+        reading = {k: {**v, "value": int(v["value"][0])} for k, v in reading.items()}
         return reading
 
     async def make_pages(
@@ -337,7 +338,6 @@ class CounterDataLogic(DetectorDataLogic):
 
     async def prepare_single(self, datakey_name: str) -> PageableDataProvider:
         return CounterDataProvider(driver=self.driver)
-
 
     async def prepare_bounded(
         self, datakey_name: str, num_collections: int, period: float
