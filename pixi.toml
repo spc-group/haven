@@ -54,7 +54,7 @@ lint-all = [
 aioca = ">=2.0"
 apsbits = ">=2.0.2"
 # Use the main branch of apstools to get migrated ophyd-async devices
-apstools = ">=1.7.13"
+apstools = "==1.7.13"
 # apstools = {git="https://github.com/BCDA-APS/apstools.git", extras=['async'], rev="99324ee5cf2c029f480cd6b8b572c61e27d7ca78"}
 # We need development branch so we can get `collect_all` plan stub
 bluesky = { git = "https://github.com/bluesky/bluesky.git" }
@@ -69,7 +69,7 @@ guarneri = ">=0.5.0"
 hatchling = ">=1.29.0, <2"
 hatch-vcs = ">=0.5.0, <0.6"
 ophyd = ">=1.11.0"
-ophyd-async = { version = "==0.21.3", extras = ["ca"] }
+ophyd-async = { version = "==0.21.4", extras = ["ca"] }
 scanspec = ">=1.0.0, <2"
 p4p = ">=4.2.2, <5"
 watchfiles = ">=1.1.1, <2"

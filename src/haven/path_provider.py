@@ -5,8 +5,8 @@ from ophyd_async.core import (
     FilenameProvider,
     PathInfo,
     PathProvider,
-    generate_directory_uri,
 )
+from ophyd_async.core._path_providers import generate_directory_uri
 
 from .iconfig import HavenConfig, load_config
 

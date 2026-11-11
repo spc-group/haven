@@ -56,7 +56,7 @@ class AravisDetector(AreaDetector[AravisDriverIO]):
             prefix,
             *writer_factories,
             acquire_logic=ADAcquireLogic(driver),
-            trigger_logic=AravisTriggerLogic(driver),
+            trigger_logic=AravisTriggerLogic(driver, process_plugin=None),
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,

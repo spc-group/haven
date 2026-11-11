@@ -41,7 +41,7 @@ class SimDetector(AreaDetector[ADBaseIO]):
             prefix,
             *writer_factories,
             acquire_logic=ADAcquireLogic(driver),
-            trigger_logic=SimDetectorTriggerLogic(driver),
+            trigger_logic=SimDetectorTriggerLogic(driver, process_plugin=None),
             plugins=plugins,
             config_sigs=config_sigs,
             name=name,
