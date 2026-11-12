@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
+from scipy.interpolate import CubicSpline
 
-pytest.importorskip("eaa_spectroscopy")
-from eaa_spectroscopy import SimulatedSpectrumMeasurementTool
+pytest.importorskip("adaptive_xanes")
 
 from haven.plans.adaptive_xanes import XANESSamplingRecommender
 
@@ -35,11 +35,11 @@ def load_data():
     return energies[mask], data[mask], ref1[mask], ref2[mask]
 
 
-def test_adaptive_xanes(debug: bool = False):
+def test_adaptive_xanes():
     np.random.seed(124)
     energies, data, ref_spectra_0, ref_spectra_1 = load_data()
 
-    instrument = SimulatedSpectrumMeasurementTool(data=(energies, data))
+    instrument = CubicSpline(energies, data)
 
     params = {
         "energy_range": [energies[0], energies[-1]],
@@ -60,29 +60,21 @@ def test_adaptive_xanes(debug: bool = False):
         method="quasirandom",
         random_seed=124,
     )
-    y_init = instrument.measure(np.asarray(x_init).reshape(-1, 1), add_noise=False)
+    y_init = instrument(x_init)
     recommender.initialize_guide(x_init, y_init)
 
     n_measurements = len(x_init)
     while True:
         try:
             suggested_energy = recommender.ask(n=1)
-            measured_value = instrument.measure(
-                np.asarray(suggested_energy).reshape(-1, 1),
-                add_noise=False,
-            )
+            measured_value = instrument(suggested_energy)
             recommender.tell(
                 suggested_energy,
-                float(measured_value.squeeze().detach().cpu().numpy()),
+                float(measured_value.squeeze()),
             )
             n_measurements += 1
         except NoRecommendation:
             break
-
-    if debug:
-        import matplotlib.pyplot as plt
-        figure = recommender.guide.visualize_status()
-        plt.show()
 
     assert n_measurements <= params["n_max_measurements"]
     assert n_measurements > 20
@@ -90,4 +82,4 @@ def test_adaptive_xanes(debug: bool = False):
 
 
 if __name__ == "__main__":
-    test_adaptive_xanes(debug=True)
+    test_adaptive_xanes()

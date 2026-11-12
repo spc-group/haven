@@ -37,8 +37,7 @@ firefly_cameras = "firefly.launcher:cameras"
 
 [project.optional-dependencies]
 adaptive-xanes = [
-    "eaa-core[bo] @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-core",
-    "eaa-spectroscopy @ git+https://github.com/AdvancedPhotonSource/EAA.git#subdirectory=packages/eaa-spectroscopy",
+    "adaptive-xanes @ git+https://github.com/AdvancedPhotonSource/adaptive-xanes.git",
 ]
 
 [tool.setuptools.package-data]
