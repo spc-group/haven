@@ -18,6 +18,7 @@ from ophyd_async.core import (
     DetectorAcquireLogic,
     DetectorDataLogic,
     DetectorTriggerLogic,
+    DeviceMock,
     DeviceVector,
     Signal,
     SignalR,
@@ -27,7 +28,10 @@ from ophyd_async.core import (
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
+    callback_on_mock_put,
+    default_mock_class,
     set_and_wait_for_other_value,
+    set_mock_value,
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
@@ -153,6 +157,38 @@ class MCA(StandardReadable):
         super().__init__(name=name)
 
 
+class InstantAcquireMock(DeviceMock["MultiChannelScaler"]):
+    """Mock behaviour that instantly sets a detector acquiring."""
+
+    async def connect(self, device: "MultiChannelScaler") -> None:
+        """Mock signals to do an instant acquire when triggered."""
+        # # Set sensible defaults to avoid runtime errors
+        # set_mock_value(device.velocity, 1000)  # Prevent ZeroDivisionError
+        # set_mock_value(device.max_velocity, 1000)  # Prevent ZeroDivisionError
+
+        # # Motor starts in "done" state (not moving)
+        # set_mock_value(device.motor_done_move, 1)
+
+        # When setpoint is written to, immediately update readback and done flag
+        def _acquire_and_stop(value):
+            set_mock_value(device.acquiring, True)
+            time.sleep(0.1)
+            for mca in device.mcas.values():
+                set_mock_value(mca.count, [1000000])
+            set_mock_value(device.clock.count, [1000000])
+            set_mock_value(device.acquiring, False)
+            # set_mock_value(device.motor_done_move, 0)  # Moving
+            # set_mock_value(device.user_readback, value)  # Arrive instantly
+            # set_mock_value(device.motor_done_move, 1)  # Done
+
+        def _instant_stop(value):
+            set_mock_value(device.acquiring, False)
+
+        callback_on_mock_put(device.start_all, _acquire_and_stop)
+        callback_on_mock_put(device.stop_all, _instant_stop)
+
+
+@default_mock_class(InstantAcquireMock)
 class MultiChannelScaler(EpicsDevice):
     """The MCS component of a SIS3820 or MeasComp counter.
 

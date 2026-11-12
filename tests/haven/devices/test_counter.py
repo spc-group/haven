@@ -1,18 +1,29 @@
+import asyncio
 import time
 
 import numpy as np
 import pytest
 from bluesky import RunEngine
 from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 from bluesky import preprocessors as bpp
-from ophyd_async.core import TriggerInfo, set_mock_value
+from ophyd_async.core import (
+    AsyncStatus,
+    StandardReadable,
+    TriggerInfo,
+    init_devices,
+    set_mock_value,
+    soft_signal_rw,
+)
+from ophyd_async.epics.motor import Motor
 
 # Remove if bounded detector support is available in ophyd-async
 try:
     from ophyd_async.core import PageableDataProvider
 except ImportError:
-    pytest.skip(allow_module_level=True)
+    SUPPORTS_BOUNDED_DETECTOR = False
 else:
+    SUPPORTS_BOUNDED_DETECTOR = True
     del PageableDataProvider
 
 from haven.devices.detectors.counter import Counter, CTR08Counter, SIS3820Counter
@@ -243,6 +254,10 @@ def test_scaler_signals(flavor):
     assert channel.raw_count.source == "ca://255idc:CTR0:scaler1.S2"
 
 
+@pytest.mark.skipif(
+    not SUPPORTS_BOUNDED_DETECTOR,
+    reason="No ophyd-async support for bounded detectors.",
+)
 @pytest.mark.parametrize("flavor", ["sis3820", "ctr08"])
 async def test_collection(flavor):
     counter = build_counter(flavor)
@@ -286,6 +301,74 @@ async def test_collection(flavor):
     assert list(data["It-count"]) == [2448, 2558]
     assert list(data["jetstream_ion_chambers-clock-count"]) == [2e7, 2.1e7]
     np.testing.assert_allclose(timestamps["I0-count"], [now - 2.1, now])
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize("flavor", ["sis3820", "ctr08"])
+async def test_step_scan_ordering(flavor):
+    async with init_devices(mock=True):
+        counter = build_counter(flavor)
+        sim_motor_2 = Motor("")
+        sim_motor_3 = Motor("")
+
+    RE = RunEngine({}, call_returns_result=True)
+
+    docs = {}
+
+    def stash_docs(name, doc):
+        docs.setdefault(name, []).append(doc)
+
+    RE.subscribe(stash_docs)
+    RE(bp.scan([counter], sim_motor_2, -10, 10, sim_motor_3, -5, 5, num=3))
+    assert len(docs["event"]) == 3
+    events = docs["event"]
+    assert list(events[0]["data"].keys()) == list(events[1]["data"].keys())
+    assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
+
+
+class TwoSignalDevice(StandardReadable):
+    trigger_num = 0
+    read_num = 0
+
+    def __init__(self, *, name=""):
+        self.signal_A = soft_signal_rw(float, initial_value=0.5)
+        self.signal_B = soft_signal_rw(float, initial_value=1.3)
+        super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def trigger(self):
+        if self.trigger_num < 1:
+            await asyncio.sleep(0.1)
+        self.trigger_num += 1
+
+    @AsyncStatus.wrap
+    async def read(self):
+        if self.read_num >= 1:
+            await asyncio.sleep(0.1)
+        self.read_num += 1
+        return await super().read()
+
+
+async def test_step_scan_ordering_mwe():
+
+    async with init_devices(mock=True):
+        detector = TwoSignalDevice()
+        sim_motor_2 = Motor("")
+        sim_motor_3 = Motor("")
+
+    RE = RunEngine({}, call_returns_result=True)
+
+    docs = {}
+
+    def stash_docs(name, doc):
+        docs.setdefault(name, []).append(doc)
+
+    RE.subscribe(stash_docs)
+    RE(bp.scan([detector], sim_motor_2, -10, 10, sim_motor_3, -5, 5, num=3))
+    assert len(docs["event"]) == 3
+    events = docs["event"]
+    assert list(events[0]["data"].keys()) == list(events[1]["data"].keys())
+    assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
 
 
 # -----------------------------------------------------------------------------
