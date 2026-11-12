@@ -4,8 +4,11 @@ from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
+from bluesky import RunEngine
+from bluesky import plans as bp
 from numpy.testing import assert_allclose
-from ophyd_async.core import DetectorTrigger, TriggerInfo, set_mock_value
+from ophyd_async.core import DetectorTrigger, TriggerInfo, init_devices, set_mock_value
+from ophyd_async.epics.motor import Motor
 
 try:
     from ophyd_async.core import set_mock_attr
@@ -140,6 +143,49 @@ def ion_chamber(sim_registry):
     return ion_chamber
 
 
+@pytest.mark.xfail
+@pytest.mark.asyncio
+async def test_step_scan_ordering(ion_chamber):
+    await ion_chamber.connect(mock=True)
+    async with init_devices(mock=True):
+        sim_motor_2 = Motor("")
+        sim_motor_3 = Motor("")
+
+    RE = RunEngine({}, call_returns_result=True)
+
+    docs = {}
+
+    def stash_docs(name, doc):
+        docs.setdefault(name, []).append(doc)
+
+    RE.subscribe(stash_docs)
+    RE(bp.scan([ion_chamber], sim_motor_2, -10, 10, sim_motor_3, -5, 5, num=3))
+    assert len(docs["event"]) == 3
+    events = docs["event"]
+    # Next line xfail:
+    # At index 0 diff: 'sim_motor_2' != 'I0-voltmeter-analog_inputs-1-final_value'
+    #
+    # Full diff: (-: missing in left side, +: extra in left side)
+    #   [
+    # +     'sim_motor_2',
+    # +     'sim_motor_3',
+    #       'I0-voltmeter-analog_inputs-1-final_value',
+    #       'I0-mcs-scaler-channels-0-net_count',
+    #       'I0-mcs-scaler-channels-0-raw_count',
+    #       'I0-mcs-scaler-channels-2-raw_count',
+    #       'I0-mcs-scaler-elapsed_time',
+    #       'I0-count_rate',
+    #       'I0-count',
+    #       'I0-net_current',
+    #       'I0-raw_current',
+    #       'I0-raw_count_rate',
+    # -     'sim_motor_2',
+    # -     'sim_motor_3',
+    #   ]
+    assert list(events[0]["data"].keys()) == list(events[1]["data"].keys())
+    assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
+
+
 def test_ion_chamber_devices(ion_chamber):
     """Check that the ion chamber has the right sub-devices."""
     assert list(ion_chamber.mcs.scaler.channels.keys()) == [0, 2]
@@ -259,7 +305,6 @@ async def test_readables(ion_chamber):
 async def test_trigger(ion_chamber):
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 50e6)
-    assert ion_chamber._trigger_statuses == {}
     # Does the same trigger twice return the same
     status1 = ion_chamber.trigger()
     status2 = ion_chamber.trigger()

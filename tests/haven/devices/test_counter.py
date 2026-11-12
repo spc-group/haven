@@ -322,6 +322,20 @@ async def test_step_scan_ordering(flavor):
     RE(bp.scan([counter], sim_motor_2, -10, 10, sim_motor_3, -5, 5, num=3))
     assert len(docs["event"]) == 3
     events = docs["event"]
+    # This next line xfails with:
+    #
+    # At index 0 diff: 'sim_motor_2' != 'jetstream_ion_chambers-clock-count'
+    #
+    # Full diff: (-: missing in left side, +: extra in left side)
+    #   [
+    # +     'sim_motor_2',
+    # +     'sim_motor_3',
+    #       'jetstream_ion_chambers-clock-count',
+    #       'I0-count',
+    #       'It-count',
+    # -     'sim_motor_2',
+    # -     'sim_motor_3',
+    #   ]
     assert list(events[0]["data"].keys()) == list(events[1]["data"].keys())
     assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
 

@@ -16,15 +16,18 @@ from ophyd_async.core import (
     AsyncStatus,
     DetectorTrigger,
     Device,
+    DeviceMock,
     StandardReadable,
     StandardReadableFormat,
     TriggerInfo,
     WatchableAsyncStatus,
     WatcherUpdate,
+    default_mock_class,
     derived_signal_r,
     error_if_none,
     observe_signals_value,
     set_and_wait_for_other_value,
+    set_mock_value,
     soft_signal_rw,
     wait_for_value,
 )
@@ -157,6 +160,12 @@ def load_ion_chambers(
     return [*_preamps, *_labjacks.values(), *_counters.values()]
 
 
+class IonChamberMock(DeviceMock["IonChamber"]):
+    async def connect(self, device: "IonChamber") -> None:
+        set_mock_value(device.mcs.scaler.clock_frequency, 50_000_000)
+
+
+@default_mock_class(IonChamberMock)
 class IonChamber(StandardReadable, Triggerable):
     """A high-level abstraction of an ion chamber.
 
