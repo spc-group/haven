@@ -16,6 +16,7 @@ from ophyd_async.core import (
     soft_signal_rw,
 )
 from ophyd_async.epics.motor import Motor
+from ophyd_async.sim import SimMotor
 
 # Remove if bounded detector support is available in ophyd-async
 try:
@@ -303,8 +304,8 @@ async def test_collection(flavor):
     np.testing.assert_allclose(timestamps["I0-count"], [now - 2.1, now])
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("flavor", ["sis3820", "ctr08"])
+@pytest.mark.asyncio
 async def test_step_scan_ordering(flavor):
     async with init_devices(mock=True):
         counter = build_counter(flavor)
@@ -340,37 +341,25 @@ async def test_step_scan_ordering(flavor):
     assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
 
 
-class TwoSignalDevice(StandardReadable):
-    trigger_num = 0
-    read_num = 0
-
-    def __init__(self, *, name=""):
-        self.signal_A = soft_signal_rw(float, initial_value=0.5)
-        self.signal_B = soft_signal_rw(float, initial_value=1.3)
-        super().__init__(name=name)
-
-    @AsyncStatus.wrap
-    async def trigger(self):
-        if self.trigger_num < 1:
-            await asyncio.sleep(0.1)
-        self.trigger_num += 1
-
-    @AsyncStatus.wrap
-    async def read(self):
-        if self.read_num >= 1:
-            await asyncio.sleep(0.1)
-        self.read_num += 1
-        return await super().read()
-
-
-async def test_step_scan_ordering_mwe():
-
-    async with init_devices(mock=True):
-        detector = TwoSignalDevice()
-        sim_motor_2 = Motor("")
-        sim_motor_3 = Motor("")
-
+def test_step_scan_ordering_mwe():
     RE = RunEngine({}, call_returns_result=True)
+
+    class SlowDescribeDevice(StandardReadable):
+        def __init__(self, *, name=""):
+            with self.add_children_as_readables():
+                self.signal_A = soft_signal_rw(float, initial_value=0.5)
+                self.signal_B = soft_signal_rw(float, initial_value=1.3)
+            super().__init__(name=name)
+
+        @AsyncStatus.wrap
+        async def describe(self):
+            await asyncio.sleep(0.1)
+            return await super().describe()
+
+    with init_devices(mock=False):
+        detector = SlowDescribeDevice()
+        sim_motor_2 = SimMotor()
+        sim_motor_3 = SimMotor()
 
     docs = {}
 
@@ -381,8 +370,11 @@ async def test_step_scan_ordering_mwe():
     RE(bp.scan([detector], sim_motor_2, -10, 10, sim_motor_3, -5, 5, num=3))
     assert len(docs["event"]) == 3
     events = docs["event"]
+    # Check that the event doc keys are in the same order for every event
     assert list(events[0]["data"].keys()) == list(events[1]["data"].keys())
     assert list(events[1]["data"].keys()) == list(events[2]["data"].keys())
+    assert list(events[0]["timestamps"].keys()) == list(events[1]["timestamps"].keys())
+    assert list(events[1]["timestamps"].keys()) == list(events[2]["timestamps"].keys())
 
 
 # -----------------------------------------------------------------------------

@@ -143,7 +143,6 @@ def ion_chamber(sim_registry):
     return ion_chamber
 
 
-@pytest.mark.xfail
 @pytest.mark.asyncio
 async def test_step_scan_ordering(ion_chamber):
     await ion_chamber.connect(mock=True)
