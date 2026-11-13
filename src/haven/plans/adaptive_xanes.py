@@ -16,10 +16,11 @@ try:
     import botorch
     import gpytorch
     import torch
-    from eaa_core.util import to_numpy, to_tensor
-    from eaa_spectroscopy import (
+    from adaptive_xanes import (
         AdaptiveXANESBayesianOptimization,
         ComprehensiveAugmentedAcquisitionFunction,
+        to_numpy,
+        to_tensor,
     )
 except ImportError:
     botorch = None
@@ -40,8 +41,8 @@ def resample(xdata: np.ndarray, ydata: np.ndarray, new_xdata: np.ndarray) -> np.
 class XANESSamplingRecommender:
     """A recommendation engine for XANES adaptive sampling.
 
-    This agent uses EAA's ``AdaptiveXANESBayesianOptimization`` tool as the
-    underlying recommendation engine. Starting with
+    This agent uses ``adaptive_xanes.AdaptiveXANESBayesianOptimization`` as
+    the underlying recommendation engine. Starting with
     n0 randomly positioned measurements of X-ray absorption coefficients
     for each spectrum, the optimizer builds a Gaussian process (GP) model, and
     suggests the next energy to measure based on the posterior uncertainty
@@ -125,18 +126,18 @@ class XANESSamplingRecommender:
         self.build()
 
     def build(self):
-        self._ensure_eaa()
+        self._ensure_backend()
         self.build_device()
 
-    def _ensure_eaa(self) -> None:
+    def _ensure_backend(self) -> None:
         if AdaptiveXANESBayesianOptimization is None:
             raise ImportError(
-                "Adaptive XANES sampling requires optional EAA dependencies. "
-                "Install `eaa-core` and `eaa-spectroscopy` to use this plan."
+                "Adaptive XANES sampling requires the optional `adaptive-xanes` package. "
+                "Install `haven-spc[adaptive-xanes]` to use this plan."
             )
 
     def _build_acquisition_kwargs(self) -> dict:
-        self._ensure_eaa()
+        self._ensure_backend()
         ref_spectra_x = self.input_args["reference_spectra_x"]
         ref_spectra_y = self.input_args["reference_spectra_y"]
         return {
@@ -184,7 +185,7 @@ class XANESSamplingRecommender:
             raise ValueError("Guide is not initialized yet.")
 
     def initialize_guide(self, energies: list[float], values: list[float]) -> None:
-        self._ensure_eaa()
+        self._ensure_backend()
         energies = to_tensor(energies).reshape(-1, 1)
         values = to_tensor(values)
         if values.ndim == 1:
@@ -318,7 +319,7 @@ class XANESSamplingRecommender:
         -------
         list[float]
           The next point to measure. Since the algorithm suggests one point at
-          a time, this is a list of length 1. Internally, the underlying EAA
+          a time, this is a list of length 1. Internally, the underlying
           optimizer returns a tensor with shape ``(1, 1)``, which is converted
           to a Python list.
         """
